@@ -1,0 +1,1155 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PK HART — Birthstone Ring Studio</title>
+
+<!--
+  PK HART — BIRTHSTONE RING STUDIO (concept demo, v2 — photoreal)
+  Sibling of the Ear Stack Studio: a custom ring designer for PK HART's stacked
+  birthstone rings (one thin band per person; optional feature diamond band).
+
+  v2 renders the ring in real time with three.js PBR materials — studio
+  environment lighting, metallic bands, refractive stones — styled like the
+  store's own product photography (piece standing on seamless ivory).
+
+  Still true (see BRIEF.md):
+    - runs from a static folder, no CDNs (three.js is vendored in ./vendor)
+    - nothing sends anywhere: "Request this design" opens the visitor's own
+      mail client via mailto:, everything else stays on the page.
+-->
+
+<style>
+/* ============================ DESIGN TOKENS (BRIEF §4) ============================ */
+:root{
+  --ink:#14110F; --ink-2:#4A423B; --ivory:#FBF8F4; --sand:#F1EBE2;
+  --gold:#A9843F; --gold-lt:#D8BE86; --plum:#3C2A34; --ok:#2E6B52;
+  --serif:Georgia,'Times New Roman',serif;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  --shadow:0 1px 2px rgba(20,17,15,.06);
+  --rail:300px; --tray:292px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--ivory); color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.45}
+h1,h2{font-family:var(--serif); font-weight:400; letter-spacing:.01em; margin:0}
+.eyebrow{font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); font-weight:600}
+.muted{color:var(--ink-2); font-size:12px}
+
+/* header */
+header.top{
+  display:flex; flex-wrap:wrap; gap:14px 24px; align-items:flex-end;
+  padding:22px 26px 18px; border-bottom:1px solid var(--sand); background:#fff;
+}
+header.top .brand{flex:1 1 280px; min-width:0}
+header.top h1{font-size:26px; line-height:1.15; margin-top:5px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+header.top .sub{font-size:12.5px; color:var(--ink-2); margin-top:5px; max-width:56ch}
+.chip{
+  font-family:var(--sans); font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+  border:1px solid var(--gold-lt); color:var(--gold); border-radius:2px; padding:3px 7px; font-weight:600;
+}
+.top-actions{display:flex; gap:8px; align-items:center}
+
+/* buttons */
+.btn{
+  border:1px solid var(--sand); background:#fff; border-radius:2px; padding:8px 12px;
+  font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink);
+  box-shadow:var(--shadow); white-space:nowrap; cursor:pointer; font-family:var(--sans);
+}
+.btn:hover{border-color:var(--gold-lt)}
+.btn:active{background:var(--sand)}
+.btn.gold{background:var(--gold); border-color:var(--gold); color:#fff}
+.btn.gold:hover{background:#96742f}
+.btn.dark{background:var(--plum); border-color:var(--plum); color:#fff}
+.btn:disabled{opacity:.42; cursor:not-allowed}
+.btn.sm{padding:6px 9px; font-size:10.5px; letter-spacing:.06em}
+.btn.wide{width:100%; text-align:center; padding:11px 12px}
+
+/* ============================ LAYOUT ============================ */
+.wrap{
+  display:grid; grid-template-columns:var(--tray) minmax(0,1fr) var(--rail);
+  gap:0; align-items:start; min-height:540px;
+}
+@media (min-width:981px){
+  .stage-col, .rail{position:sticky; top:0; max-height:100vh; overflow-y:auto}
+}
+.col{padding:18px 18px 26px; min-width:0}
+.tray{border-right:1px solid var(--sand); display:flex; flex-direction:column; gap:12px}
+.rail{border-left:1px solid var(--sand); display:flex; flex-direction:column; gap:14px}
+.colhead{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px}
+
+/* ============================ BAND EDITOR ============================ */
+.bands{display:flex; flex-direction:column; gap:10px}
+.band-card{
+  border:1px solid var(--sand); border-radius:2px; background:#fff; box-shadow:var(--shadow);
+  padding:10px 11px 12px; cursor:pointer;
+}
+.band-card.sel{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold), var(--shadow)}
+.band-card .bc-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+.band-card .bc-title{font-family:var(--serif); font-size:14.5px}
+.band-card .bc-stone{font-size:11px; color:var(--ink-2); margin-left:7px}
+.bc-remove{
+  border:0; background:transparent; color:var(--ink-2); font-size:15px; line-height:1;
+  cursor:pointer; padding:2px 4px; border-radius:2px;
+}
+.bc-remove:hover{color:var(--ink); background:var(--sand)}
+.row{display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap}
+.row .lbl{font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-2); width:44px; flex:none}
+
+/* metal picker */
+.metals{display:flex; gap:6px}
+.metals.big .metal{width:30px; height:30px}
+.metal{
+  width:22px; height:22px; border-radius:50%; border:1px solid rgba(20,17,15,.18);
+  cursor:pointer; padding:0; position:relative;
+}
+.metal[aria-pressed=true]{box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--gold)}
+.metal.y{background:linear-gradient(135deg,#EDCB7E 15%,#C59A48 60%,#A87F35)}
+.metal.r{background:linear-gradient(135deg,#EFC0A6 15%,#CE8F70 60%,#B07152)}
+.metal.w{background:linear-gradient(135deg,#F7F7F9 15%,#C9CBD2 60%,#A5A8B1)}
+
+/* stone swatches */
+.stones{display:grid; grid-template-columns:repeat(6,1fr); gap:5px; flex:1}
+.stone{
+  width:20px; height:20px; border-radius:50%; border:1px solid rgba(20,17,15,.16);
+  cursor:pointer; padding:0; justify-self:center;
+}
+.stone[aria-pressed=true]{box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--gold)}
+
+/* size segmented + twins */
+.sizeseg{display:inline-flex; border:1px solid var(--sand); border-radius:2px; background:#fff; box-shadow:var(--shadow)}
+.sizeseg button{
+  border:0; background:transparent; padding:5px 8px; font-size:9.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-2); cursor:pointer; font-family:var(--sans);
+}
+.sizeseg button+button{border-left:1px solid var(--sand)}
+.sizeseg button[aria-pressed=true]{background:var(--plum); color:#fff}
+.twinlbl{display:inline-flex; align-items:center; gap:6px; margin-left:auto; cursor:pointer}
+.twintxt{font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-2)}
+.tog.mini{width:28px; height:16px}
+.tog.mini::after{width:10px; height:10px}
+.tog.mini[aria-pressed=true]::after{left:14px}
+
+.name-in{
+  flex:1; border:1px solid var(--sand); border-radius:2px; padding:6px 8px; font-size:12.5px;
+  font-family:var(--sans); color:var(--ink); background:var(--ivory); min-width:0;
+}
+.name-in:focus{outline:none; border-color:var(--gold-lt); background:#fff}
+
+.addband{margin-top:2px}
+
+/* feature stone */
+.feature{border-top:1px solid var(--sand); padding-top:12px; margin-top:4px}
+.shapes{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap}
+.shape{
+  border:1px solid var(--sand); background:#fff; border-radius:2px; padding:5px 8px;
+  font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2);
+  cursor:pointer; display:flex; align-items:center; gap:6px;
+}
+.shape svg{display:block}
+.shape[aria-pressed=true]{border-color:var(--gold); color:var(--ink); box-shadow:0 0 0 1px var(--gold)}
+
+/* toggle */
+.tog{
+  width:34px; height:19px; border-radius:10px; border:1px solid var(--sand); background:#fff;
+  position:relative; cursor:pointer; padding:0; flex:none;
+}
+.tog::after{
+  content:""; position:absolute; top:2px; left:2px; width:13px; height:13px; border-radius:50%;
+  background:var(--ink-2); transition:left .15s ease, background .15s ease;
+}
+.tog[aria-pressed=true]{background:var(--gold); border-color:var(--gold)}
+.tog[aria-pressed=true]::after{left:17px; background:#fff}
+
+/* ============================ STAGE ============================ */
+.stage-col{display:flex; flex-direction:column}
+.stage-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap}
+.stage{
+  flex:1; margin-top:10px; background:#FBF8F4; border:1px solid var(--sand); border-radius:2px;
+  box-shadow:var(--shadow); position:relative; min-height:480px; overflow:hidden;
+}
+.stage canvas{display:block; width:100%; height:100%; touch-action:none; cursor:grab}
+.stage-btns{position:absolute; right:12px; bottom:12px; display:flex; gap:8px}
+.stage-btns .btn{background:rgba(255,255,255,.92)}
+
+/* ============================ RAIL ============================ */
+.sumlist{display:flex; flex-direction:column}
+.sumrow{display:flex; align-items:center; gap:9px; padding:8px 0; border-bottom:1px solid var(--sand)}
+.sumrow:last-child{border-bottom:0}
+.dotsw{width:13px; height:13px; border-radius:50%; border:1px solid rgba(20,17,15,.16); flex:none}
+.sumrow .what{flex:1; min-width:0; font-size:12.5px}
+.sumrow .what .nm{font-style:italic; color:var(--ink-2)}
+.sumrow .mt{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); flex:none}
+.sizebox{display:flex; align-items:center; gap:8px}
+.sizebox select{
+  border:1px solid var(--sand); border-radius:2px; background:#fff; padding:7px 8px;
+  font-family:var(--sans); font-size:12.5px; color:var(--ink);
+}
+.finenote{font-size:11.5px; color:var(--ink-2); line-height:1.5}
+.rail-actions{display:flex; flex-direction:column; gap:8px}
+
+/* ============================ MODAL ============================ */
+.modal-bg{
+  position:fixed; inset:0; background:rgba(20,17,15,.4); display:none;
+  align-items:center; justify-content:center; padding:20px; z-index:50;
+}
+.modal-bg.open{display:flex}
+.modal{
+  background:#fff; border-radius:2px; max-width:460px; width:100%; padding:22px;
+  box-shadow:0 8px 40px rgba(20,17,15,.25); max-height:86vh; overflow:auto;
+}
+.modal h2{font-size:20px; margin:6px 0 2px}
+.spec{
+  white-space:pre-wrap; background:var(--ivory); border:1px solid var(--sand); border-radius:2px;
+  padding:12px; font-size:12.5px; margin:12px 0; font-family:var(--sans); line-height:1.6;
+}
+.modal .actions{display:flex; gap:8px; flex-wrap:wrap}
+
+footer.pagefoot{
+  border-top:1px solid var(--sand); padding:14px 26px; display:flex; justify-content:space-between;
+  gap:12px; flex-wrap:wrap; font-size:11px; color:var(--ink-2); background:#fff;
+}
+
+/* ============================ RESPONSIVE ============================ */
+@media (max-width:980px){
+  .wrap{display:flex; flex-direction:column}
+  /* the ring stays pinned on top while you edit below */
+  .stage-col{order:-1; position:sticky; top:0; z-index:20; background:var(--ivory); padding-bottom:10px; max-height:none; overflow:visible}
+  .stage{min-height:0; height:40vh}
+  .stage-head{padding-top:4px}
+  .tray{border-right:0; border-top:1px solid var(--sand)}
+  .rail{border-left:0; border-top:1px solid var(--sand)}
+  /* finger-sized tap targets */
+  .stone{width:27px; height:27px}
+  .metal{width:28px; height:28px}
+  .metals.big .metal{width:34px; height:34px}
+  .sizeseg button{padding:9px 11px; font-size:10.5px}
+  .tog{width:40px; height:23px}
+  .tog::after{width:17px; height:17px}
+  .tog[aria-pressed=true]::after{left:19px}
+  .tog.mini{width:34px; height:20px}
+  .tog.mini::after{width:14px; height:14px}
+  .tog.mini[aria-pressed=true]::after{left:17px}
+  .shape{padding:8px 11px}
+  .bc-remove{font-size:18px; padding:4px 8px}
+}
+</style>
+
+<header class="top">
+  <div class="brand">
+    <div class="eyebrow">PK HART Fine Jewelry</div>
+    <h1>Birthstone Ring Studio <span class="chip">Concept preview</span></h1>
+    <div class="sub">One ring, five wraps, a birthstone for each person you love &mdash; and statement stones on the bottom row. Pick the stones and carats, we place them the way we always do, then send us your design.</div>
+  </div>
+  <div class="top-actions">
+    <button class="btn" id="btnSurprise">Surprise me</button>
+    <button class="btn" id="btnReset">Start over</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============================ BAND EDITOR ============================ -->
+  <section class="col tray">
+    <div class="colhead">
+      <div class="eyebrow">The metal</div>
+    </div>
+    <div class="row" style="margin:0 0 10px">
+      <div class="metals big" id="globalMetal"></div>
+      <span class="muted" id="metalLabel"></span>
+    </div>
+    <div class="colhead">
+      <div class="eyebrow">Stone carat</div>
+      <div class="muted">all the top stones</div>
+    </div>
+    <div class="row" style="margin:0 0 14px" id="globalCarat"></div>
+    <div class="colhead">
+      <div class="eyebrow">The wraps</div>
+      <div class="muted" id="bandCount"></div>
+    </div>
+    <div class="bands" id="bands"></div>
+    <button class="btn wide addband" id="btnAdd">+ Add a wrap</button>
+
+    <div class="feature">
+      <div class="row" style="margin-top:0">
+        <span class="eyebrow" style="flex:1">The bottom row</span>
+        <button class="tog" id="featTog" aria-pressed="false" aria-label="Toggle bottom row"></button>
+      </div>
+      <div class="muted" style="margin-top:6px">Statement stones on the bottom wrap &mdash; a diamond, or mom &amp; dad&rsquo;s stones, in any cut.</div>
+      <div id="featControls" style="display:none">
+        <div class="bands" id="bottomStones" style="margin-top:10px"></div>
+        <button class="btn wide" id="btnAddBottom" style="margin-top:8px">+ Add a bottom stone</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ STAGE ============================ -->
+  <section class="col stage-col">
+    <div class="stage-head">
+      <div class="eyebrow">Your ring, live</div>
+      <div class="muted">Drag to turn the ring &middot; tap a stone to edit it</div>
+    </div>
+    <div class="stage">
+      <canvas id="scene" aria-label="Rendered preview of your custom birthstone ring"></canvas>
+      <div class="stage-btns">
+        <button class="btn sm" id="btnFront">Front view</button>
+        <button class="btn sm" id="btnTurn">Turn it around</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ SUMMARY RAIL ============================ -->
+  <section class="col rail">
+    <div class="colhead">
+      <div class="eyebrow">Your ring</div>
+      <div class="muted" id="sumCount"></div>
+    </div>
+    <div class="sumlist" id="sumlist"></div>
+    <div class="sizebox">
+      <span class="eyebrow" style="font-size:10px">Ring size</span>
+      <select id="ringSize"></select>
+      <span class="muted">we&rsquo;ll confirm together</span>
+    </div>
+    <div class="finenote">
+      Every ring is made to order, so pricing is quoted per design.
+      Send it over and we&rsquo;ll come back to you within a day.
+    </div>
+    <div class="rail-actions">
+      <button class="btn wide" id="btnSave">Save an image</button>
+      <button class="btn gold wide" id="btnRequest">Request this design</button>
+    </div>
+  </section>
+</div>
+
+<footer class="pagefoot">
+  <span>PK HART Fine Jewelry &middot; Lincolnwood, IL &middot; sales@pkhartjewels.com &middot; +1 (847) 440-4624</span>
+  <span>Studio concept by The Groundwork Co.</span>
+</footer>
+
+<!-- ============================ REQUEST MODAL ============================ -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="eyebrow">Request this design</div>
+    <h2 id="modalTitle">Here&rsquo;s your ring</h2>
+    <div class="muted">This opens your own email &mdash; nothing is sent until you hit send.</div>
+    <div class="spec" id="specText"></div>
+    <div class="actions">
+      <a class="btn gold" id="btnMailto" href="#">Email it to PK HART</a>
+      <button class="btn" id="btnCopy">Copy the spec</button>
+      <button class="btn" id="btnClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from './vendor/RoomEnvironment.js';
+
+/* ============================ 1. DATA ============================ */
+const MONTHS = [
+  {m:'January',   s:'Garnet',     c:'#9A2A3A', d:'#5E1622', hex:0xb02a44},
+  {m:'February',  s:'Amethyst',   c:'#9966CC', d:'#5E3A86', hex:0x9e66e0},
+  {m:'March',     s:'Aquamarine', c:'#9BD8E0', d:'#5FA8B5', hex:0x9fe2ec},
+  {m:'April',     s:'Diamond',    c:'#F2F5F9', d:'#B9C2CF', hex:0xffffff},
+  {m:'May',       s:'Emerald',    c:'#2E9C6B', d:'#15573A', hex:0x1cc076},
+  {m:'June',      s:'Pearl',      c:'#F6F1E7', d:'#CFC2A8', hex:0xf8f2e8},
+  {m:'July',      s:'Ruby',       c:'#C3123F', d:'#7A0A26', hex:0xe0164a},
+  {m:'August',    s:'Peridot',    c:'#AFCB54', d:'#779230', hex:0xbbdc50},
+  {m:'September', s:'Sapphire',   c:'#2B4C9B', d:'#17295C', hex:0x2f5fd0},
+  {m:'October',   s:'Opal',       c:'#EADCEE', d:'#C3A9CF', hex:0xf0e2f4},
+  {m:'November',  s:'Citrine',    c:'#E8A83D', d:'#A66F1D', hex:0xf5b23a},
+  {m:'December',  s:'Blue Topaz', c:'#58AEDC', d:'#2D6E99', hex:0x5cc0f0},
+];
+const METALS = {
+  y:{label:'Gold',      hex:0xd9ae56, rough:0.16},
+  r:{label:'Rose gold', hex:0xd9977a, rough:0.16},
+  w:{label:'Silver',    hex:0xe4e5ea, rough:0.1},
+};
+/* Her construction: 1–5 wraps, each with one birthstone or left plain.
+   Stones cascade diagonally across the wraps (from her reference photos)
+   and their placement is fixed — not draggable. */
+const MAX_WRAPS = 5;
+/* Zigzag cascade across the visible face, like her photos: center,
+   right, left, mid-right, mid-left — nothing slipping over the shoulder. */
+const PLACEMENT = [0.48, 0.70, 0.26, 0.62, 0.34];   // stone position per wrap
+const SHAPES = [
+  {id:'oval', label:'Oval'}, {id:'pear', label:'Pear'},
+  {id:'heart', label:'Heart'}, {id:'emerald', label:'Emerald'},
+];
+/* Carat → rendered girdle size (round brilliant mm, scaled to the R=1 band). */
+const STONE_CARATS = {
+  c10:{label:'0.10 ct', scale:0.115},
+  c15:{label:'0.15 ct', scale:0.135},
+  c25:{label:'0.25 ct', scale:0.165},
+};
+const FEATURE_CARATS = {
+  c50:{label:'0.50 ct', scale:0.17},
+  c100:{label:'1 ct', scale:0.21},
+  c150:{label:'1.5 ct', scale:0.24},
+  c200:{label:'2 ct', scale:0.275},
+};
+
+/* ============================ 2. STATE ============================ */
+let wraps = [];           // 1–5 of {id, stone: null | {month, name, twin}}
+let metal = 'y';          // one metal for the whole ring
+let stoneCarat = 'c15';   // one carat for all the top stones
+let feature = {on:false, stones:[]};   // bottom wrap: up to 3 of {id, shape, month, size, name}
+let selected = 0;         // wrap index, or 'f0'/'f1'/'f2' for bottom stones
+let uid = 0;
+// bottom stones sit together just off center, like her photos
+const BOTTOM_POS = {1:[0.52], 2:[0.42,0.60], 3:[0.34,0.50,0.66]};
+const MAX_BOTTOM = 3;
+
+function newWrap(partial){
+  return Object.assign({id:++uid, stone:{month:3, name:'', twin:false}}, partial || {});
+}
+function newBottomStone(partial){
+  return Object.assign({id:++uid, shape:'oval', month:3, size:'c100', name:'', turn:false}, partial || {});
+}
+function defaultDesign(){
+  wraps = [
+    newWrap({stone:{month:4, name:'', twin:false}}),
+    newWrap({stone:{month:8, name:'', twin:true}}),
+    newWrap({stone:{month:2, name:'', twin:false}}),
+    newWrap({stone:{month:10, name:'', twin:false}}),
+    newWrap({stone:null}),
+  ];
+  metal = 'y';
+  stoneCarat = 'c15';
+  feature = {on:true, stones:[newBottomStone({shape:'oval', month:3, size:'c100'})]};
+  selected = 0;
+}
+
+/* ============================ helpers ============================ */
+const $ = (s, el) => (el||document).querySelector(s);
+function h(tag, cls, parent, text){
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+/* ============================ 3. BAND EDITOR ============================ */
+function sizePicker(options, current, onPick){
+  const wrap = h('div', 'sizeseg');
+  for (const key of Object.keys(options)){
+    const b = h('button', '', wrap, options[key].label);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(key === current));
+    b.addEventListener('click', e => { e.stopPropagation(); onPick(key); });
+  }
+  return wrap;
+}
+function metalPicker(current, onPick){
+  const wrap = h('div', 'metals');
+  for (const key of ['y','r','w']){
+    const b = h('button', 'metal ' + key, wrap);
+    b.type = 'button';
+    b.title = METALS[key].label;
+    b.setAttribute('aria-label', METALS[key].label);
+    b.setAttribute('aria-pressed', String(key === current));
+    b.addEventListener('click', e => { e.stopPropagation(); onPick(key); });
+  }
+  return wrap;
+}
+
+function renderEditor(){
+  const gc = $('#globalCarat');
+  gc.innerHTML = '';
+  gc.appendChild(sizePicker(STONE_CARATS, stoneCarat, key => { stoneCarat = key; render(); }));
+
+  const box = $('#bands');
+  box.innerHTML = '';
+  wraps.forEach((wr, i) => {
+    const card = h('div', 'band-card' + (selected === i ? ' sel' : ''), box);
+    card.addEventListener('click', () => { selected = i; render(); });
+
+    const head = h('div', 'bc-head', card);
+    const title = h('div', 'bc-title', head, 'Wrap ' + (i + 1));
+    h('span', 'bc-stone', title, wr.stone ? MONTHS[wr.stone.month].m + ' · ' + MONTHS[wr.stone.month].s : 'plain, no stone');
+    if (wraps.length > 1){
+      const rm = h('button', 'bc-remove', head, '×');
+      rm.type = 'button';
+      rm.title = 'Remove this wrap';
+      rm.addEventListener('click', e => {
+        e.stopPropagation();
+        wraps.splice(i, 1);
+        if (typeof selected === 'number' && selected >= wraps.length) selected = wraps.length - 1;
+        render();
+      });
+    }
+
+    const trow = h('div', 'row', card);
+    const stLbl = h('label', 'twinlbl', trow);
+    stLbl.style.marginLeft = '0';
+    const stBtn = h('button', 'tog mini', stLbl);
+    stBtn.type = 'button';
+    stBtn.setAttribute('aria-pressed', String(Boolean(wr.stone)));
+    stBtn.setAttribute('aria-label', 'This wrap has a stone');
+    stBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      wr.stone = wr.stone ? null : {month:3, name:'', twin:false};
+      selected = i; render();
+    });
+    h('span', 'twintxt', stLbl, wr.stone ? 'Has a stone' : 'Plain band');
+
+    if (wr.stone){
+      const st = wr.stone;
+      const srow = h('div', 'row', card);
+      h('span', 'lbl', srow, 'Stone');
+      const sw = h('div', 'stones', srow);
+      MONTHS.forEach((mo, mi) => {
+        const b = h('button', 'stone', sw);
+        b.type = 'button';
+        b.title = mo.m + ' — ' + mo.s;
+        b.setAttribute('aria-label', mo.m + ' ' + mo.s);
+        b.setAttribute('aria-pressed', String(st.month === mi));
+        b.style.background = 'radial-gradient(circle at 35% 30%, #fff 0%, ' + mo.c + ' 45%, ' + mo.d + ' 100%)';
+        b.addEventListener('click', e => { e.stopPropagation(); st.month = mi; selected = i; render(); });
+      });
+
+      const zrow = h('div', 'row', card);
+      const tw = h('label', 'twinlbl', zrow);
+      tw.style.marginLeft = '0';
+      const twBtn = h('button', 'tog mini', tw);
+      twBtn.type = 'button';
+      twBtn.setAttribute('aria-pressed', String(st.twin));
+      twBtn.setAttribute('aria-label', 'Twin stones');
+      twBtn.addEventListener('click', e => { e.stopPropagation(); st.twin = !st.twin; selected = i; render(); });
+      h('span', 'twintxt', tw, 'Twins');
+
+      const nrow = h('div', 'row', card);
+      h('span', 'lbl', nrow, 'For');
+      const inp = h('input', 'name-in', nrow);
+      inp.placeholder = 'a name (optional)';
+      inp.maxLength = 24;
+      inp.value = st.name;
+      inp.addEventListener('click', e => e.stopPropagation());
+      inp.addEventListener('input', () => { st.name = inp.value; renderSummary(); });
+    }
+  });
+
+  $('#bandCount').textContent = wraps.length + ' of ' + MAX_WRAPS;
+  $('#btnAdd').disabled = wraps.length >= MAX_WRAPS;
+
+  $('#featTog').setAttribute('aria-pressed', String(feature.on));
+  $('#featControls').style.display = feature.on ? 'block' : 'none';
+  const gm = $('#globalMetal');
+  gm.innerHTML = '';
+  gm.appendChild(metalPicker(metal, key => { metal = key; render(); }));
+  $('#metalLabel').textContent = METALS[metal].label;
+
+  // bottom-row stone cards
+  const bb = $('#bottomStones');
+  bb.innerHTML = '';
+  feature.stones.forEach((bs, i) => {
+    const key = 'f' + i;
+    const card = h('div', 'band-card' + (selected === key ? ' sel' : ''), bb);
+    card.addEventListener('click', () => { selected = key; render(); });
+
+    const head = h('div', 'bc-head', card);
+    const title = h('div', 'bc-title', head, 'Bottom stone ' + (i + 1));
+    h('span', 'bc-stone', title, SHAPES.find(s => s.id === bs.shape).label + ' · ' + MONTHS[bs.month].s);
+    if (feature.stones.length > 1){
+      const rm = h('button', 'bc-remove', head, '×');
+      rm.type = 'button';
+      rm.title = 'Remove this stone';
+      rm.addEventListener('click', e => {
+        e.stopPropagation();
+        feature.stones.splice(i, 1);
+        selected = 'f0';
+        render();
+      });
+    }
+
+    const shrow = h('div', 'row', card);
+    h('span', 'lbl', shrow, 'Cut');
+    const shapes = h('div', 'shapes', shrow);
+    shapes.style.marginTop = '0';
+    SHAPES.forEach(sh => {
+      const b = h('button', 'shape', shapes);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(bs.shape === sh.id));
+      b.innerHTML = shapeIcon(sh.id) + '<span>' + sh.label + '</span>';
+      b.addEventListener('click', e => { e.stopPropagation(); bs.shape = sh.id; selected = key; render(); });
+    });
+
+    const srow = h('div', 'row', card);
+    h('span', 'lbl', srow, 'Stone');
+    const sw = h('div', 'stones', srow);
+    MONTHS.forEach((mo, mi) => {
+      const b = h('button', 'stone', sw);
+      b.type = 'button';
+      b.title = mo.m + ' — ' + mo.s;
+      b.setAttribute('aria-label', mo.m + ' ' + mo.s);
+      b.setAttribute('aria-pressed', String(bs.month === mi));
+      b.style.background = 'radial-gradient(circle at 35% 30%, #fff 0%, ' + mo.c + ' 45%, ' + mo.d + ' 100%)';
+      b.addEventListener('click', e => { e.stopPropagation(); bs.month = mi; selected = key; render(); });
+    });
+
+    const crow = h('div', 'row', card);
+    h('span', 'lbl', crow, 'Carat');
+    crow.appendChild(sizePicker(FEATURE_CARATS, bs.size, k => { bs.size = k; selected = key; render(); }));
+    const tn = h('label', 'twinlbl', crow);
+    const tnBtn = h('button', 'tog mini', tn);
+    tnBtn.type = 'button';
+    tnBtn.setAttribute('aria-pressed', String(bs.turn));
+    tnBtn.setAttribute('aria-label', 'Set the stone sideways');
+    tnBtn.addEventListener('click', e => { e.stopPropagation(); bs.turn = !bs.turn; selected = key; render(); });
+    h('span', 'twintxt', tn, 'Sideways');
+
+    const nrow = h('div', 'row', card);
+    h('span', 'lbl', nrow, 'For');
+    const inp = h('input', 'name-in', nrow);
+    inp.placeholder = 'a name (optional)';
+    inp.maxLength = 24;
+    inp.value = bs.name;
+    inp.addEventListener('click', e => e.stopPropagation());
+    inp.addEventListener('input', () => { bs.name = inp.value; renderSummary(); });
+  });
+  $('#btnAddBottom').disabled = feature.stones.length >= MAX_BOTTOM;
+}
+
+function shapeIcon(id){
+  const s = '14', common = 'fill="none" stroke="currentColor" stroke-width="1.3"';
+  if (id === 'oval')    return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 14 14"><ellipse cx="7" cy="7" rx="4" ry="5.6" '+common+'/></svg>';
+  if (id === 'pear')    return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 14 14"><path d="M7 1.6 C9.6 4.4 11 6.8 11 9 a4 4 0 0 1 -8 0 C3 6.8 4.4 4.4 7 1.6 Z" '+common+'/></svg>';
+  if (id === 'heart')   return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 14 14"><path d="M7 12 C2 8.4 2.2 4.6 4.6 3.9 C6 3.5 7 4.6 7 5.4 C7 4.6 8 3.5 9.4 3.9 C11.8 4.6 12 8.4 7 12 Z" '+common+'/></svg>';
+  return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 14 14"><path d="M4.4 2.5 h5.2 l2 2 v5 l-2 2 h-5.2 l-2 -2 v-5 Z" '+common+'/><path d="M5.4 4.3 h3.2 l1.1 1.1 v3.2 l-1.1 1.1 h-3.2 l-1.1 -1.1 v-3.2 Z" '+common+' opacity=".55"/></svg>';
+}
+
+/* ============================ 4. THREE.JS SCENE ============================ */
+const R = 1;            // band radius
+const TUBE = 0.058;     // band tube radius — skinny wraps, like hers
+const canvas = $('#scene');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true});
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.18;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xFBF8F4);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+
+const key = new THREE.DirectionalLight(0xfff4e4, 1.6);
+key.position.set(2.5, 5, 3.5);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.left = key.shadow.camera.bottom = -3;
+key.shadow.camera.right = key.shadow.camera.top = 3;
+key.shadow.radius = 8;
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xe8eaf0, 0.35);
+fill.position.set(-3, 2, -2);
+scene.add(fill);
+
+// ground: ivory surface that catches a soft shadow
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(30, 30),
+  new THREE.ShadowMaterial({opacity:0.16, color:0x55402e})
+);
+ground.rotation.x = -Math.PI/2;
+ground.position.y = -(R + TUBE) - 0.002;
+ground.receiveShadow = true;
+scene.add(ground);
+// faint sheen under the piece, like a seamless studio sweep
+const sweep = new THREE.Mesh(
+  new THREE.CircleGeometry(4.2, 48),
+  new THREE.MeshStandardMaterial({color:0xf6f0e6, roughness:0.95, metalness:0})
+);
+sweep.rotation.x = -Math.PI/2;
+sweep.position.y = ground.position.y - 0.001;
+scene.add(sweep);
+
+/* materials */
+const metalMats = {};
+for (const k in METALS){
+  metalMats[k] = new THREE.MeshPhysicalMaterial({
+    color:METALS[k].hex, metalness:1, roughness:METALS[k].rough,
+    clearcoat:0.5, clearcoatRoughness:0.25, envMapIntensity:1.15,
+  });
+}
+function gemMaterial(mi){
+  const mo = MONTHS[mi];
+  if (mo.s === 'Pearl') return new THREE.MeshPhysicalMaterial({
+    color:mo.hex, metalness:0, roughness:0.22, clearcoat:1, clearcoatRoughness:0.12,
+    iridescence:0.75, iridescenceIOR:1.5, envMapIntensity:1,
+  });
+  if (mo.s === 'Opal') return new THREE.MeshPhysicalMaterial({
+    color:mo.hex, metalness:0, roughness:0.15, clearcoat:1,
+    iridescence:1, iridescenceIOR:2, transmission:0.25, thickness:0.2, envMapIntensity:1.1,
+  });
+  const diamond = mo.s === 'Diamond';
+  const mat = new THREE.MeshPhysicalMaterial({
+    color:mo.hex, metalness:0, roughness:0.02,
+    transmission:diamond ? 0.93 : 0.68, thickness:diamond ? 0.55 : 0.32,
+    ior:diamond ? 2.35 : 1.9, clearcoat:1, clearcoatRoughness:0.03,
+    attenuationColor:new THREE.Color(mo.hex), attenuationDistance:diamond ? 2 : 1.1,
+    envMapIntensity:1.7,
+  });
+  if ('dispersion' in mat) mat.dispersion = diamond ? 0.35 : 0.12;
+  return mat;
+}
+
+/* gem geometry: faceted cut built from a girdle outline */
+function cutGeometry(outline, height){
+  const rings = [
+    {y: 0.38*height, s: 0.62},
+    {y: 0.28*height, s: 0.92},
+    {y: 0,           s: 1.00},
+    {y:-0.26*height, s: 0.74},
+    {y:-0.72*height, s: 0.10},
+  ];
+  const pos = [];
+  const n = outline.length;
+  const P = (ri, j) => {
+    const [x, z] = outline[j % n];
+    return [x*rings[ri].s, rings[ri].y, z*rings[ri].s];
+  };
+  // table cap (fan)
+  for (let j = 0; j < n; j++){
+    pos.push(0, rings[0].y, 0, ...P(0, j+1), ...P(0, j));
+  }
+  // side facets
+  for (let ri = 0; ri < rings.length-1; ri++){
+    for (let j = 0; j < n; j++){
+      const a = P(ri, j), b = P(ri, j+1), c = P(ri+1, j+1), d = P(ri+1, j);
+      pos.push(...a, ...b, ...c, ...a, ...c, ...d);
+    }
+  }
+  // culet cap
+  for (let j = 0; j < n; j++){
+    pos.push(0, rings[4].y, 0, ...P(4, j), ...P(4, j+1));
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  return g;
+}
+function circleOutline(n, rx, rz){
+  const o = [];
+  for (let i = 0; i < n; i++){
+    const a = i/n * Math.PI*2;
+    o.push([Math.cos(a)*rx, Math.sin(a)*rz]);
+  }
+  return o;
+}
+const OUTLINES = {
+  round:   circleOutline(16, 1, 1),
+  oval:    circleOutline(18, 0.74, 1.12),
+  emerald: [[-0.5,-1.05],[0.5,-1.05],[0.78,-0.77],[0.78,0.77],[0.5,1.05],[-0.5,1.05],[-0.78,0.77],[-0.78,-0.77]],
+  pear:    [[0,-1.15],[0.3,-0.68],[0.56,-0.22],[0.72,0.2],[0.74,0.52],[0.62,0.8],[0.36,0.98],[0,1.04],
+            [-0.36,0.98],[-0.62,0.8],[-0.74,0.52],[-0.72,0.2],[-0.56,-0.22],[-0.3,-0.68]],
+  heart:   [[0,1.05],[0.5,0.52],[0.82,0.08],[0.92,-0.32],[0.84,-0.62],[0.62,-0.8],[0.36,-0.76],[0.15,-0.58],[0,-0.36],
+            [-0.15,-0.58],[-0.36,-0.76],[-0.62,-0.8],[-0.84,-0.62],[-0.92,-0.32],[-0.82,0.08],[-0.5,0.52]],
+};
+const GEOMS = {};
+for (const k in OUTLINES) GEOMS[k] = cutGeometry(OUTLINES[k], 0.9);
+const prongGeom = new THREE.SphereGeometry(1, 10, 8);
+
+/* angle mapping: t in [0,1] -> theta across the visible top arc */
+const TH0 = THREE.MathUtils.degToRad(152), TH1 = THREE.MathUtils.degToRad(28);
+const tTheta = t => TH0 + (TH1 - TH0) * t;
+
+/* Bands spread apart at the top (where the stones live) and come together,
+   tapering, at the back of the finger — like the real fused rings. */
+const spreadAt = th => 0.12 + 0.88 * (1 + Math.sin(th)) / 2;
+const tubeAt = th => 0.58 + 0.42 * (1 + Math.sin(th)) / 2;
+
+function bandGeometry(zi, tubeScale){
+  const SEG = 150, RAD = 16;
+  const pos = [], idx = [];
+  const ct = new THREE.Vector3(), tan = new THREE.Vector3(),
+        radial = new THREE.Vector3(), B = new THREE.Vector3(), N = new THREE.Vector3();
+  for (let i = 0; i <= SEG; i++){
+    const th = i/SEG * Math.PI*2;
+    ct.set(R*Math.cos(th), R*Math.sin(th), zi*spreadAt(th));
+    // tangent d/dth
+    tan.set(-R*Math.sin(th), R*Math.cos(th), zi*0.88*Math.cos(th)/2).normalize();
+    radial.set(Math.cos(th), Math.sin(th), 0);
+    B.crossVectors(tan, radial).normalize();
+    N.crossVectors(B, tan).normalize();
+    const r = TUBE * (tubeScale || 1) * tubeAt(th);
+    for (let j = 0; j <= RAD; j++){
+      const ph = j/RAD * Math.PI*2;
+      pos.push(
+        ct.x + r*(N.x*Math.cos(ph) + B.x*Math.sin(ph)),
+        ct.y + r*(N.y*Math.cos(ph) + B.y*Math.sin(ph)),
+        ct.z + r*(N.z*Math.cos(ph) + B.z*Math.sin(ph))
+      );
+    }
+  }
+  for (let i = 0; i < SEG; i++){
+    for (let j = 0; j < RAD; j++){
+      const a = i*(RAD+1)+j, b = a+RAD+1;
+      idx.push(a, b, a+1, b, b+1, a+1);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+let ringGroup = null;
+let gemHandles = [];   // {mesh set, obj, idx, zi}
+let bandHandles = [];  // {mesh, idx}
+
+function buildStone(parent, mi, scale, theta, zi, outlineKey, snug){
+  const g = new THREE.Group();
+  const mat = gemMaterial(mi);
+  const gem = new THREE.Mesh(GEOMS[outlineKey || 'round'], mat);
+  gem.castShadow = true;
+  gem.scale.setScalar(scale);
+  g.add(gem);
+  // 4 prongs
+  const o = OUTLINES[outlineKey || 'round'];
+  const span = o.reduce((m, p) => Math.max(m, Math.abs(p[0])), 0);
+  const spanZ = o.reduce((m, p) => Math.max(m, Math.abs(p[1])), 0);
+  for (const [px, pz] of [[span,0],[-span,0],[0,spanZ],[0,-spanZ]]){
+    const pr = new THREE.Mesh(prongGeom, metalMats[metal]);
+    pr.scale.setScalar(scale*0.16);
+    pr.position.set(px*scale*0.95, -scale*0.05, pz*scale*0.95);
+    pr.castShadow = true;
+    g.add(pr);
+  }
+  // little bezel seat
+  const seat = new THREE.Mesh(new THREE.CylinderGeometry(scale*0.42, scale*0.3, scale*0.35, 10), metalMats[metal]);
+  seat.position.y = -scale*0.5;
+  g.add(seat);
+  // place on band: radial out at theta, gem up = radial direction
+  const dir = new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0);
+  // bottom statement stones sit low and snug on their band, like her photos
+  g.position.copy(dir).multiplyScalar(snug ? R + TUBE*0.3 + scale*0.16 : R + TUBE*0.55 + scale*0.28);
+  g.position.z = zi * spreadAt(theta);
+  g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+  if (snug && snug.turn) g.rotateY(Math.PI/2);
+  if (snug && snug.tilt) g.rotateY(snug.tilt);
+  parent.add(g);
+  return g;
+}
+
+function renderScene(){
+  if (ringGroup){ scene.remove(ringGroup); ringGroup.traverse(o => { if (o.geometry && !Object.values(GEOMS).includes(o.geometry) && o.geometry !== prongGeom) o.geometry.dispose(); }); }
+  ringGroup = new THREE.Group();
+  gemHandles = [];
+  bandHandles = [];
+
+  // The chosen wraps, plus the bottom wrap for the statement stones when it's on.
+  const total = wraps.length + (feature.on ? 1 : 0);
+  const spacing = 0.215;   // airy gaps between wraps at the face, like her photos
+  const z0 = -((total-1)*spacing)/2;
+
+  // which wrap is selected? (for the halo)
+  let selWrap = -1;
+  if (typeof selected === 'string' && selected.startsWith('f') && feature.on) selWrap = total - 1;
+  else if (typeof selected === 'number') selWrap = selected;
+
+  for (let w = 0; w < total; w++){
+    const zi = z0 + w*spacing;
+    const band = new THREE.Mesh(bandGeometry(zi, 1), metalMats[metal]);
+    band.castShadow = true;
+    band.userData.wrap = w;
+    ringGroup.add(band);
+    bandHandles.push({mesh:band, wrap:w});
+    if (w === selWrap){
+      const halo = new THREE.Mesh(bandGeometry(zi, 1.6),
+        new THREE.MeshBasicMaterial({color:0xA9843F, transparent:true, opacity:0.18, depthWrite:false}));
+      ringGroup.add(halo);
+    }
+
+    if (feature.on && w === total - 1){
+      const pos = BOTTOM_POS[Math.min(feature.stones.length, MAX_BOTTOM)] || [];
+      feature.stones.forEach((bs, j) => {
+        const scale = FEATURE_CARATS[bs.size].scale;
+        const m = buildStone(ringGroup, bs.month, scale, tTheta(pos[j] ?? 0.48), zi, bs.shape,
+          {turn: bs.turn, tilt: [-0.16, 0.14, -0.1][j % 3]});   // her stones sit a touch off-axis
+        gemHandles.push({root:m, idx:'f' + j});
+      });
+      continue;
+    }
+    const st = wraps[w] && wraps[w].stone;
+    if (!st) continue;
+    const scale = STONE_CARATS[stoneCarat].scale;
+    const theta = tTheta(PLACEMENT[w % PLACEMENT.length]);
+    if (st.twin){
+      const dth = (scale*2.3) / R;
+      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta - dth/2, zi), idx: w});
+      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta + dth/2, zi), idx: w});
+    } else {
+      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta, zi), idx: w});
+    }
+  }
+
+  scene.add(ringGroup);
+  frameCamera(total, spacing);
+  requestRender();
+}
+
+/* camera orbit */
+let azim = 0, elev = 1.12, dist = 7;   // looking at the face of the ring, like her photos
+let azimTarget = azim;
+function frameCamera(count, spacing){
+  const width = count*spacing + 0.3;
+  dist = 6.3 + width*1.3;
+  positionCamera();
+}
+function positionCamera(){
+  camera.position.set(
+    Math.sin(azim)*Math.cos(elev)*dist,
+    Math.sin(elev)*dist*0.9,
+    Math.cos(azim)*Math.cos(elev)*dist
+  );
+  camera.lookAt(0, 0.12, 0);
+  requestRender();
+}
+
+/* render-on-demand (+ eased camera turns) */
+let needsRender = false;
+let warmup = 90;   // render every frame briefly after load, so the first paint always lands
+function requestRender(){ needsRender = true; }
+function tick(){
+  if (Math.abs(azimTarget - azim) > 0.002){
+    azim += (azimTarget - azim) * 0.12;
+    positionCamera();
+  }
+  if (needsRender || warmup > 0){
+    renderer.render(scene, camera);
+    needsRender = false;
+    if (warmup > 0) warmup--;
+  }
+  requestAnimationFrame(tick);
+}
+tick();
+
+function resize(){
+  const box = canvas.parentElement.getBoundingClientRect();
+  const w = Math.max(10, box.width), hh = Math.max(10, box.height);
+  renderer.setSize(w, hh, false);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  camera.aspect = w/hh;
+  camera.updateProjectionMatrix();
+  requestRender();
+}
+new ResizeObserver(resize).observe(canvas.parentElement);
+resize();
+
+/* ============================ 5. INTERACTION ============================ */
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+function setPointer(e){
+  const r = canvas.getBoundingClientRect();
+  pointer.x = ((e.clientX - r.left)/r.width)*2 - 1;
+  pointer.y = -((e.clientY - r.top)/r.height)*2 + 1;
+}
+/* Stones are fixed in place (her design). Clicking selects; dragging turns the ring. */
+let dragging = null; // {x, y}
+canvas.addEventListener('pointerdown', e => {
+  setPointer(e);
+  raycaster.setFromCamera(pointer, camera);
+  const gemMeshes = [];
+  gemHandles.forEach(hd => hd.root.traverse(o => { if (o.isMesh){ o.userData.handle = hd; gemMeshes.push(o); } }));
+  const hit = raycaster.intersectObjects(gemMeshes, false)[0];
+  if (hit){
+    selected = hit.object.userData.handle.idx;
+    render();
+  }
+  dragging = {x:e.clientX, y:e.clientY};
+  canvas.setPointerCapture(e.pointerId);
+  canvas.style.cursor = 'grabbing';
+});
+canvas.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  azim += (e.clientX - dragging.x)*0.006;   // free spin, all the way around
+  azimTarget = azim;
+  elev = THREE.MathUtils.clamp(elev + (dragging.y - e.clientY)*0.004, 0.08, 1.45);
+  dragging.x = e.clientX; dragging.y = e.clientY;
+  positionCamera();
+});
+function endDrag(){
+  if (!dragging) return;
+  dragging = null;
+  canvas.style.cursor = 'grab';
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+
+/* ============================ 6. SUMMARY RAIL ============================ */
+function renderSummary(){
+  const list = $('#sumlist');
+  list.innerHTML = '';
+  const mrow = h('div', 'sumrow', list);
+  const msw = h('span', 'dotsw', mrow);
+  msw.style.background = {y:'linear-gradient(135deg,#EDCB7E,#A87F35)', r:'linear-gradient(135deg,#EFC0A6,#B07152)', w:'linear-gradient(135deg,#F7F7F9,#A5A8B1)'}[metal];
+  h('div', 'what', mrow, 'The metal — ' + METALS[metal].label);
+  wraps.forEach((wr, i) => {
+    const row = h('div', 'sumrow', list);
+    const sw = h('span', 'dotsw', row);
+    const what = h('div', 'what', row);
+    if (wr.stone){
+      const st = wr.stone;
+      sw.style.background = 'radial-gradient(circle at 35% 30%, #fff 0%, ' + MONTHS[st.month].c + ' 45%, ' + MONTHS[st.month].d + ' 100%)';
+      what.innerHTML = 'Wrap ' + (i+1) + ' — ' + MONTHS[st.month].m + ' (' + MONTHS[st.month].s + ')' +
+        ' · ' + STONE_CARATS[stoneCarat].label + (st.twin ? ' · twins' : '') +
+        (st.name ? ' <span class="nm">· for ' + escapeHtml(st.name) + '</span>' : '');
+    } else {
+      sw.style.background = 'linear-gradient(135deg,#E8E4DA,#CFC8B8)';
+      what.innerHTML = 'Wrap ' + (i+1) + ' — <span class="nm">plain band</span>';
+    }
+  });
+  if (feature.on) feature.stones.forEach(bs => {
+    const row = h('div', 'sumrow', list);
+    const sw = h('span', 'dotsw', row);
+    sw.style.background = 'radial-gradient(circle at 35% 30%, #fff 0%, ' + MONTHS[bs.month].c + ' 45%, ' + MONTHS[bs.month].d + ' 100%)';
+    const what = h('div', 'what', row);
+    what.innerHTML = 'Bottom — ' + SHAPES.find(s => s.id === bs.shape).label.toLowerCase() + ' ' +
+      MONTHS[bs.month].s.toLowerCase() + ' · ' + FEATURE_CARATS[bs.size].label +
+      (bs.turn ? ' · sideways' : '') +
+      (bs.name ? ' <span class="nm">· for ' + escapeHtml(bs.name) + '</span>' : '');
+  });
+  const total = wraps.length + (feature.on ? 1 : 0);
+  $('#sumCount').textContent = total + ' wrap' + (total !== 1 ? 's' : '');
+}
+
+function buildSpec(){
+  const lines = [];
+  lines.push('CUSTOM BIRTHSTONE RING — design request');
+  lines.push('');
+  lines.push('Metal: ' + METALS[metal].label + ' · ' + wraps.length + ' wrap' + (wraps.length !== 1 ? 's' : '') +
+    (feature.on ? ' + bottom row' : ''));
+  lines.push('Top stones: ' + STONE_CARATS[stoneCarat].label + ' each');
+  wraps.forEach((wr, i) => {
+    const st = wr.stone;
+    lines.push('Wrap ' + (i+1) + ': ' + (st
+      ? MONTHS[st.month].m + ' (' + MONTHS[st.month].s + ')' +
+        (st.twin ? ' · twin stones' : '') +
+        (st.name ? ' · for ' + st.name : '')
+      : 'plain, no stone'));
+  });
+  if (feature.on && feature.stones.length){
+    feature.stones.forEach((bs, i) => {
+      lines.push('Bottom stone ' + (i+1) + ': ' +
+        SHAPES.find(s => s.id === bs.shape).label + '-cut ' + MONTHS[bs.month].s +
+        ' · ' + FEATURE_CARATS[bs.size].label +
+        (bs.turn ? ' · set sideways' : '') +
+        (bs.name ? ' · for ' + bs.name : ''));
+    });
+  }
+  lines.push('Ring size: ' + $('#ringSize').value);
+  lines.push('');
+  lines.push('Designed in the PK HART Birthstone Ring Studio.');
+  return lines.join('\n');
+}
+
+/* ============================ render root ============================ */
+function render(){
+  renderEditor();
+  renderScene();
+  renderSummary();
+}
+
+/* ============================ wiring ============================ */
+$('#btnAdd').addEventListener('click', () => {
+  if (wraps.length >= MAX_WRAPS) return;
+  const used = new Set(wraps.filter(w => w.stone).map(w => w.stone.month));
+  let month = MONTHS.findIndex((_, i) => !used.has(i));
+  if (month < 0) month = Math.floor(Math.random() * 12);
+  wraps.push(newWrap({stone:{month, name:'', twin:false}}));
+  selected = wraps.length - 1;
+  render();
+});
+
+$('#btnAddBottom').addEventListener('click', () => {
+  if (feature.stones.length >= MAX_BOTTOM) return;
+  feature.stones.push(newBottomStone({shape: ['pear','emerald','heart'][feature.stones.length % 3], month: 3, size:'c50'}));
+  selected = 'f' + (feature.stones.length - 1);
+  render();
+});
+
+$('#featTog').addEventListener('click', () => {
+  feature.on = !feature.on;
+  if (feature.on && !feature.stones.length) feature.stones.push(newBottomStone());
+  selected = feature.on ? 'f0' : 0;
+  render();
+});
+
+$('#btnReset').addEventListener('click', () => { defaultDesign(); render(); });
+
+$('#btnTurn').addEventListener('click', () => { azimTarget += Math.PI; });
+$('#btnFront').addEventListener('click', () => {
+  // ease back to the face of the ring
+  azimTarget = Math.round(azim / (Math.PI * 2)) * Math.PI * 2;
+  elev = 1.12;
+  positionCamera();
+});
+
+$('#btnSurprise').addEventListener('click', () => {
+  const n = 3 + Math.floor(Math.random() * 3);   // 3-5 wraps
+  const months = [...Array(12).keys()].sort(() => Math.random() - .5);
+  wraps = Array.from({length: n}, (_, i) => newWrap({
+    stone: Math.random() < .85
+      ? {month: months[i % 12], name:'', twin: Math.random() < .15}
+      : null,
+  }));
+  stoneCarat = ['c10','c15','c15','c25'][Math.floor(Math.random()*4)];
+  metal = ['y','y','r','w'][Math.floor(Math.random()*4)];
+  feature.on = Math.random() < .7;
+  const nb = Math.random() < .7 ? 1 : 2;
+  feature.stones = Array.from({length: nb}, (_, i) => newBottomStone({
+    shape: SHAPES[Math.floor(Math.random() * SHAPES.length)].id,
+    month: Math.random() < .6 ? 3 : months[(n + i) % 12],
+    size: ['c50','c100','c100','c150'][Math.floor(Math.random()*4)],
+  }));
+  selected = 0;
+  render();
+});
+
+(function(){
+  const sel = $('#ringSize');
+  for (let s = 4; s <= 10; s += .5){
+    const o = document.createElement('option');
+    o.value = o.textContent = s;
+    if (s === 6.5) o.selected = true;
+    sel.appendChild(o);
+  }
+})();
+
+$('#btnRequest').addEventListener('click', () => {
+  const spec = buildSpec();
+  $('#specText').textContent = spec;
+  $('#btnMailto').href = 'mailto:sales@pkhartjewels.com?subject=' +
+    encodeURIComponent('Custom birthstone ring request') + '&body=' + encodeURIComponent(spec + '\n\nMy name:\nMy phone:');
+  $('#modalBg').classList.add('open');
+});
+$('#btnClose').addEventListener('click', () => $('#modalBg').classList.remove('open'));
+$('#modalBg').addEventListener('click', e => { if (e.target === e.currentTarget) $('#modalBg').classList.remove('open'); });
+$('#btnCopy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(buildSpec()); $('#btnCopy').textContent = 'Copied'; }
+  catch { $('#btnCopy').textContent = 'Select + copy above'; }
+  setTimeout(() => { $('#btnCopy').textContent = 'Copy the spec'; }, 1600);
+});
+
+$('#btnSave').addEventListener('click', () => {
+  renderer.render(scene, camera);
+  const a = document.createElement('a');
+  a.download = 'pkhart-birthstone-ring.png';
+  a.href = renderer.domElement.toDataURL('image/png');
+  a.click();
+});
+
+/* go */
+defaultDesign();
+render();
+</script>
