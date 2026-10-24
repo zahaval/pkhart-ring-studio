@@ -371,24 +371,25 @@ const METALS = {
    Stones cascade diagonally across the wraps (from her reference photos)
    and their placement is fixed — not draggable. */
 const MAX_WRAPS = 5;
-/* Zigzag cascade across the visible face, like her photos: center,
-   right, left, mid-right, mid-left — nothing slipping over the shoulder. */
-const PLACEMENT = [0.48, 0.70, 0.26, 0.62, 0.34];   // stone position per wrap
+/* Measured from PK HART's own ring photo (0 = left of the face, 1 = right):
+   wrap 1 .29 · wrap 2 .07 · wrap 3 .52 · wrap 4 .25 · wrap 5 .77, bottom stone .52.
+   Compressed slightly (t = .10 + .80 x) so none slip over the shoulder. */
+const PLACEMENT = [0.33, 0.16, 0.52, 0.30, 0.72];   // stone position per wrap
 const SHAPES = [
   {id:'oval', label:'Oval'}, {id:'pear', label:'Pear'},
   {id:'heart', label:'Heart'}, {id:'emerald', label:'Emerald'},
 ];
 /* Carat → rendered girdle size (round brilliant mm, scaled to the R=1 band). */
 const STONE_CARATS = {
-  c10:{label:'0.10 ct', scale:0.115},
-  c15:{label:'0.15 ct', scale:0.135},
-  c25:{label:'0.25 ct', scale:0.165},
+  c10:{label:'0.10 ct', scale:0.092},
+  c15:{label:'0.15 ct', scale:0.112},
+  c25:{label:'0.25 ct', scale:0.142},
 };
 const FEATURE_CARATS = {
-  c50:{label:'0.50 ct', scale:0.17},
-  c100:{label:'1 ct', scale:0.21},
-  c150:{label:'1.5 ct', scale:0.24},
-  c200:{label:'2 ct', scale:0.275},
+  c50:{label:'0.50 ct', scale:0.20},
+  c100:{label:'1 ct', scale:0.26},
+  c150:{label:'1.5 ct', scale:0.30},
+  c200:{label:'2 ct', scale:0.34},
 };
 
 /* ============================ 2. STATE ============================ */
@@ -626,7 +627,8 @@ function shapeIcon(id){
 
 /* ============================ 4. THREE.JS SCENE ============================ */
 const R = 1;            // band radius
-const TUBE = 0.058;     // band tube radius — skinny wraps, like hers
+const TUBE = 0.058;     // base band size
+const RIB_W = 1.12, RIB_T = 0.50;   // flat ribbon: half-width / half-thickness vs TUBE
 const canvas = $('#scene');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true});
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -673,11 +675,29 @@ sweep.position.y = ground.position.y - 0.001;
 scene.add(sweep);
 
 /* materials */
+/* hand-hammered surface, like her bands */
+const hammer = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#808080'; g.fillRect(0,0,256,256);
+  let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 260; i++){
+    const x = rnd()*256, y = rnd()*256, r = 5 + rnd()*13, v = 90 + rnd()*80;
+    for (const ox of [-256,0,256]) for (const oy of [-256,0,256]){
+      const gr = g.createRadialGradient(x+ox, y+oy, 0, x+ox, y+oy, r);
+      gr.addColorStop(0, `rgba(${v},${v},${v},.55)`); gr.addColorStop(1, 'rgba(128,128,128,0)');
+      g.fillStyle = gr; g.beginPath(); g.ellipse(x+ox, y+oy, r*1.5, r, rnd()*3, 0, 7); g.fill();
+    }
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+})();
 const metalMats = {};
 for (const k in METALS){
   metalMats[k] = new THREE.MeshPhysicalMaterial({
     color:METALS[k].hex, metalness:1, roughness:METALS[k].rough,
     clearcoat:0.5, clearcoatRoughness:0.25, envMapIntensity:1.15,
+    bumpMap:hammer, bumpScale:1.6,
   });
 }
 function gemMaterial(mi){
@@ -768,26 +788,29 @@ const spreadAt = th => 0.12 + 0.88 * (1 + Math.sin(th)) / 2;
 const tubeAt = th => 0.58 + 0.42 * (1 + Math.sin(th)) / 2;
 
 function bandGeometry(zi, tubeScale){
-  const SEG = 150, RAD = 16;
-  const pos = [], idx = [];
+  const SEG = 180, RAD = 20;
+  const pos = [], idx = [], uvs = [];
   const ct = new THREE.Vector3(), tan = new THREE.Vector3(),
         radial = new THREE.Vector3(), B = new THREE.Vector3(), N = new THREE.Vector3();
+  const sq = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);   // superellipse: flat face, soft edges
   for (let i = 0; i <= SEG; i++){
     const th = i/SEG * Math.PI*2;
     ct.set(R*Math.cos(th), R*Math.sin(th), zi*spreadAt(th));
-    // tangent d/dth
     tan.set(-R*Math.sin(th), R*Math.cos(th), zi*0.88*Math.cos(th)/2).normalize();
     radial.set(Math.cos(th), Math.sin(th), 0);
     B.crossVectors(tan, radial).normalize();
     N.crossVectors(B, tan).normalize();
-    const r = TUBE * (tubeScale || 1) * tubeAt(th);
+    const k = TUBE * (tubeScale || 1) * tubeAt(th);
+    const rA = k * RIB_W, rR = k * RIB_T;
     for (let j = 0; j <= RAD; j++){
       const ph = j/RAD * Math.PI*2;
+      const a = rR * sq(Math.cos(ph), 0.55), b = rA * sq(Math.sin(ph), 0.55);
       pos.push(
-        ct.x + r*(N.x*Math.cos(ph) + B.x*Math.sin(ph)),
-        ct.y + r*(N.y*Math.cos(ph) + B.y*Math.sin(ph)),
-        ct.z + r*(N.z*Math.cos(ph) + B.z*Math.sin(ph))
+        ct.x + a*N.x + b*B.x,
+        ct.y + a*N.y + b*B.y,
+        ct.z + a*N.z + b*B.z
       );
+      uvs.push(i/SEG * 22, j/RAD * 2);
     }
   }
   for (let i = 0; i < SEG; i++){
@@ -798,6 +821,7 @@ function bandGeometry(zi, tubeScale){
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   g.setIndex(idx);
   g.computeVertexNormals();
   return g;
@@ -849,7 +873,7 @@ function renderScene(){
 
   // The chosen wraps, plus the bottom wrap for the statement stones when it's on.
   const total = wraps.length + (feature.on ? 1 : 0);
-  const spacing = 0.215;   // airy gaps between wraps at the face, like her photos
+  const spacing = 0.30;   // gaps between wraps ~1.5x the band width, measured from her photo
   const z0 = -((total-1)*spacing)/2;
 
   // which wrap is selected? (for the halo)
@@ -903,7 +927,7 @@ let azim = 0, elev = 1.12, dist = 7;   // looking at the face of the ring, like 
 let azimTarget = azim;
 function frameCamera(count, spacing){
   const width = count*spacing + 0.3;
-  dist = 6.3 + width*1.3;
+  dist = 4.6 + width*1.12;
   positionCamera();
 }
 function positionCamera(){
