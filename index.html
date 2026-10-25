@@ -787,36 +787,53 @@ const tTheta = t => TH0 + (TH1 - TH0) * t;
 const spreadAt = th => 0.12 + 0.88 * (1 + Math.sin(th)) / 2;
 const tubeAt = th => 0.58 + 0.42 * (1 + Math.sin(th)) / 2;
 
-function bandGeometry(zi, tubeScale){
-  const SEG = 180, RAD = 20;
+/* Her ring is one wire wound into a coil: each wrap is one turn, the turns
+   spread apart across the face and bunch together at the back, and both free
+   ends taper to a point. The top tip lands right of center on the face. */
+const FACE = Math.PI / 2;
+const FInt = th => 0.56 * th - 0.44 * Math.cos(th);   // integral of spreadAt
+const COIL = {k:0, F0:0, start:0, end:0};
+const zAt = th => COIL.k * (FInt(th) - COIL.F0);
+const TIP = 0.75;                                       // radians over which an end tapers
+function endTaper(th){
+  const u = Math.min((th - COIL.start) / TIP, (COIL.end - th) / TIP, 1);
+  const s = Math.max(0, u); return 0.06 + 0.94 * s * s * (3 - 2 * s);
+}
+function setCoil(turns, spacing){
+  COIL.k = spacing / (2 * Math.PI * 0.56);              // one turn advances one wrap at the face
+  COIL.F0 = FInt(FACE + Math.PI * (turns - 1));         // center the coil on its middle turn
+  COIL.start = FACE - 0.36;                             // top tip, just right of center
+  COIL.end = FACE + 2 * Math.PI * (turns - 1) + THREE.MathUtils.degToRad(290);
+}
+const wrapSpan = w => [Math.max(COIL.start, FACE - Math.PI + 2 * Math.PI * w),
+                       Math.min(COIL.end,   FACE + Math.PI + 2 * Math.PI * w)];
+
+function coilGeometry(thA, thB, tubeScale){
+  const SEG = Math.max(24, Math.ceil((thB - thA) * 34)), RAD = 20;
   const pos = [], idx = [], uvs = [];
   const ct = new THREE.Vector3(), tan = new THREE.Vector3(),
         radial = new THREE.Vector3(), B = new THREE.Vector3(), N = new THREE.Vector3();
   const sq = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);   // superellipse: flat face, soft edges
   for (let i = 0; i <= SEG; i++){
-    const th = i/SEG * Math.PI*2;
-    ct.set(R*Math.cos(th), R*Math.sin(th), zi*spreadAt(th));
-    tan.set(-R*Math.sin(th), R*Math.cos(th), zi*0.88*Math.cos(th)/2).normalize();
+    const th = thA + (thB - thA) * i / SEG;
+    ct.set(R * Math.cos(th), R * Math.sin(th), zAt(th));
+    tan.set(-R * Math.sin(th), R * Math.cos(th), COIL.k * spreadAt(th)).normalize();
     radial.set(Math.cos(th), Math.sin(th), 0);
     B.crossVectors(tan, radial).normalize();
     N.crossVectors(B, tan).normalize();
-    const k = TUBE * (tubeScale || 1) * tubeAt(th);
+    const k = TUBE * (tubeScale || 1) * tubeAt(th) * endTaper(th);
     const rA = k * RIB_W, rR = k * RIB_T;
     for (let j = 0; j <= RAD; j++){
-      const ph = j/RAD * Math.PI*2;
+      const ph = j / RAD * Math.PI * 2;
       const a = rR * sq(Math.cos(ph), 0.55), b = rA * sq(Math.sin(ph), 0.55);
-      pos.push(
-        ct.x + a*N.x + b*B.x,
-        ct.y + a*N.y + b*B.y,
-        ct.z + a*N.z + b*B.z
-      );
-      uvs.push(i/SEG * 22, j/RAD * 2);
+      pos.push(ct.x + a * N.x + b * B.x, ct.y + a * N.y + b * B.y, ct.z + a * N.z + b * B.z);
+      uvs.push((th - COIL.start) / (2 * Math.PI) * 22, j / RAD * 2);
     }
   }
   for (let i = 0; i < SEG; i++){
     for (let j = 0; j < RAD; j++){
-      const a = i*(RAD+1)+j, b = a+RAD+1;
-      idx.push(a, b, a+1, b, b+1, a+1);
+      const a = i * (RAD + 1) + j, b = a + RAD + 1;
+      idx.push(a, b, a + 1, b, b + 1, a + 1);
     }
   }
   const g = new THREE.BufferGeometry();
@@ -857,7 +874,7 @@ function buildStone(parent, mi, scale, theta, zi, outlineKey, snug){
   const dir = new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0);
   // bottom statement stones sit low and snug on their band, like her photos
   g.position.copy(dir).multiplyScalar(snug ? R + TUBE*0.3 + scale*0.16 : R + TUBE*0.55 + scale*0.28);
-  g.position.z = zi * spreadAt(theta);
+  g.position.z = zi;
   g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
   if (snug && snug.turn) g.rotateY(Math.PI/2);
   if (snug && snug.tilt) g.rotateY(snug.tilt);
@@ -871,25 +888,27 @@ function renderScene(){
   gemHandles = [];
   bandHandles = [];
 
-  // The chosen wraps, plus the bottom wrap for the statement stones when it's on.
+  // The chosen wraps, plus the bottom wrap for the statement stones when it's on — one continuous coil.
   const total = wraps.length + (feature.on ? 1 : 0);
   const spacing = 0.30;   // gaps between wraps ~1.5x the band width, measured from her photo
-  const z0 = -((total-1)*spacing)/2;
+  setCoil(total, spacing);
 
   // which wrap is selected? (for the halo)
   let selWrap = -1;
   if (typeof selected === 'string' && selected.startsWith('f') && feature.on) selWrap = total - 1;
   else if (typeof selected === 'number') selWrap = selected;
 
+  const at = (t, w) => tTheta(t) + 2 * Math.PI * w;   // a face position on wrap w
+
   for (let w = 0; w < total; w++){
-    const zi = z0 + w*spacing;
-    const band = new THREE.Mesh(bandGeometry(zi, 1), metalMats[metal]);
+    const [thA, thB] = wrapSpan(w);
+    const band = new THREE.Mesh(coilGeometry(thA, thB, 1), metalMats[metal]);
     band.castShadow = true;
     band.userData.wrap = w;
     ringGroup.add(band);
     bandHandles.push({mesh:band, wrap:w});
     if (w === selWrap){
-      const halo = new THREE.Mesh(bandGeometry(zi, 1.6),
+      const halo = new THREE.Mesh(coilGeometry(thA, thB, 1.6),
         new THREE.MeshBasicMaterial({color:0xA9843F, transparent:true, opacity:0.18, depthWrite:false}));
       ringGroup.add(halo);
     }
@@ -898,7 +917,8 @@ function renderScene(){
       const pos = BOTTOM_POS[Math.min(feature.stones.length, MAX_BOTTOM)] || [];
       feature.stones.forEach((bs, j) => {
         const scale = FEATURE_CARATS[bs.size].scale;
-        const m = buildStone(ringGroup, bs.month, scale, tTheta(pos[j] ?? 0.48), zi, bs.shape,
+        const th = at(pos[j] ?? 0.48, w);
+        const m = buildStone(ringGroup, bs.month, scale, th, zAt(th), bs.shape,
           {turn: bs.turn, tilt: [-0.16, 0.14, -0.1][j % 3]});   // her stones sit a touch off-axis
         gemHandles.push({root:m, idx:'f' + j});
       });
@@ -907,13 +927,13 @@ function renderScene(){
     const st = wraps[w] && wraps[w].stone;
     if (!st) continue;
     const scale = STONE_CARATS[stoneCarat].scale;
-    const theta = tTheta(PLACEMENT[w % PLACEMENT.length]);
+    const theta = at(PLACEMENT[w % PLACEMENT.length], w);
     if (st.twin){
       const dth = (scale*2.3) / R;
-      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta - dth/2, zi), idx: w});
-      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta + dth/2, zi), idx: w});
+      for (const th of [theta - dth/2, theta + dth/2])
+        gemHandles.push({root: buildStone(ringGroup, st.month, scale, th, zAt(th)), idx: w});
     } else {
-      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta, zi), idx: w});
+      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta, zAt(theta)), idx: w});
     }
   }
 
