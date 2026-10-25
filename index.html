@@ -204,6 +204,30 @@ header.top .sub{font-size:12.5px; color:var(--ink-2); margin-top:5px; max-width:
 }
 .modal .actions{display:flex; gap:8px; flex-wrap:wrap}
 
+/* ============================ REFERENCE PHOTOS ============================ */
+.refbar{margin-top:10px}
+.reftog{
+  width:100%; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+  border:0; border-top:1px solid var(--sand); background:transparent; padding:10px 2px 6px;
+  cursor:pointer; text-align:left; font-family:var(--sans);
+}
+.reftog .muted{flex:1; min-width:0}
+.refchev{color:var(--ink-2); font-size:12px; transition:transform .18s ease}
+.reftog[aria-expanded=true] .refchev{transform:rotate(180deg)}
+.refstrip{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:4px 0 6px}
+.refstrip[hidden]{display:none}
+.refpic{display:block; aspect-ratio:5/4; overflow:hidden; border-radius:2px; border:1px solid var(--sand); background:var(--sand)}
+.refpic img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .25s ease}
+.refpic:hover img{transform:scale(1.03)}
+.refnote{grid-column:1 / -1; font-size:11.5px; line-height:1.5}
+.lightbox{
+  position:fixed; inset:0; background:rgba(20,17,15,.78); display:none; z-index:60;
+  align-items:center; justify-content:center; padding:18px; cursor:zoom-out;
+}
+.lightbox.open{display:flex}
+.lightbox img{max-width:min(100%,1100px); max-height:82vh; display:block; border-radius:2px; box-shadow:0 10px 50px rgba(0,0,0,.4)}
+.lightbox .cap{position:absolute; left:0; right:0; bottom:16px; text-align:center; color:#fff; font-size:12.5px; padding:0 20px; text-shadow:0 1px 3px rgba(0,0,0,.6)}
+
 footer.pagefoot{
   border-top:1px solid var(--sand); padding:14px 26px; display:flex; justify-content:space-between;
   gap:12px; flex-wrap:wrap; font-size:11px; color:var(--ink-2); background:#fff;
@@ -216,6 +240,14 @@ footer.pagefoot{
   .stage-col{order:-1; position:sticky; top:0; z-index:20; background:var(--ivory); padding-bottom:10px; max-height:none; overflow:visible}
   .stage{min-height:0; height:40vh}
   .stage-head{padding-top:4px}
+  /* on phones the photos open straight into the lightbox; the strip would push the sticky stage down */
+  .refbar{margin-top:6px}
+  .reftog{padding:7px 2px 2px}
+  .reftog .muted{display:none}
+  .refstrip{display:none}
+  .refstrip[hidden]{display:none}
+  .refchev{display:none}
+  .reftog .eyebrow::after{content:" \2197"; font-size:10px}
   .tray{border-right:0; border-top:1px solid var(--sand)}
   .rail{border-left:0; border-top:1px solid var(--sand)}
   /* finger-sized tap targets */
@@ -295,6 +327,24 @@ footer.pagefoot{
         <button class="btn sm" id="btnTurn">Turn it around</button>
       </div>
     </div>
+
+    <!-- the real thing, for comparison -->
+    <div class="refbar">
+      <button class="reftog" id="refTog" aria-expanded="false" aria-controls="refStrip">
+        <span class="eyebrow">Her ring, for reference</span>
+        <span class="muted">the real piece this studio is modelled on</span>
+        <span class="refchev" aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="refstrip" id="refStrip" hidden>
+        <a href="img/real-2.jpg" class="refpic" data-cap="Five wraps and an emerald-cut diamond — the ring the studio opens on">
+          <img src="img/real-2.jpg" alt="Close-up of the real five-wrap birthstone ring with an emerald-cut diamond" loading="lazy">
+        </a>
+        <a href="img/real-1.jpg" class="refpic" data-cap="Two of her rings worn together — note how the wraps draw together at the sides">
+          <img src="img/real-1.jpg" alt="Two real PK HART wrap rings worn on adjacent fingers" loading="lazy">
+        </a>
+        <div class="refnote muted">Polished 14k wire, one birthstone per wrap, the wraps soldered into a single band at the back. Tap a photo to see it large.</div>
+      </div>
+    </div>
   </section>
 
   <!-- ============================ SUMMARY RAIL ============================ -->
@@ -340,6 +390,12 @@ footer.pagefoot{
   </div>
 </div>
 
+<!-- ============================ PHOTO LIGHTBOX ============================ -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Reference photo">
+  <img id="lightboxImg" alt="">
+  <div class="cap" id="lightboxCap"></div>
+</div>
+
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.min.js" } }
 </script>
@@ -362,10 +418,11 @@ const MONTHS = [
   {m:'November',  s:'Citrine',    c:'#E8A83D', d:'#A66F1D', hex:0xf5b23a},
   {m:'December',  s:'Blue Topaz', c:'#58AEDC', d:'#2D6E99', hex:0x5cc0f0},
 ];
+/* Warm 14k yellow like her ring (deeper than brass, bright polish), matched to the photo. */
 const METALS = {
-  y:{label:'Gold',      hex:0xd9ae56, rough:0.16},
-  r:{label:'Rose gold', hex:0xd9977a, rough:0.16},
-  w:{label:'Silver',    hex:0xe4e5ea, rough:0.1},
+  y:{label:'Gold',      hex:0xdcab5a, rough:0.10},
+  r:{label:'Rose gold', hex:0xdea28a, rough:0.10},
+  w:{label:'Silver',    hex:0xe8e9ed, rough:0.08},
 };
 /* Her construction: 1–5 wraps, each with one birthstone or left plain.
    Stones cascade diagonally across the wraps (from her reference photos)
@@ -410,16 +467,18 @@ function newBottomStone(partial){
   return Object.assign({id:++uid, shape:'oval', month:3, size:'c100', name:'', turn:false}, partial || {});
 }
 function defaultDesign(){
+  // Opens on Penina's own ring (see "Her ring, for reference"): ruby, garnet,
+  // amethyst, peridot, citrine, and an emerald-cut diamond on the bottom wrap.
   wraps = [
-    newWrap({stone:{month:4, name:'', twin:false}}),
-    newWrap({stone:{month:8, name:'', twin:true}}),
-    newWrap({stone:{month:2, name:'', twin:false}}),
+    newWrap({stone:{month:6, name:'', twin:false}}),
+    newWrap({stone:{month:0, name:'', twin:false}}),
+    newWrap({stone:{month:1, name:'', twin:false}}),
+    newWrap({stone:{month:7, name:'', twin:false}}),
     newWrap({stone:{month:10, name:'', twin:false}}),
-    newWrap({stone:null}),
   ];
   metal = 'y';
   stoneCarat = 'c15';
-  feature = {on:true, stones:[newBottomStone({shape:'oval', month:3, size:'c100'})]};
+  feature = {on:true, stones:[newBottomStone({shape:'emerald', month:3, size:'c50'})]};
   selected = 0;
 }
 
@@ -627,12 +686,12 @@ function shapeIcon(id){
 
 /* ============================ 4. THREE.JS SCENE ============================ */
 const R = 1;            // band radius
-const TUBE = 0.058;     // base band size
-const RIB_W = 1.12, RIB_T = 0.50;   // flat ribbon: half-width / half-thickness vs TUBE
+const TUBE = 0.050;     // wire radius (~1 mm gauge on a size-6 band, like her ring)
+const RIB_W = 1.0, RIB_T = 0.82;    // half-round wire: a hair wider than it is tall
 const canvas = $('#scene');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true});
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.18;
+renderer.toneMappingExposure = 1.12;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -644,7 +703,7 @@ scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
 const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
 
-const key = new THREE.DirectionalLight(0xfff4e4, 1.6);
+const key = new THREE.DirectionalLight(0xfff1dc, 1.7);
 key.position.set(2.5, 5, 3.5);
 key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048);
@@ -655,6 +714,10 @@ scene.add(key);
 const fill = new THREE.DirectionalLight(0xe8eaf0, 0.35);
 fill.position.set(-3, 2, -2);
 scene.add(fill);
+// a low warm rim from the right, so the wires carry the long bright streaks seen in her photo
+const rim = new THREE.DirectionalLight(0xfff6e8, 1.5);
+rim.position.set(4, 1.2, -1.5);
+scene.add(rim);
 
 // ground: ivory surface that catches a soft shadow
 const ground = new THREE.Mesh(
@@ -675,18 +738,19 @@ sweep.position.y = ground.position.y - 0.001;
 scene.add(sweep);
 
 /* materials */
-/* hand-hammered surface, like her bands */
+/* hand-finished surface: dense, tiny planishing facets under a high polish —
+   enough to break the highlights into glints, not enough to read as texture */
 const hammer = (() => {
   const c = document.createElement('canvas'); c.width = c.height = 256;
   const g = c.getContext('2d');
   g.fillStyle = '#808080'; g.fillRect(0,0,256,256);
   let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 260; i++){
-    const x = rnd()*256, y = rnd()*256, r = 5 + rnd()*13, v = 90 + rnd()*80;
+  for (let i = 0; i < 700; i++){
+    const x = rnd()*256, y = rnd()*256, r = 3 + rnd()*7, v = 96 + rnd()*64;
     for (const ox of [-256,0,256]) for (const oy of [-256,0,256]){
       const gr = g.createRadialGradient(x+ox, y+oy, 0, x+ox, y+oy, r);
-      gr.addColorStop(0, `rgba(${v},${v},${v},.55)`); gr.addColorStop(1, 'rgba(128,128,128,0)');
-      g.fillStyle = gr; g.beginPath(); g.ellipse(x+ox, y+oy, r*1.5, r, rnd()*3, 0, 7); g.fill();
+      gr.addColorStop(0, `rgba(${v},${v},${v},.5)`); gr.addColorStop(1, 'rgba(128,128,128,0)');
+      g.fillStyle = gr; g.beginPath(); g.ellipse(x+ox, y+oy, r*1.4, r, rnd()*3, 0, 7); g.fill();
     }
   }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -696,10 +760,13 @@ const metalMats = {};
 for (const k in METALS){
   metalMats[k] = new THREE.MeshPhysicalMaterial({
     color:METALS[k].hex, metalness:1, roughness:METALS[k].rough,
-    clearcoat:0.5, clearcoatRoughness:0.25, envMapIntensity:1.15,
-    bumpMap:hammer, bumpScale:1.6,
+    clearcoat:0.3, clearcoatRoughness:0.12, envMapIntensity:1.45,
+    bumpMap:hammer, bumpScale:0.3,
   });
 }
+// open seats are seen from inside too
+const metalMatsDS = {};
+for (const k in METALS){ metalMatsDS[k] = metalMats[k].clone(); metalMatsDS[k].side = THREE.DoubleSide; }
 function gemMaterial(mi){
   const mo = MONTHS[mi];
   if (mo.s === 'Pearl') return new THREE.MeshPhysicalMaterial({
@@ -782,58 +849,94 @@ const prongGeom = new THREE.SphereGeometry(1, 10, 8);
 const TH0 = THREE.MathUtils.degToRad(152), TH1 = THREE.MathUtils.degToRad(28);
 const tTheta = t => TH0 + (TH1 - TH0) * t;
 
-/* Bands spread apart at the top (where the stones live) and come together,
-   tapering, at the back of the finger — like the real fused rings. */
-const spreadAt = th => 0.12 + 0.88 * (1 + Math.sin(th)) / 2;
-const tubeAt = th => 0.58 + 0.42 * (1 + Math.sin(th)) / 2;
+/* Wraps fan apart across the top of the finger (where the stones live) and
+   draw together at the back until they touch and fuse into one band — the
+   way her rings are soldered. SPREAD_MIN sets how tight the bundle gets:
+   at .17 the wires overlap each other by about a third at the back. */
+const SPREAD_MIN = 0.15;
+const spreadAt = th => SPREAD_MIN + (1 - SPREAD_MIN) * (1 + Math.sin(th)) / 2;
+const spreadSlope = th => (1 - SPREAD_MIN) * Math.cos(th) / 2;
+const tubeAt = th => 0.80 + 0.20 * (1 + Math.sin(th)) / 2;   // wire stays near-constant gauge
 
-/* Her ring is one wire wound into a coil: each wrap is one turn, the turns
-   spread apart across the face and bunch together at the back, and both free
-   ends taper to a point. The top tip lands right of center on the face. */
-const FACE = Math.PI / 2;
-const FInt = th => 0.56 * th - 0.44 * Math.cos(th);   // integral of spreadAt
-const COIL = {k:0, F0:0, start:0, end:0};
-const zAt = th => COIL.k * (FInt(th) - COIL.F0);
-const TIP = 0.75;                                       // radians over which an end tapers
-function endTaper(th){
-  const u = Math.min((th - COIL.start) / TIP, (COIL.end - th) / TIP, 1);
-  const s = Math.max(0, u); return 0.06 + 0.94 * s * s * (3 - 2 * s);
-}
-function setCoil(turns, spacing){
-  COIL.k = spacing / (2 * Math.PI * 0.56);              // one turn advances one wrap at the face
-  COIL.F0 = FInt(FACE + Math.PI * (turns - 1));         // center the coil on its middle turn
-  COIL.start = FACE - 0.36;                             // top tip, just right of center
-  COIL.end = FACE + 2 * Math.PI * (turns - 1) + THREE.MathUtils.degToRad(290);
-}
-const wrapSpan = w => [Math.max(COIL.start, FACE - Math.PI + 2 * Math.PI * w),
-                       Math.min(COIL.end,   FACE + Math.PI + 2 * Math.PI * w)];
+/* Each wire is hand-fanned, so it leans a little off parallel across the face
+   and crosses its neighbours' line slightly — the lean dies out at the join. */
+const WOBBLE = [[0.030, 0.9], [-0.036, 2.2], [0.024, 4.1], [-0.028, 0.3], [0.034, 3.0], [-0.022, 1.6]];
+const wobbleAt = (w, th) => { const [amp, ph] = WOBBLE[w % WOBBLE.length]; return amp * Math.sin(th*1.0 + ph) * (1 + Math.sin(th)) / 2; };
 
-function coilGeometry(thA, thB, tubeScale){
-  const SEG = Math.max(24, Math.ceil((thB - thA) * 34)), RAD = 20;
+function bandGeometry(zi, tubeScale, w){
+  const SEG = 180, RAD = 20;
+  const wob = (typeof w === 'number') ? th => wobbleAt(w, th) : () => 0;
   const pos = [], idx = [], uvs = [];
   const ct = new THREE.Vector3(), tan = new THREE.Vector3(),
         radial = new THREE.Vector3(), B = new THREE.Vector3(), N = new THREE.Vector3();
-  const sq = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);   // superellipse: flat face, soft edges
+  const sq = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);   // superellipse: a touch flattened
   for (let i = 0; i <= SEG; i++){
-    const th = thA + (thB - thA) * i / SEG;
-    ct.set(R * Math.cos(th), R * Math.sin(th), zAt(th));
-    tan.set(-R * Math.sin(th), R * Math.cos(th), COIL.k * spreadAt(th)).normalize();
+    const th = i/SEG * Math.PI*2;
+    ct.set(R*Math.cos(th), R*Math.sin(th), zi*spreadAt(th) + wob(th));
+    tan.set(-R*Math.sin(th), R*Math.cos(th), zi*spreadSlope(th) + (wob(th + 0.01) - wob(th - 0.01)) / 0.02).normalize();
     radial.set(Math.cos(th), Math.sin(th), 0);
     B.crossVectors(tan, radial).normalize();
     N.crossVectors(B, tan).normalize();
-    const k = TUBE * (tubeScale || 1) * tubeAt(th) * endTaper(th);
+    const k = TUBE * (tubeScale || 1) * tubeAt(th);
     const rA = k * RIB_W, rR = k * RIB_T;
     for (let j = 0; j <= RAD; j++){
-      const ph = j / RAD * Math.PI * 2;
-      const a = rR * sq(Math.cos(ph), 0.55), b = rA * sq(Math.sin(ph), 0.55);
-      pos.push(ct.x + a * N.x + b * B.x, ct.y + a * N.y + b * B.y, ct.z + a * N.z + b * B.z);
-      uvs.push((th - COIL.start) / (2 * Math.PI) * 22, j / RAD * 2);
+      const ph = j/RAD * Math.PI*2;
+      const a = rR * sq(Math.cos(ph), 0.9), b = rA * sq(Math.sin(ph), 0.9);
+      pos.push(
+        ct.x + a*N.x + b*B.x,
+        ct.y + a*N.y + b*B.y,
+        ct.z + a*N.z + b*B.z
+      );
+      uvs.push(i/SEG * 34, j/RAD * 2);
     }
   }
   for (let i = 0; i < SEG; i++){
     for (let j = 0; j < RAD; j++){
-      const a = i * (RAD + 1) + j, b = a + RAD + 1;
-      idx.push(a, b, a + 1, b, b + 1, a + 1);
+      const a = i*(RAD+1)+j, b = a+RAD+1;
+      idx.push(a, b, a+1, b, b+1, a+1);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+/* The solder join at the back: a low solid fill between the bunched wires
+   from roughly 7 o'clock to 5 o'clock, so the wraps read as one band there
+   (the wire crowns still stand proud of it, like fused wire). */
+function joinGeometry(halfSpan){
+  const A = THREE.MathUtils.degToRad(205), Bg = THREE.MathUtils.degToRad(335);
+  const SEG = 72, RAD = 16;
+  const pos = [], idx = [], uvs = [];
+  const ct = new THREE.Vector3(), tan = new THREE.Vector3(),
+        radial = new THREE.Vector3(), Bv = new THREE.Vector3(), N = new THREE.Vector3();
+  const smooth = x => { x = THREE.MathUtils.clamp(x, 0, 1); return x*x*(3-2*x); };
+  const sq = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);
+  for (let i = 0; i <= SEG; i++){
+    const th = A + (Bg - A) * i/SEG;
+    const f = smooth(i/SEG / 0.22) * smooth((1 - i/SEG) / 0.22);   // fades in and out under the wires
+    ct.set(R*Math.cos(th), R*Math.sin(th), 0);
+    tan.set(-Math.sin(th), Math.cos(th), 0);
+    radial.set(Math.cos(th), Math.sin(th), 0);
+    Bv.crossVectors(tan, radial).normalize();
+    N.crossVectors(Bv, tan).normalize();
+    const k = TUBE * tubeAt(th);
+    const rA = halfSpan * spreadAt(th) + k * 0.9;             // out to the outer wires
+    const rR = k * (0.35 + 0.55 * f);                          // sits just below the wire crowns
+    for (let j = 0; j <= RAD; j++){
+      const ph = j/RAD * Math.PI*2;
+      const a = rR * sq(Math.cos(ph), 0.6), b = rA * sq(Math.sin(ph), 0.6);
+      pos.push(ct.x + a*N.x + b*Bv.x, ct.y + a*N.y + b*Bv.y, ct.z + a*N.z + b*Bv.z);
+      uvs.push(i/SEG * 12, j/RAD * 2);
+    }
+  }
+  for (let i = 0; i < SEG; i++){
+    for (let j = 0; j < RAD; j++){
+      const a = i*(RAD+1)+j, b = a+RAD+1;
+      idx.push(a, b, a+1, b, b+1, a+1);
     }
   }
   const g = new THREE.BufferGeometry();
@@ -848,33 +951,34 @@ let ringGroup = null;
 let gemHandles = [];   // {mesh set, obj, idx, zi}
 let bandHandles = [];  // {mesh, idx}
 
-function buildStone(parent, mi, scale, theta, zi, outlineKey, snug){
+function buildStone(parent, mi, scale, theta, zi, outlineKey, snug, wrapIndex){
   const g = new THREE.Group();
   const mat = gemMaterial(mi);
   const gem = new THREE.Mesh(GEOMS[outlineKey || 'round'], mat);
   gem.castShadow = true;
   gem.scale.setScalar(scale);
   g.add(gem);
-  // 4 prongs
+  // 4 small claw prongs, set on the diagonals like her tiny heads
   const o = OUTLINES[outlineKey || 'round'];
   const span = o.reduce((m, p) => Math.max(m, Math.abs(p[0])), 0);
   const spanZ = o.reduce((m, p) => Math.max(m, Math.abs(p[1])), 0);
-  for (const [px, pz] of [[span,0],[-span,0],[0,spanZ],[0,-spanZ]]){
+  const d = Math.SQRT1_2;
+  for (const [px, pz] of [[span*d,spanZ*d],[-span*d,spanZ*d],[span*d,-spanZ*d],[-span*d,-spanZ*d]]){
     const pr = new THREE.Mesh(prongGeom, metalMats[metal]);
-    pr.scale.setScalar(scale*0.16);
-    pr.position.set(px*scale*0.95, -scale*0.05, pz*scale*0.95);
+    pr.scale.set(scale*0.15, scale*0.30, scale*0.15);
+    pr.position.set(px*scale*1.0, scale*0.06, pz*scale*1.0);
     pr.castShadow = true;
     g.add(pr);
   }
-  // little bezel seat
-  const seat = new THREE.Mesh(new THREE.CylinderGeometry(scale*0.42, scale*0.3, scale*0.35, 10), metalMats[metal]);
-  seat.position.y = -scale*0.5;
+  // small open seat under the stone
+  const seat = new THREE.Mesh(new THREE.CylinderGeometry(scale*0.5, scale*0.34, scale*0.42, 12, 1, true), metalMatsDS[metal]);
+  seat.position.y = -scale*0.52;
   g.add(seat);
   // place on band: radial out at theta, gem up = radial direction
   const dir = new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0);
   // bottom statement stones sit low and snug on their band, like her photos
   g.position.copy(dir).multiplyScalar(snug ? R + TUBE*0.3 + scale*0.16 : R + TUBE*0.55 + scale*0.28);
-  g.position.z = zi;
+  g.position.z = zi * spreadAt(theta) + (typeof wrapIndex === 'number' ? wobbleAt(wrapIndex, theta) : 0);
   g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
   if (snug && snug.turn) g.rotateY(Math.PI/2);
   if (snug && snug.tilt) g.rotateY(snug.tilt);
@@ -888,27 +992,32 @@ function renderScene(){
   gemHandles = [];
   bandHandles = [];
 
-  // The chosen wraps, plus the bottom wrap for the statement stones when it's on — one continuous coil.
+  // The chosen wraps, plus the bottom wrap for the statement stones when it's on.
   const total = wraps.length + (feature.on ? 1 : 0);
-  const spacing = 0.30;   // gaps between wraps ~1.5x the band width, measured from her photo
-  setCoil(total, spacing);
+  const spacing = 0.28;   // wire-to-wire pitch across the face, measured from her photo
+  const z0 = -((total-1)*spacing)/2;
+
+  // the fused join at the back (only once there is something to join)
+  if (total > 1){
+    const join = new THREE.Mesh(joinGeometry(((total-1)*spacing)/2), metalMats[metal]);
+    join.castShadow = true;
+    ringGroup.add(join);
+  }
 
   // which wrap is selected? (for the halo)
   let selWrap = -1;
   if (typeof selected === 'string' && selected.startsWith('f') && feature.on) selWrap = total - 1;
   else if (typeof selected === 'number') selWrap = selected;
 
-  const at = (t, w) => tTheta(t) + 2 * Math.PI * w;   // a face position on wrap w
-
   for (let w = 0; w < total; w++){
-    const [thA, thB] = wrapSpan(w);
-    const band = new THREE.Mesh(coilGeometry(thA, thB, 1), metalMats[metal]);
+    const zi = z0 + w*spacing;
+    const band = new THREE.Mesh(bandGeometry(zi, 1, w), metalMats[metal]);
     band.castShadow = true;
     band.userData.wrap = w;
     ringGroup.add(band);
     bandHandles.push({mesh:band, wrap:w});
     if (w === selWrap){
-      const halo = new THREE.Mesh(coilGeometry(thA, thB, 1.6),
+      const halo = new THREE.Mesh(bandGeometry(zi, 1.6, w),
         new THREE.MeshBasicMaterial({color:0xA9843F, transparent:true, opacity:0.18, depthWrite:false}));
       ringGroup.add(halo);
     }
@@ -917,9 +1026,8 @@ function renderScene(){
       const pos = BOTTOM_POS[Math.min(feature.stones.length, MAX_BOTTOM)] || [];
       feature.stones.forEach((bs, j) => {
         const scale = FEATURE_CARATS[bs.size].scale;
-        const th = at(pos[j] ?? 0.48, w);
-        const m = buildStone(ringGroup, bs.month, scale, th, zAt(th), bs.shape,
-          {turn: bs.turn, tilt: [-0.16, 0.14, -0.1][j % 3]});   // her stones sit a touch off-axis
+        const m = buildStone(ringGroup, bs.month, scale, tTheta(pos[j] ?? 0.48), zi, bs.shape,
+          {turn: bs.turn, tilt: [-0.16, 0.14, -0.1][j % 3]}, w);   // her stones sit a touch off-axis
         gemHandles.push({root:m, idx:'f' + j});
       });
       continue;
@@ -927,13 +1035,13 @@ function renderScene(){
     const st = wraps[w] && wraps[w].stone;
     if (!st) continue;
     const scale = STONE_CARATS[stoneCarat].scale;
-    const theta = at(PLACEMENT[w % PLACEMENT.length], w);
+    const theta = tTheta(PLACEMENT[w % PLACEMENT.length]);
     if (st.twin){
       const dth = (scale*2.3) / R;
-      for (const th of [theta - dth/2, theta + dth/2])
-        gemHandles.push({root: buildStone(ringGroup, st.month, scale, th, zAt(th)), idx: w});
+      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta - dth/2, zi, null, null, w), idx: w});
+      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta + dth/2, zi, null, null, w), idx: w});
     } else {
-      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta, zAt(theta)), idx: w});
+      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta, zi, null, null, w), idx: w});
     }
   }
 
@@ -944,6 +1052,9 @@ function renderScene(){
 
 /* camera orbit */
 let azim = 0, elev = 1.12, dist = 7;   // looking at the face of the ring, like her photos
+// #back / #side open on the join at the back, or the profile (handy for sharing a view)
+if (/back/.test(location.hash)) { azim = Math.PI; elev = 0.55; }
+else if (/side/.test(location.hash)) { azim = Math.PI/2; elev = 0.35; }
 let azimTarget = azim;
 function frameCamera(count, spacing){
   const width = count*spacing + 0.3;
@@ -1184,6 +1295,28 @@ $('#btnCopy').addEventListener('click', async () => {
   catch { $('#btnCopy').textContent = 'Select + copy above'; }
   setTimeout(() => { $('#btnCopy').textContent = 'Copy the spec'; }, 1600);
 });
+
+/* reference photos: inline strip on desktop, straight to the lightbox on phones */
+const refPics = [...document.querySelectorAll('.refpic')];
+const isPhone = () => matchMedia('(max-width:980px)').matches;
+function openLightbox(a){
+  $('#lightboxImg').src = a.getAttribute('href');
+  $('#lightboxImg').alt = a.querySelector('img').alt;
+  $('#lightboxCap').textContent = a.dataset.cap || '';
+  $('#lightbox').classList.add('open');
+}
+function closeLightbox(){ $('#lightbox').classList.remove('open'); }
+$('#refTog').addEventListener('click', () => {
+  if (isPhone()){ openLightbox(refPics[0]); return; }
+  const strip = $('#refStrip');
+  const open = strip.hidden;
+  strip.hidden = !open;
+  $('#refTog').setAttribute('aria-expanded', String(open));
+});
+refPics.forEach(a => a.addEventListener('click', e => { e.preventDefault(); openLightbox(a); }));
+if (/ref/.test(location.hash) && !isPhone()){ $('#refStrip').hidden = false; $('#refTog').setAttribute('aria-expanded', 'true'); }
+$('#lightbox').addEventListener('click', closeLightbox);
+document.addEventListener('keydown', e => { if (e.key === 'Escape'){ closeLightbox(); $('#modalBg').classList.remove('open'); } });
 
 $('#btnSave').addEventListener('click', () => {
   renderer.render(scene, camera);
