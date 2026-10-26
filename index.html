@@ -345,7 +345,7 @@ footer.pagefoot{
       <canvas id="scene" aria-label="Rendered preview of your custom birthstone ring"></canvas>
       <canvas id="photoView" width="1000" height="960" aria-label="Her real ring, photographed, with your stones painted in"></canvas>
       <div class="photocap" id="photoCap">
-        Shown on Penina&rsquo;s hand.
+        Her ring, photographed.
         <span class="note" id="photoNote" hidden></span>
       </div>
       <div class="stage-btns">
@@ -1164,92 +1164,148 @@ function buildPhotoBases(){
   photoBases.y = make(null);
   photoBases.r = make((r, g2, b) => [Math.min(255, r*1.03 + 6), g2*0.86, Math.min(255, b*1.18 + 8)]);
   photoBases.w = make((r, g2, b) => { const L = (0.3*r + 0.59*g2 + 0.11*b) * 1.12 + 6; return [L*0.98, L*1.0, L*1.08]; });
-  buildWireLayers(out, W, H);
+  buildWireMasks(out, W, H);
+  // the reference strip's close-up shows the same cut-out
+  const firstPic = document.querySelector('.refpic');
+  if (firstPic){ const url = photoCut.y.toDataURL('image/jpeg', 0.92); firstPic.href = url; firstPic.querySelector('img').src = url; }
 }
 
-/* ---- painting a wire out ----
-   One transparent layer per wire, computed once. Each wire owns the strip of
-   photo from the middle of the gap above it to the middle of the gap below it
-   (those midpoints are bare skin whatever the wire's exact edges do, and the
-   strips of neighbouring wires tile seamlessly). The strip is refilled with a
-   real block of her skin — from above the ring for the upper wires, below it
-   for the lower ones — slid straight down/up in the same columns so the
-   finger's shading runs through, then colour-matched to both seams. Skin is
-   untouched by the metal tints, so one set of layers serves all metals. */
-const photoLayers = [];
-function buildWireLayers(src, W, H){
-  const px = (x, y) => { x = Math.max(0, Math.min(W-1, Math.round(x))); y = Math.max(0, Math.min(H-1, y)); const y0 = Math.floor(y), f = y - y0, y1 = Math.min(H-1, y0 + 1); const j0 = (y0*W + x)*4, j1 = (y1*W + x)*4; return [src[j0]*(1-f) + src[j1]*f, src[j0+1]*(1-f) + src[j1+1]*f, src[j0+2]*(1-f) + src[j1+2]*f]; };
+/* ---- cutting the ring out ----
+   Her ring is lifted off the hand and shown on the studio's ivory. One soft
+   mask per wire, built once at load: a band along the wire's measured centre
+   line keeps everything that is not confidently skin (the wire's core is
+   always kept, so a pink reflection never punches a hole), its stone and
+   prongs are kept, small gaps are closed and the edge gets a 1 px feather.
+   Taking a wrap away just leaves that wire's mask out. Every ring pixel is
+   the photo's own. */
+const PHOTO_BG = '#FBF8F4';
+const photoMasks = [];     // per wire: white canvas with the wire's alpha
+const photoCut = {};       // per metal: the whole ring cut out on ivory (for borrowing bare wire)
+const photoCache = {};     // per configuration: union mask + shadow
+function buildWireMasks(src, W, H){
   const yAt = (pts, x) => {
     const n = pts.length;
     if (x <= pts[0][0]) return pts[0][1] + (x - pts[0][0]) * (pts[1][1] - pts[0][1]) / (pts[1][0] - pts[0][0]);
     if (x >= pts[n-1][0]) return pts[n-1][1] + (x - pts[n-1][0]) * (pts[n-1][1] - pts[n-2][1]) / (pts[n-1][0] - pts[n-2][0]);
     for (let k = 1; k < n; k++) if (x <= pts[k][0]){ const [x0, y0] = pts[k-1], [x1, y1] = pts[k]; return y0 + (y1 - y0) * (x - x0) / (x1 - x0); }
   };
-  const isSkin = (x, y) => {
-    if (y < 0 || y >= H) return false;
-    x = Math.max(2, Math.min(W-3, Math.round(x)));
-    let r = 0, g = 0, b = 0;
-    for (let dx = -2; dx <= 2; dx++){ const j = ((y|0)*W + x + dx)*4; r += src[j]; g += src[j+1]; b += src[j+2]; }
-    r /= 1275; g /= 1275; b /= 1275;
-    const mx = Math.max(r,g,b), mn = Math.min(r,g,b), df = mx - mn;
-    if (!df || mx < 0.34 || mx > 0.9) return false;
+  // metal-like: gold hue, a bright highlight, or the dark shadow between wires (never skin's mid-pink)
+  const metalLike = (x, y) => {
+    const j = (y*W + x)*4, r = src[j]/255, g = src[j+1]/255, b = src[j+2]/255;
+    const mx = Math.max(r,g,b), mn = Math.min(r,g,b), df = mx - mn, sat = mx ? df/mx : 0;
+    if (mx < 0.36) return true;
+    if (mx > 0.86 && sat < 0.3) return true;
+    if (!df) return false;
     let h = mx === r ? ((g-b)/df) % 6 : mx === g ? (b-r)/df + 2 : (r-g)/df + 4; h *= 60; if (h < 0) h += 360;
-    return h <= 26 && df/mx >= 0.28;
+    return h >= 28 && h <= 65 && sat > 0.18;
   };
-  // mean colour of the clean skin rows just beyond a seam (null if there are none)
-  const seamColour = (x, y, dir) => { const acc = [0,0,0]; let n = 0; for (let k = 2; k <= 7; k++){ const yy = y + dir*k; if (!isSkin(x, yy)) continue; const p = px(x, yy); acc[0] += p[0]; acc[1] += p[1]; acc[2] += p[2]; n++; } return n >= 2 ? acc.map(v => v/n) : null; };
-  const PITCH = 28, F = 2;
-  const ease = u => u*u*(3 - 2*u);
-  const sm = (arr, k) => arr.map((v, n) => { let sum = 0, c = 0; for (let t = -k; t <= k; t++){ if (arr[n+t] != null){ sum += arr[n+t]; c++; } } return c ? sum / c : 0; });
+  const confidentSkin = (x, y) => !metalLike(x, y);
+  const HALF = 11, CORE = 6.5;   // the wire itself is ~13 px across in this photo
   for (let i = 0; i < 6; i++){
-    const out = new ImageData(W, H), o = out.data;
     const pts = PHOTO.wires[i];
-    const xA = Math.max(0, pts[0][0] - 6), xB = Math.min(W-1, pts[pts.length-1][0] + 6);
-    const fromAbove = i <= 1, flip = i % 2 === 1, dxs = [0, 5, -5, 0, 6, -6][i];
-    const tops = [], bots = [], offT = [[],[],[]], offB = [[],[],[]];
-    for (let x = xA; x <= xB; x++){
+    const bin = new Uint8Array(W*H);
+    const x0 = Math.max(0, pts[0][0] - 2), x1 = Math.min(W-1, pts[pts.length-1][0] + 2);
+    const xm0 = pts[1][0], xm1 = pts[pts.length-2][0];   // the wire's main run; beyond it, it turns away into shadow
+    // per column: how far the metal runs contiguously above and below the core
+    const ups = [], downs = [];
+    for (let x = x0; x <= x1; x++){
       const yc = yAt(pts, x);
-      let yTop = i > 0 ? (yc + yAt(PHOTO.wires[i-1], x)) / 2 : yc - PITCH;
-      let yBot = i < 5 ? (yc + yAt(PHOTO.wires[i+1], x)) / 2 : yc + PITCH;
-      if (i === 5 && Math.abs(x - PHOTO.bottom.x) < PHOTO.bottom.w/2 + 8) yBot = Math.max(yBot, PHOTO.bottom.y + PHOTO.bottom.h/2 + 8);
-      tops.push(yTop); bots.push(yBot);
-      // where the skin block comes from in this column, and how its ends compare to the seams
-      const h = yBot - yTop;
-      const blk = fromAbove ? yAt(PHOTO.wires[0], x) - 34 - h : Math.max(yAt(PHOTO.wires[5], x) + 30, Math.abs(x - PHOTO.bottom.x) < 44 ? 412 : 0);
-      // target shading at each seam: the skin just beyond it, or failing that the block's own colour there
-      const lp0 = yy => { const acc = [0,0,0]; for (let t = -7; t <= 7; t++){ const q = px(x + dxs, yy + t); acc[0] += q[0]; acc[1] += q[1]; acc[2] += q[2]; } return acc.map(v => v/15); };
-      const sT = seamColour(x, yTop, -1) || lp0(flip ? blk + h : blk), sB = seamColour(x, yBot, +1) || lp0(flip ? blk : blk + h);
-      for (let c = 0; c < 3; c++){ offT[c].push(sT[c]); offB[c].push(sB[c]); }
+      const taper = Math.min(1, 0.4 + 0.6 * Math.min(x - x0, x1 - x) / 14);
+      const core = CORE * taper, half = (x >= xm0 && x <= xm1 ? HALF : CORE) * taper;
+      let up = core, down = core;
+      while (up < half && metalLike(x, Math.max(0, Math.round(yc - up - 1)))) up++;
+      while (down < half && metalLike(x, Math.min(H-1, Math.round(yc + down + 1)))) down++;
+      ups.push(up); downs.push(down);
     }
-    const topS = sm(tops, 4), botS = sm(bots, 4);
-    const oT = offT.map(a => sm(a, 8)), oB = offB.map(a => sm(a, 8));
-    for (let k = 0; k < topS.length; k++){
-      const x = xA + k, yTop = topS[k], yBot = botS[k], h = yBot - yTop;
-      const blk = fromAbove ? yAt(PHOTO.wires[0], x) - 34 - h : Math.max(yAt(PHOTO.wires[5], x) + 30, Math.abs(x - PHOTO.bottom.x) < 44 ? 412 : 0);
-      let taper = 1;
-      if (x < pts[0][0]) taper = (x - xA) / 6;
-      if (x > pts[pts.length-1][0]) taper = (xB - x) / 6;
-      // the block's own low-frequency shading (vertical 15-row mean per column) is swapped for the seam-to-seam ramp
-      const lp = yy => { const acc = [0,0,0]; for (let t = -7; t <= 7; t++){ const q = px(x + dxs, yy + t); acc[0] += q[0]; acc[1] += q[1]; acc[2] += q[2]; } return acc.map(v => v/15); };
-      for (let y = Math.max(0, Math.ceil(yTop) - F); y <= Math.min(H-1, Math.floor(yBot) + F); y++){
-        const u = Math.max(0, Math.min(1, (y - yTop) / Math.max(1, h)));
-        const yy = flip ? blk + (1 - u) * h : blk + u * h;
-        const p = px(x + dxs, yy), low = lp(yy);
-        const wb = ease(u);
-        const outside = y < yTop ? yTop - y : y > yBot ? y - yBot : 0;
-        const alpha = Math.max(0, 1 - outside / (F + 1)) * Math.max(0, Math.min(1, taper));
-        const j = (y*W + x)*4;
-        for (let c = 0; c < 3; c++){
-          const target = oT[c][k]*(1-wb) + oB[c][k]*wb;      // what the shading should be here
-          o[j+c] = p[c] - low[c] + target;
-        }
-        o[j+3] = Math.round(alpha * 255);
+    const smoothArr = arr => arr.map((v, k) => { let sum = 0, n = 0; for (let t = -5; t <= 5; t++){ if (arr[k+t] != null){ sum += arr[k+t]; n++; } } return sum / n; });
+    const upS = smoothArr(ups), downS = smoothArr(downs);
+    for (let x = x0; x <= x1; x++){
+      const yc = yAt(pts, x), up = upS[x - x0], down = downS[x - x0];
+      for (let y = Math.max(0, Math.ceil(yc - up)); y <= Math.min(H-1, Math.floor(yc + down)); y++) bin[y*W + x] = 1;
+    }
+    // its stone (or the diamond) with the prongs round it
+    const sp = i < 5 ? {x:PHOTO.spots[i].x, y:PHOTO.spots[i].y, rx:PHOTO.spots[i].r + 5, ry:PHOTO.spots[i].r + 5, solid:PHOTO.spots[i].r + 1}
+                     : {x:PHOTO.bottom.x, y:PHOTO.bottom.y, rx:PHOTO.bottom.w/2 + 7, ry:PHOTO.bottom.h/2 + 7, solid:Math.min(PHOTO.bottom.w, PHOTO.bottom.h)/2};
+    for (let y = Math.max(0, Math.floor(sp.y - sp.ry)); y <= Math.min(H-1, Math.ceil(sp.y + sp.ry)); y++)
+      for (let x = Math.max(0, Math.floor(sp.x - sp.rx)); x <= Math.min(W-1, Math.ceil(sp.x + sp.rx)); x++){
+        const dx = (x - sp.x) / sp.rx, dy = (y - sp.y) / sp.ry;
+        if (dx*dx + dy*dy > 1) continue;
+        if (Math.hypot(x - sp.x, y - sp.y) <= sp.solid || !confidentSkin(x, y)) bin[y*W + x] = 1;
       }
+    // close small gaps (dilate 2, erode 2), then a 1 px feather
+    const yMin = Math.max(0, Math.floor(Math.min(...pts.map(p => p[1])) - 40)), yMax = Math.min(H-1, Math.ceil(Math.max(...pts.map(p => p[1])) + 40));
+    const bx0 = Math.max(0, Math.min(x0, sp.x - sp.rx - 4) | 0), bx1 = Math.min(W-1, Math.max(x1, sp.x + sp.rx + 4) | 0);
+    const morph = (inp, r, dilate) => {
+      const tmp = new Uint8Array(W*H), res = new Uint8Array(W*H);
+      for (let y = yMin; y <= yMax; y++) for (let x = bx0; x <= bx1; x++){
+        let v = dilate ? 0 : 1;
+        for (let t = -r; t <= r; t++){ const xx = Math.max(0, Math.min(W-1, x + t)); const q = inp[y*W + xx]; if (dilate ? q : !q){ v = dilate ? 1 : 0; break; } }
+        tmp[y*W + x] = v;
+      }
+      for (let y = yMin; y <= yMax; y++) for (let x = bx0; x <= bx1; x++){
+        let v = dilate ? 0 : 1;
+        for (let t = -r; t <= r; t++){ const yy = Math.max(0, Math.min(H-1, y + t)); const q = tmp[yy*W + x]; if (dilate ? q : !q){ v = dilate ? 1 : 0; break; } }
+        res[y*W + x] = v;
+      }
+      return res;
+    };
+    const closed = morph(morph(bin, 2, true), 2, false);
+    const out = new ImageData(W, H), o = out.data;
+    for (let y = yMin; y <= yMax; y++) for (let x = bx0; x <= bx1; x++){
+      let sum = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){ const xx = Math.max(0, Math.min(W-1, x + dx)), yy = Math.max(0, Math.min(H-1, y + dy)); sum += closed[yy*W + xx]; }
+      const j = (y*W + x)*4;
+      o[j] = o[j+1] = o[j+2] = 255; o[j+3] = Math.round(255 * sum / 9);
     }
-    const lc = document.createElement('canvas'); lc.width = W; lc.height = H;
-    lc.getContext('2d').putImageData(out, 0, 0);
-    photoLayers[i] = lc;
+    const mc = document.createElement('canvas'); mc.width = W; mc.height = H;
+    mc.getContext('2d').putImageData(out, 0, 0);
+    photoMasks[i] = mc;
   }
+  // the whole ring on ivory, per metal (what a plain wrap borrows its bare wire from)
+  const all = unionMask([0,1,2,3,4,5]);
+  for (const k in photoBases){
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    g.fillStyle = PHOTO_BG; g.fillRect(0, 0, W, H);
+    g.drawImage(cutout(photoBases[k], all), 0, 0);
+    photoCut[k] = c;
+  }
+}
+function unionMask(wireIds){
+  const c = document.createElement('canvas'); c.width = PHOTO.w; c.height = PHOTO.h;
+  const g = c.getContext('2d');
+  wireIds.forEach(i => g.drawImage(photoMasks[i], 0, 0));
+  return c;
+}
+function cutout(base, mask){
+  const c = document.createElement('canvas'); c.width = PHOTO.w; c.height = PHOTO.h;
+  const g = c.getContext('2d');
+  g.drawImage(base, 0, 0);
+  g.globalCompositeOperation = 'destination-in';
+  g.drawImage(mask, 0, 0);
+  return c;
+}
+/* a soft, subtle shadow under the ring so it sits on the ivory */
+function shadowFor(mask){
+  const W = PHOTO.w, H = PHOTO.h;
+  const sil = document.createElement('canvas'); sil.width = W; sil.height = H;
+  const sg = sil.getContext('2d');
+  sg.drawImage(mask, 0, 0);
+  sg.globalCompositeOperation = 'source-in';
+  sg.fillStyle = '#5a452f'; sg.fillRect(0, 0, W, H);
+  const small = document.createElement('canvas'); small.width = Math.ceil(W/10); small.height = Math.ceil(H/10);
+  const g = small.getContext('2d');
+  g.drawImage(sil, 0, 0, small.width, small.height);
+  return small;
+}
+function configFor(first, bottomOn){
+  const key = first + ':' + bottomOn;
+  if (photoCache[key]) return photoCache[key];
+  const ids = [];
+  for (let i = first; i < 5; i++) ids.push(i);
+  if (bottomOn) ids.push(5);
+  const mask = unionMask(ids);
+  return (photoCache[key] = {mask, shadow: shadowFor(mask)});
 }
 /* shift only the gold-coloured pixels (hue ~48°), leaving skin and stones alone */
 function tintGold(d, fn){
@@ -1332,7 +1388,7 @@ function cloneWire(g, x, y, r, aDeg, dir){
   const P = Math.ceil(R*2) + 2;
   const pc = document.createElement('canvas'); pc.width = pc.height = P;
   const pg = pc.getContext('2d');
-  pg.drawImage(photoBases[metal], sx - P/2, sy - P/2, P, P, 0, 0, P, P);
+  pg.drawImage(photoCut[metal], sx - P/2, sy - P/2, P, P, 0, 0, P, P);
   pg.globalCompositeOperation = 'destination-in';
   const m = pg.createRadialGradient(P/2, P/2, R - 7, P/2, P/2, R);
   m.addColorStop(0, 'rgba(0,0,0,1)'); m.addColorStop(1, 'rgba(0,0,0,0)');
@@ -1361,11 +1417,12 @@ function renderPhoto(){
   const g = photoCtx;
   g.setTransform(PX, 0, 0, PX, 0, 0);
   g.clearRect(0, 0, PHOTO.w, PHOTO.h);
-  g.drawImage(photoBases[metal], 0, 0);
-  // fewer wraps: the top wires come off the photo (her smaller rings keep the lower wires, bottom row last)
+  // fewer wraps: the top wires are left out of the cut-out (her smaller rings keep the lower wires, bottom row last)
   const first = PHOTO.spots.length - wraps.length;        // wrap k sits on wire first + k
-  for (let i = 0; i < first; i++) g.drawImage(photoLayers[i], 0, 0);
-  if (!feature.on) g.drawImage(photoLayers[5], 0, 0);
+  const cfg = configFor(first, feature.on);
+  g.fillStyle = PHOTO_BG; g.fillRect(0, 0, PHOTO.w, PHOTO.h);
+  g.save(); g.globalAlpha = 0.2; g.imageSmoothingEnabled = true; g.drawImage(cfg.shadow, 0, 0, cfg.shadow.width, cfg.shadow.height, -4, 5, PHOTO.w + 8, PHOTO.h + 8); g.restore();
+  g.drawImage(cutout(photoBases[metal], cfg.mask), 0, 0);
   const rScale = {c05:1, c10:1.12, c15:1.25, c25:1.45}[stoneCarat] || 1;   // 0.05 ct = her actual stones
   wraps.forEach((wr, k) => {
     const sp = PHOTO.spots[first + k];
