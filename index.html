@@ -119,7 +119,7 @@ header.top .sub{font-size:12.5px; color:var(--ink-2); margin-top:5px; max-width:
 .sizeseg{display:inline-flex; border:1px solid var(--sand); border-radius:2px; background:#fff; box-shadow:var(--shadow)}
 .sizeseg button{
   border:0; background:transparent; padding:5px 8px; font-size:9.5px; letter-spacing:.1em;
-  text-transform:uppercase; color:var(--ink-2); cursor:pointer; font-family:var(--sans);
+  text-transform:uppercase; color:var(--ink-2); cursor:pointer; font-family:var(--sans); white-space:nowrap;
 }
 .sizeseg button+button{border-left:1px solid var(--sand)}
 .sizeseg button[aria-pressed=true]{background:var(--plum); color:#fff}
@@ -464,6 +464,7 @@ const SHAPES = [
 ];
 /* Carat → rendered girdle size (round brilliant mm, scaled to the R=1 band). */
 const STONE_CARATS = {
+  c05:{label:'0.05 ct', scale:0.082},   // her size: ~2 mm, twice the wire's width
   c10:{label:'0.10 ct', scale:0.092},
   c15:{label:'0.15 ct', scale:0.112},
   c25:{label:'0.25 ct', scale:0.142},
@@ -486,6 +487,10 @@ let uid = 0;
 const BOTTOM_POS = {1:[0.52], 2:[0.42,0.60], 3:[0.34,0.50,0.66]};
 const MAX_BOTTOM = 3;
 
+const twinMonth = st => (st.month2 == null ? st.month : st.month2);   // twins default to a matching stone
+const stoneText = st => MONTHS[st.month].m + ' (' + MONTHS[st.month].s + ')' +
+  (st.twin && twinMonth(st) !== st.month ? ' + ' + MONTHS[twinMonth(st)].m + ' (' + MONTHS[twinMonth(st)].s + ')' : '');
+const swatchBg = mi => 'radial-gradient(circle at 35% 30%, #fff 0%, ' + MONTHS[mi].c + ' 45%, ' + MONTHS[mi].d + ' 100%)';
 function newWrap(partial){
   return Object.assign({id:++uid, stone:{month:3, name:'', twin:false}}, partial || {});
 }
@@ -503,7 +508,7 @@ function defaultDesign(){
     newWrap({stone:{month:10, name:'', twin:false}}),
   ];
   metal = 'y';
-  stoneCarat = 'c15';
+  stoneCarat = 'c05';
   feature = {on:true, stones:[newBottomStone({shape:'emerald', month:3, size:'c50'})]};
   selected = 0;
 }
@@ -558,7 +563,11 @@ function renderEditor(){
 
     const head = h('div', 'bc-head', card);
     const title = h('div', 'bc-title', head, 'Wrap ' + (i + 1));
-    h('span', 'bc-stone', title, wr.stone ? MONTHS[wr.stone.month].m + ' · ' + MONTHS[wr.stone.month].s : 'plain, no stone');
+    h('span', 'bc-stone', title, wr.stone
+      ? (wr.stone.twin && twinMonth(wr.stone) !== wr.stone.month
+          ? MONTHS[wr.stone.month].s + ' + ' + MONTHS[twinMonth(wr.stone)].s
+          : MONTHS[wr.stone.month].m + ' · ' + MONTHS[wr.stone.month].s)
+      : 'plain, no stone');
     if (wraps.length > 1){
       const rm = h('button', 'bc-remove', head, '×');
       rm.type = 'button';
@@ -587,18 +596,21 @@ function renderEditor(){
 
     if (wr.stone){
       const st = wr.stone;
-      const srow = h('div', 'row', card);
-      h('span', 'lbl', srow, 'Stone');
-      const sw = h('div', 'stones', srow);
-      MONTHS.forEach((mo, mi) => {
-        const b = h('button', 'stone', sw);
-        b.type = 'button';
-        b.title = mo.m + ' — ' + mo.s;
-        b.setAttribute('aria-label', mo.m + ' ' + mo.s);
-        b.setAttribute('aria-pressed', String(st.month === mi));
-        b.style.background = 'radial-gradient(circle at 35% 30%, #fff 0%, ' + mo.c + ' 45%, ' + mo.d + ' 100%)';
-        b.addEventListener('click', e => { e.stopPropagation(); st.month = mi; selected = i; render(); });
-      });
+      const stoneRow = (label, current, onPick) => {
+        const srow = h('div', 'row', card);
+        h('span', 'lbl', srow, label);
+        const sw = h('div', 'stones', srow);
+        MONTHS.forEach((mo, mi) => {
+          const b = h('button', 'stone', sw);
+          b.type = 'button';
+          b.title = mo.m + ' — ' + mo.s;
+          b.setAttribute('aria-label', mo.m + ' ' + mo.s);
+          b.setAttribute('aria-pressed', String(current === mi));
+          b.style.background = swatchBg(mi);
+          b.addEventListener('click', e => { e.stopPropagation(); onPick(mi); selected = i; render(); });
+        });
+      };
+      stoneRow('Stone', st.month, mi => { st.month = mi; });
 
       const zrow = h('div', 'row', card);
       const tw = h('label', 'twinlbl', zrow);
@@ -607,8 +619,15 @@ function renderEditor(){
       twBtn.type = 'button';
       twBtn.setAttribute('aria-pressed', String(st.twin));
       twBtn.setAttribute('aria-label', 'Twin stones');
-      twBtn.addEventListener('click', e => { e.stopPropagation(); st.twin = !st.twin; selected = i; render(); });
-      h('span', 'twintxt', tw, 'Twins');
+      twBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        st.twin = !st.twin;
+        if (st.twin && st.month2 == null) st.month2 = st.month;   // starts as a matching pair
+        selected = i; render();
+      });
+      h('span', 'twintxt', tw, st.twin ? 'Twins — two stones on this wrap' : 'Twins');
+      // the second stone can be a different person's birthstone
+      if (st.twin) stoneRow('Twin', twinMonth(st), mi => { st.month2 = mi; });
 
       const nrow = h('div', 'row', card);
       h('span', 'lbl', nrow, 'For');
@@ -1065,7 +1084,7 @@ function renderScene(){
     if (st.twin){
       const dth = (scale*2.3) / R;
       gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta - dth/2, zi, null, null, w), idx: w});
-      gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta + dth/2, zi, null, null, w), idx: w});
+      gemHandles.push({root: buildStone(ringGroup, twinMonth(st), scale, theta + dth/2, zi, null, null, w), idx: w});
     } else {
       gemHandles.push({root: buildStone(ringGroup, st.month, scale, theta, zi, null, null, w), idx: w});
     }
@@ -1245,7 +1264,7 @@ function renderPhoto(){
   g.setTransform(PX, 0, 0, PX, 0, 0);
   g.clearRect(0, 0, PHOTO.w, PHOTO.h);
   g.drawImage(photoBases[metal], 0, 0);
-  const rScale = {c10:0.86, c15:1, c25:1.18}[stoneCarat] || 1;
+  const rScale = {c05:1, c10:1.12, c15:1.25, c25:1.45}[stoneCarat] || 1;   // 0.05 ct = her actual stones
   PHOTO.spots.forEach((sp, i) => {
     const wr = wraps[i];
     const st = wr && wr.stone;
@@ -1255,7 +1274,7 @@ function renderPhoto(){
     if (st.twin){
       const a = sp.a * Math.PI/180, off = r*2.5;
       const dir = -sp.clone;   // put the twin on the side we'd otherwise borrow wire from... the other way
-      paintGem(g, sp.x + Math.cos(a)*off*dir, sp.y + Math.sin(a)*off*dir, r*0.96, sp.a, st.month, true);
+      paintGem(g, sp.x + Math.cos(a)*off*dir, sp.y + Math.sin(a)*off*dir, r*0.96, sp.a, twinMonth(st), true);
     }
   });
   const B = PHOTO.bottom;
@@ -1416,8 +1435,11 @@ function renderSummary(){
     const what = h('div', 'what', row);
     if (wr.stone){
       const st = wr.stone;
-      sw.style.background = 'radial-gradient(circle at 35% 30%, #fff 0%, ' + MONTHS[st.month].c + ' 45%, ' + MONTHS[st.month].d + ' 100%)';
-      what.innerHTML = 'Wrap ' + (i+1) + ' — ' + MONTHS[st.month].m + ' (' + MONTHS[st.month].s + ')' +
+      const mixed = st.twin && twinMonth(st) !== st.month;
+      sw.style.background = mixed
+        ? 'linear-gradient(90deg, ' + MONTHS[st.month].c + ' 50%, ' + MONTHS[twinMonth(st)].c + ' 50%)'
+        : swatchBg(st.month);
+      what.innerHTML = 'Wrap ' + (i+1) + ' — ' + stoneText(st) +
         ' · ' + STONE_CARATS[stoneCarat].label + (st.twin ? ' · twins' : '') +
         (st.name ? ' <span class="nm">· for ' + escapeHtml(st.name) + '</span>' : '');
     } else {
@@ -1449,8 +1471,8 @@ function buildSpec(){
   wraps.forEach((wr, i) => {
     const st = wr.stone;
     lines.push('Wrap ' + (i+1) + ': ' + (st
-      ? MONTHS[st.month].m + ' (' + MONTHS[st.month].s + ')' +
-        (st.twin ? ' · twin stones' : '') +
+      ? stoneText(st) +
+        (st.twin ? (twinMonth(st) !== st.month ? ' · twin stones, one of each' : ' · twin stones') : '') +
         (st.name ? ' · for ' + st.name : '')
       : 'plain, no stone'));
   });
@@ -1517,10 +1539,10 @@ $('#btnSurprise').addEventListener('click', () => {
   const months = [...Array(12).keys()].sort(() => Math.random() - .5);
   wraps = Array.from({length: n}, (_, i) => newWrap({
     stone: Math.random() < .85
-      ? {month: months[i % 12], name:'', twin: Math.random() < .15}
+      ? {month: months[i % 12], month2: months[(i + 5) % 12], name:'', twin: Math.random() < .15}
       : null,
   }));
-  stoneCarat = ['c10','c15','c15','c25'][Math.floor(Math.random()*4)];
+  stoneCarat = ['c05','c05','c10','c15','c25'][Math.floor(Math.random()*5)];
   metal = ['y','y','r','w'][Math.floor(Math.random()*4)];
   feature.on = Math.random() < .7;
   const nb = Math.random() < .7 ? 1 : 2;
