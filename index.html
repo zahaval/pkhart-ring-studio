@@ -19,262 +19,300 @@
 -->
 
 <style>
-/* ============================ DESIGN TOKENS (BRIEF §4) ============================ */
+/* ============================ PK HART TOKENS ============================
+   PK HART's own palette and type. The layout discipline (8px grid, one
+   border weight, one small radius, flat offset depth, numbered section
+   openers, quick flat motion) is borrowed from the studio's house system. */
 :root{
-  --ink:#14110F; --ink-2:#4A423B; --ivory:#FBF8F4; --sand:#F1EBE2;
-  --gold:#A9843F; --gold-lt:#D8BE86; --plum:#3C2A34; --ok:#2E6B52;
+  --ink:#14110F; --ink-2:#5B5148; --ink-3:#8C8178;
+  --ivory:#FBF8F4; --paper:#FFFFFF; --sand:#EFE8DC; --sand-2:#E2D8C7;
+  --gold:#A9843F; --gold-ink:#8A6A2C; --gold-lt:#E7D9B8; --gold-wash:#F4ECDC;
+  --line:1.5px; --r:2px; --pill:999px;
   --serif:Georgia,'Times New Roman',serif;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
-  --shadow:0 1px 2px rgba(20,17,15,.06);
-  --rail:300px; --tray:292px;
+  --ease:cubic-bezier(.2,.7,.3,1); --fast:160ms;
+  --rail:312px; --tray:312px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--ivory); color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.45}
-h1,h2{font-family:var(--serif); font-weight:400; letter-spacing:.01em; margin:0}
-.eyebrow{font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); font-weight:600}
-.muted{color:var(--ink-2); font-size:12px}
+body{background:var(--ivory); color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased}
+h1,h2{font-family:var(--serif); font-weight:400; letter-spacing:.005em; margin:0}
+button,input,select{font-family:var(--sans)}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+@media (prefers-reduced-motion:reduce){ *,*::before,*::after{transition:none !important; animation:none !important} }
 
-/* header */
+/* small type roles */
+.eyebrow{font-size:12px; font-weight:600; color:var(--ink); letter-spacing:0}
+.muted{color:var(--ink-2); font-size:12.5px}
+.tag{
+  display:inline-block; font-family:var(--sans); font-size:11.5px; font-weight:500; line-height:1; color:var(--ink);
+  border:var(--line) solid var(--ink); border-radius:var(--pill); padding:5px 10px; background:var(--paper);
+}
+.tag.gold{border-color:var(--gold); color:var(--gold-ink); background:var(--gold-wash)}
+
+/* section opener: thin rule + tiny numbered label sitting on it */
+.datum{display:flex; align-items:center; gap:12px; margin:0 0 16px}
+.datum .num{font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--gold-ink); white-space:nowrap}
+.datum .ttl{font-size:13px; font-weight:600; color:var(--ink); white-space:nowrap}
+.datum::after{content:""; flex:1; height:1px; background:var(--sand-2)}
+.datum .aside{font-size:12px; color:var(--ink-2); white-space:nowrap}
+.datum .aside:empty{display:none}
+.section + .section{margin-top:32px}
+
+/* ============================ HEADER ============================ */
 header.top{
-  display:flex; flex-wrap:wrap; gap:14px 24px; align-items:flex-end;
-  padding:22px 26px 18px; border-bottom:1px solid var(--sand); background:#fff;
+  display:flex; flex-wrap:wrap; gap:16px 32px; align-items:flex-end;
+  padding:32px 32px 24px; border-bottom:1px solid var(--sand-2); background:var(--paper);
 }
-header.top .brand{flex:1 1 280px; min-width:0}
-header.top h1{font-size:26px; line-height:1.15; margin-top:5px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-header.top .sub{font-size:12.5px; color:var(--ink-2); margin-top:5px; max-width:56ch}
-.chip{
-  font-family:var(--sans); font-size:10px; letter-spacing:.14em; text-transform:uppercase;
-  border:1px solid var(--gold-lt); color:var(--gold); border-radius:2px; padding:3px 7px; font-weight:600;
-}
+header.top .brand{flex:1 1 320px; min-width:0}
+header.top .house{font-size:12px; font-weight:600; color:var(--gold-ink); letter-spacing:.02em}
+header.top h1{font-size:30px; line-height:1.1; margin-top:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+header.top .sub{font-size:14px; color:var(--ink-2); margin-top:8px; max-width:60ch}
 .top-actions{display:flex; gap:8px; align-items:center}
 
-/* buttons */
+/* ============================ BUTTONS ============================ */
 .btn{
-  border:1px solid var(--sand); background:#fff; border-radius:2px; padding:8px 12px;
-  font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink);
-  box-shadow:var(--shadow); white-space:nowrap; cursor:pointer; font-family:var(--sans);
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  border:var(--line) solid var(--ink); background:var(--paper); color:var(--ink); border-radius:var(--r);
+  padding:9px 14px; font-size:13.5px; font-weight:500; line-height:1.2; white-space:nowrap;
+  transition:background var(--fast) var(--ease), color var(--fast) var(--ease), border-color var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
-.btn:hover{border-color:var(--gold-lt)}
-.btn:active{background:var(--sand)}
-.btn.gold{background:var(--gold); border-color:var(--gold); color:#fff}
-.btn.gold:hover{background:#96742f}
-.btn.dark{background:var(--plum); border-color:var(--plum); color:#fff}
-.btn:disabled{opacity:.42; cursor:not-allowed}
-.btn.sm{padding:6px 9px; font-size:10.5px; letter-spacing:.06em}
-.btn.wide{width:100%; text-align:center; padding:11px 12px}
+.btn:hover{background:var(--gold-wash)}
+.btn:active{transform:translate(1px,1px)}
+.btn.gold{background:var(--gold); border-color:var(--gold); color:#fff; font-weight:600}
+.btn.gold:hover{background:var(--gold-ink); border-color:var(--gold-ink)}
+.btn.quiet{border-color:var(--sand-2)}
+.btn.quiet:hover{border-color:var(--ink)}
+.btn:disabled{opacity:.4; cursor:not-allowed; transform:none}
+.btn.sm{padding:7px 10px; font-size:12.5px}
+.btn.wide{width:100%}
+.btn .arr{font-weight:400}
 
 /* ============================ LAYOUT ============================ */
 .wrap{
   display:grid; grid-template-columns:var(--tray) minmax(0,1fr) var(--rail);
-  gap:0; align-items:start; min-height:540px;
+  gap:0; align-items:start; min-height:560px;
 }
 @media (min-width:981px){
   .stage-col, .rail{position:sticky; top:0; max-height:100vh; overflow-y:auto}
 }
-.col{padding:18px 18px 26px; min-width:0}
-.tray{border-right:1px solid var(--sand); display:flex; flex-direction:column; gap:12px}
-.rail{border-left:1px solid var(--sand); display:flex; flex-direction:column; gap:14px}
-.colhead{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px}
+.col{padding:24px 24px 40px; min-width:0}
+.tray{border-right:1px solid var(--sand-2)}
+.rail{border-left:1px solid var(--sand-2); display:flex; flex-direction:column; gap:24px}
 
 /* ============================ BAND EDITOR ============================ */
-.bands{display:flex; flex-direction:column; gap:10px}
+.bands{display:flex; flex-direction:column; gap:8px}
 .band-card{
-  border:1px solid var(--sand); border-radius:2px; background:#fff; box-shadow:var(--shadow);
-  padding:10px 11px 12px; cursor:pointer;
+  border:var(--line) solid var(--sand-2); border-radius:var(--r); background:var(--paper);
+  padding:12px 12px 14px; cursor:pointer;
+  transition:border-color var(--fast) var(--ease), background var(--fast) var(--ease);
 }
-.band-card.sel{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold), var(--shadow)}
-.band-card .bc-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
-.band-card .bc-title{font-family:var(--serif); font-size:14.5px}
-.band-card .bc-stone{font-size:11px; color:var(--ink-2); margin-left:7px}
+.band-card:hover{border-color:var(--ink-3)}
+.band-card.sel{border-color:var(--gold); background:#FFFDF9}
+.band-card .bc-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px}
+.band-card .bc-title{font-family:var(--serif); font-size:15.5px; min-width:0}
+.band-card .bc-stone{font-family:var(--sans); font-size:12px; color:var(--ink-2); margin-left:8px}
 .bc-remove{
-  border:0; background:transparent; color:var(--ink-2); font-size:15px; line-height:1;
-  cursor:pointer; padding:2px 4px; border-radius:2px;
+  border:var(--line) solid transparent; background:transparent; color:var(--ink-2); font-size:16px; line-height:1;
+  padding:2px 6px; border-radius:var(--r); flex:none;
+  transition:border-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
-.bc-remove:hover{color:var(--ink); background:var(--sand)}
+.bc-remove:hover{color:var(--ink); border-color:var(--ink)}
 .row{display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap}
-.row .lbl{font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-2); width:44px; flex:none}
+.row .lbl{font-size:12px; font-weight:500; color:var(--ink-2); width:48px; flex:none}
+.addnote{font-size:12.5px; color:var(--ink-2); margin-top:8px}
+.addnote:empty{display:none}
 
-/* metal picker */
-.metals{display:flex; gap:6px}
-.metals.big .metal{width:30px; height:30px}
+/* metal swatches: circles because they are swatches of the metal */
+.metals{display:flex; gap:8px}
+.metals.big .metal{width:32px; height:32px}
 .metal{
-  width:22px; height:22px; border-radius:50%; border:1px solid rgba(20,17,15,.18);
-  cursor:pointer; padding:0; position:relative;
+  width:24px; height:24px; border-radius:50%; border:var(--line) solid var(--sand-2);
+  padding:0; position:relative; transition:border-color var(--fast) var(--ease);
 }
-.metal[aria-pressed=true]{box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--gold)}
+.metal:hover{border-color:var(--ink-3)}
+.metal[aria-pressed=true]{border-color:var(--ink); outline:var(--line) solid var(--gold); outline-offset:2px}
 .metal.y{background:linear-gradient(135deg,#EDCB7E 15%,#C59A48 60%,#A87F35)}
 .metal.r{background:linear-gradient(135deg,#EFC0A6 15%,#CE8F70 60%,#B07152)}
 .metal.w{background:linear-gradient(135deg,#F7F7F9 15%,#C9CBD2 60%,#A5A8B1)}
 
 /* stone swatches */
-.stones{display:grid; grid-template-columns:repeat(6,1fr); gap:5px; flex:1}
+.stones{display:grid; grid-template-columns:repeat(6,1fr); gap:6px; flex:1}
 .stone{
-  width:20px; height:20px; border-radius:50%; border:1px solid rgba(20,17,15,.16);
-  cursor:pointer; padding:0; justify-self:center;
+  width:22px; height:22px; border-radius:50%; border:var(--line) solid var(--sand-2);
+  padding:0; justify-self:center; transition:border-color var(--fast) var(--ease);
 }
-.stone[aria-pressed=true]{box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--gold)}
+.stone:hover{border-color:var(--ink-3)}
+.stone[aria-pressed=true]{border-color:var(--ink); outline:var(--line) solid var(--gold); outline-offset:2px}
 
-/* size segmented + twins */
-.sizeseg{display:inline-flex; border:1px solid var(--sand); border-radius:2px; background:#fff; box-shadow:var(--shadow)}
+/* pill pickers (carat, cut) — the one rounded element */
+.sizeseg{display:inline-flex; flex-wrap:wrap; gap:6px}
 .sizeseg button{
-  border:0; background:transparent; padding:5px 8px; font-size:9.5px; letter-spacing:.1em;
-  text-transform:uppercase; color:var(--ink-2); cursor:pointer; font-family:var(--sans); white-space:nowrap;
+  border:var(--line) solid var(--sand-2); background:var(--paper); border-radius:var(--pill);
+  padding:5px 11px; font-size:12px; font-weight:500; color:var(--ink); white-space:nowrap;
+  transition:background var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
-.sizeseg button+button{border-left:1px solid var(--sand)}
-.sizeseg button[aria-pressed=true]{background:var(--plum); color:#fff}
-.twinlbl{display:inline-flex; align-items:center; gap:6px; margin-left:auto; cursor:pointer}
-.twintxt{font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-2)}
-.tog.mini{width:28px; height:16px}
-.tog.mini::after{width:10px; height:10px}
-.tog.mini[aria-pressed=true]::after{left:14px}
-
-.name-in{
-  flex:1; border:1px solid var(--sand); border-radius:2px; padding:6px 8px; font-size:12.5px;
-  font-family:var(--sans); color:var(--ink); background:var(--ivory); min-width:0;
-}
-.name-in:focus{outline:none; border-color:var(--gold-lt); background:#fff}
-
-.addband{margin-top:2px}
-
-/* feature stone */
-.feature{border-top:1px solid var(--sand); padding-top:12px; margin-top:4px}
-.shapes{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap}
+.sizeseg button:hover{border-color:var(--ink)}
+.sizeseg button[aria-pressed=true]{background:var(--ink); border-color:var(--ink); color:#fff}
+.shapes{display:flex; gap:6px; flex-wrap:wrap}
 .shape{
-  border:1px solid var(--sand); background:#fff; border-radius:2px; padding:5px 8px;
-  font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2);
-  cursor:pointer; display:flex; align-items:center; gap:6px;
+  border:var(--line) solid var(--sand-2); background:var(--paper); border-radius:var(--pill); padding:5px 11px 5px 9px;
+  font-size:12px; font-weight:500; color:var(--ink); display:inline-flex; align-items:center; gap:6px;
+  transition:background var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 .shape svg{display:block}
-.shape[aria-pressed=true]{border-color:var(--gold); color:var(--ink); box-shadow:0 0 0 1px var(--gold)}
+.shape:hover{border-color:var(--ink)}
+.shape[aria-pressed=true]{background:var(--ink); border-color:var(--ink); color:#fff}
 
-/* toggle */
+/* checkboxes (stone on/off, twins, sideways, bottom row) */
+.twinlbl{display:inline-flex; align-items:center; gap:8px; margin-left:auto; cursor:pointer}
+.twintxt{font-size:12.5px; font-weight:500; color:var(--ink)}
 .tog{
-  width:34px; height:19px; border-radius:10px; border:1px solid var(--sand); background:#fff;
-  position:relative; cursor:pointer; padding:0; flex:none;
+  width:18px; height:18px; border-radius:var(--r); border:var(--line) solid var(--ink-3); background:var(--paper);
+  position:relative; padding:0; flex:none; transition:background var(--fast) var(--ease), border-color var(--fast) var(--ease);
 }
 .tog::after{
-  content:""; position:absolute; top:2px; left:2px; width:13px; height:13px; border-radius:50%;
-  background:var(--ink-2); transition:left .15s ease, background .15s ease;
+  content:""; position:absolute; left:5px; top:1.5px; width:5px; height:9px;
+  border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); opacity:0; transition:opacity var(--fast) var(--ease);
 }
+.tog:hover{border-color:var(--ink)}
 .tog[aria-pressed=true]{background:var(--gold); border-color:var(--gold)}
-.tog[aria-pressed=true]::after{left:17px; background:#fff}
+.tog[aria-pressed=true]::after{opacity:1}
+
+.name-in{
+  flex:1; border:var(--line) solid var(--sand-2); border-radius:var(--r); padding:7px 10px; font-size:13.5px;
+  color:var(--ink); background:var(--paper); min-width:0; transition:border-color var(--fast) var(--ease);
+}
+.name-in::placeholder{color:var(--ink-3)}
+.name-in:focus{outline:none; border-color:var(--gold)}
 
 /* ============================ STAGE ============================ */
 .stage-col{display:flex; flex-direction:column}
-.stage-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap}
+.stage-head{display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap}
+/* depth is a flat offset layer behind the stage, not a shadow */
+.stagewrap{position:relative; z-index:0; flex:1; display:flex; margin:16px 10px 10px 0}
+.stagewrap::before{
+  content:""; position:absolute; inset:0; transform:translate(10px,10px);
+  background:var(--gold-lt); border:var(--line) solid var(--ink); border-radius:var(--r); z-index:-1;
+}
 .stage{
-  flex:1; margin-top:10px; background:#FBF8F4; border:1px solid var(--sand); border-radius:2px;
-  box-shadow:var(--shadow); position:relative; min-height:480px; overflow:hidden;
+  flex:1; background:var(--ivory); border:var(--line) solid var(--ink); border-radius:var(--r);
+  position:relative; min-height:480px; overflow:hidden;
 }
 .stage canvas{display:block; width:100%; height:100%; touch-action:none; cursor:grab}
 .stage-btns{position:absolute; right:12px; bottom:12px; display:flex; gap:8px}
-.stage-btns .btn{background:rgba(255,255,255,.92)}
+.stage-btns .btn{background:var(--paper)}
 
 /* ============================ RAIL ============================ */
 .sumlist{display:flex; flex-direction:column}
-.sumrow{display:flex; align-items:center; gap:9px; padding:8px 0; border-bottom:1px solid var(--sand)}
+.sumrow{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--sand)}
 .sumrow:last-child{border-bottom:0}
-.dotsw{width:13px; height:13px; border-radius:50%; border:1px solid rgba(20,17,15,.16); flex:none}
-.sumrow .what{flex:1; min-width:0; font-size:12.5px}
+.dotsw{width:14px; height:14px; border-radius:50%; border:1px solid rgba(20,17,15,.18); flex:none}
+.sumrow .what{flex:1; min-width:0; font-size:13px}
 .sumrow .what .nm{font-style:italic; color:var(--ink-2)}
-.sumrow .mt{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); flex:none}
-.sizebox{display:flex; align-items:center; gap:8px}
+.sizebox{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.sizebox .lbl{font-size:12.5px; font-weight:500}
 .sizebox select{
-  border:1px solid var(--sand); border-radius:2px; background:#fff; padding:7px 8px;
-  font-family:var(--sans); font-size:12.5px; color:var(--ink);
+  border:var(--line) solid var(--sand-2); border-radius:var(--r); background:var(--paper); padding:7px 10px;
+  font-size:13.5px; color:var(--ink); transition:border-color var(--fast) var(--ease);
 }
-.finenote{font-size:11.5px; color:var(--ink-2); line-height:1.5}
+.sizebox select:hover{border-color:var(--ink)}
+.finenote{font-size:13px; color:var(--ink-2); line-height:1.55}
 .rail-actions{display:flex; flex-direction:column; gap:8px}
 
 /* ============================ MODAL ============================ */
 .modal-bg{
-  position:fixed; inset:0; background:rgba(20,17,15,.4); display:none;
-  align-items:center; justify-content:center; padding:20px; z-index:50;
+  position:fixed; inset:0; background:rgba(20,17,15,.45); display:none;
+  align-items:center; justify-content:center; padding:24px; z-index:50;
 }
 .modal-bg.open{display:flex}
 .modal{
-  background:#fff; border-radius:2px; max-width:460px; width:100%; padding:22px;
-  box-shadow:0 8px 40px rgba(20,17,15,.25); max-height:86vh; overflow:auto;
+  position:relative; z-index:0; background:var(--paper); border:var(--line) solid var(--ink); border-radius:var(--r);
+  max-width:480px; width:100%; padding:24px; max-height:86vh; overflow:auto;
 }
-.modal h2{font-size:20px; margin:6px 0 2px}
+.modal::before{
+  content:""; position:absolute; inset:0; transform:translate(10px,10px);
+  background:var(--gold-lt); border:var(--line) solid var(--ink); border-radius:var(--r); z-index:-1;
+}
+.modal h2{font-size:22px; margin:8px 0 4px}
 .spec{
-  white-space:pre-wrap; background:var(--ivory); border:1px solid var(--sand); border-radius:2px;
-  padding:12px; font-size:12.5px; margin:12px 0; font-family:var(--sans); line-height:1.6;
+  white-space:pre-wrap; background:var(--ivory); border:var(--line) solid var(--sand-2); border-radius:var(--r);
+  padding:12px 14px; font-size:13px; margin:16px 0; line-height:1.6;
 }
 .modal .actions{display:flex; gap:8px; flex-wrap:wrap}
 
 /* ============================ REFERENCE PHOTOS ============================ */
-.refbar{margin-top:10px}
+.refbar{margin-top:16px}
 .reftog{
-  width:100%; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
-  border:0; border-top:1px solid var(--sand); background:transparent; padding:10px 2px 6px;
-  cursor:pointer; text-align:left; font-family:var(--sans);
+  width:100%; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+  border:0; border-top:1px solid var(--sand-2); background:transparent; padding:14px 2px 8px;
+  text-align:left;
 }
+.reftog .eyebrow{font-size:13px}
 .reftog .muted{flex:1; min-width:0}
-.refchev{color:var(--ink-2); font-size:12px; transition:transform .18s ease}
+.refchev{color:var(--ink-2); font-size:12px; transition:transform var(--fast) var(--ease)}
 .reftog[aria-expanded=true] .refchev{transform:rotate(180deg)}
-.refstrip{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:4px 0 6px}
+.refstrip{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:4px 0 8px}
 .refstrip[hidden]{display:none}
-.refpic{display:block; aspect-ratio:5/4; overflow:hidden; border-radius:2px; border:1px solid var(--sand); background:var(--sand)}
-.refpic img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .25s ease}
-.refpic:hover img{transform:scale(1.03)}
-.refnote{grid-column:1 / -1; font-size:11.5px; line-height:1.5}
+.refpic{display:block; aspect-ratio:5/4; overflow:hidden; border-radius:var(--r); border:var(--line) solid var(--sand-2); background:var(--sand); transition:border-color var(--fast) var(--ease)}
+.refpic:hover{border-color:var(--ink)}
+.refpic img{width:100%; height:100%; object-fit:cover; display:block}
+.refnote{grid-column:1 / -1; font-size:12.5px; line-height:1.55}
 .lightbox{
-  position:fixed; inset:0; background:rgba(20,17,15,.78); display:none; z-index:60;
-  align-items:center; justify-content:center; padding:18px; cursor:zoom-out;
+  position:fixed; inset:0; background:rgba(20,17,15,.82); display:none; z-index:60;
+  align-items:center; justify-content:center; padding:24px; cursor:zoom-out;
 }
 .lightbox.open{display:flex}
-.lightbox img{max-width:min(100%,1100px); max-height:82vh; display:block; border-radius:2px; box-shadow:0 10px 50px rgba(0,0,0,.4)}
-.lightbox .cap{position:absolute; left:0; right:0; bottom:16px; text-align:center; color:#fff; font-size:12.5px; padding:0 20px; text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.lightbox img{max-width:min(100%,1100px); max-height:80vh; display:block; border-radius:var(--r); border:var(--line) solid var(--ivory)}
+.lightbox .cap{position:absolute; left:24px; right:24px; bottom:20px; text-align:center; color:var(--ivory); font-size:13px}
 
 footer.pagefoot{
-  border-top:1px solid var(--sand); padding:14px 26px; display:flex; justify-content:space-between;
-  gap:12px; flex-wrap:wrap; font-size:11px; color:var(--ink-2); background:#fff;
+  border-top:1px solid var(--sand-2); padding:16px 32px; display:flex; justify-content:space-between;
+  gap:12px; flex-wrap:wrap; font-size:12px; color:var(--ink-2); background:var(--paper);
 }
 
 /* ============================ RESPONSIVE ============================ */
 @media (max-width:980px){
   .wrap{display:flex; flex-direction:column}
+  header.top{padding:24px 16px 16px}
+  .col{padding:16px 16px 32px}
   /* the ring stays pinned on top while you edit below */
-  .stage-col{order:-1; position:sticky; top:0; z-index:20; background:var(--ivory); padding-bottom:10px; max-height:none; overflow:visible}
+  .stage-col{order:-1; position:sticky; top:0; z-index:20; background:var(--ivory); padding-bottom:8px; max-height:none; overflow:visible}
+  .stagewrap{margin:8px 8px 8px 0; flex:none}
   .stage{flex:none; min-height:0; height:40vh}
   .stage-head{padding-top:4px}
   /* on phones the photos open straight into the lightbox; the strip would push the sticky stage down */
-  .refbar{margin-top:6px}
-  .reftog{padding:7px 2px 2px}
+  .refbar{margin-top:8px}
+  .reftog{padding:8px 2px 2px}
   .reftog .muted{display:none}
-  .refstrip{display:none}
-  .refstrip[hidden]{display:none}
+  .refstrip, .refstrip[hidden]{display:none}
   .refchev{display:none}
-  .reftog .eyebrow::after{content:" \2197"; font-size:10px}
-  .tray{border-right:0; border-top:1px solid var(--sand)}
-  .rail{border-left:0; border-top:1px solid var(--sand)}
+  .reftog .eyebrow::after{content:" \2197"; font-size:11px}
+  .tray{border-right:0; border-top:1px solid var(--sand-2)}
+  .rail{border-left:0; border-top:1px solid var(--sand-2)}
+  footer.pagefoot{padding:16px}
   /* finger-sized tap targets */
-  .stone{width:27px; height:27px}
-  .metal{width:28px; height:28px}
-  .metals.big .metal{width:34px; height:34px}
-  .sizeseg button{padding:9px 11px; font-size:10.5px}
-  .tog{width:40px; height:23px}
-  .tog::after{width:17px; height:17px}
-  .tog[aria-pressed=true]::after{left:19px}
-  .tog.mini{width:34px; height:20px}
-  .tog.mini::after{width:14px; height:14px}
-  .tog.mini[aria-pressed=true]::after{left:17px}
-  .shape{padding:8px 11px}
+  .stone{width:28px; height:28px}
+  .metal{width:30px; height:30px}
+  .metals.big .metal{width:36px; height:36px}
+  .sizeseg button, .shape{padding:8px 13px; font-size:13px}
+  .tog{width:22px; height:22px}
+  .tog::after{left:7px; top:3px; width:5px; height:10px}
   .bc-remove{font-size:18px; padding:4px 8px}
+  .btn{padding:11px 14px}
 }
 </style>
 
 <header class="top">
   <div class="brand">
-    <div class="eyebrow">PK HART Fine Jewelry</div>
-    <h1>Birthstone Ring Studio <span class="chip">Concept preview</span></h1>
-    <div class="sub">One ring, five wraps, a birthstone for each person you love &mdash; and statement stones on the bottom row. Pick the stones and carats, we place them the way we always do, then send us your design.</div>
+    <div class="house">PK HART Fine Jewelry</div>
+    <h1>Birthstone Ring Studio <span class="tag gold">Concept preview</span></h1>
+    <div class="sub">One ring, up to five wraps, a birthstone for each person you love &mdash; and statement stones on the bottom row. Pick the stones and carats, we place them the way we always do, then send us your design.</div>
   </div>
   <div class="top-actions">
-    <button class="btn" id="btnSurprise">Surprise me</button>
-    <button class="btn" id="btnReset">Start over</button>
+    <button class="btn quiet" id="btnSurprise">Surprise me</button>
+    <button class="btn quiet" id="btnReset">Start over</button>
   </div>
 </header>
 
@@ -282,49 +320,50 @@ footer.pagefoot{
 
   <!-- ============================ BAND EDITOR ============================ -->
   <section class="col tray">
-    <div class="colhead">
-      <div class="eyebrow">The metal</div>
-    </div>
-    <div class="row" style="margin:0 0 10px">
-      <div class="metals big" id="globalMetal"></div>
-      <span class="muted" id="metalLabel"></span>
-    </div>
-    <div class="colhead">
-      <div class="eyebrow">Stone carat</div>
-      <div class="muted">all the top stones</div>
-    </div>
-    <div class="row" style="margin:0 0 14px" id="globalCarat"></div>
-    <div class="colhead">
-      <div class="eyebrow">The wraps</div>
-      <div class="muted" id="bandCount"></div>
-    </div>
-    <div class="bands" id="bands"></div>
-    <button class="btn wide addband" id="btnAdd">+ Add a wrap</button>
-
-    <div class="feature">
-      <div class="row" style="margin-top:0">
-        <span class="eyebrow" style="flex:1">The bottom row</span>
-        <button class="tog" id="featTog" aria-pressed="false" aria-label="Toggle bottom row"></button>
+    <div class="section">
+      <div class="datum"><span class="num">01</span><span class="ttl">The metal</span><span class="aside" id="metalLabel"></span></div>
+      <div class="row" style="margin:0">
+        <div class="metals big" id="globalMetal"></div>
       </div>
-      <div class="muted" style="margin-top:6px">Statement stones on the bottom wrap &mdash; a diamond, or mom &amp; dad&rsquo;s stones, in any cut.</div>
+    </div>
+
+    <div class="section">
+      <div class="datum"><span class="num">02</span><span class="ttl">Stone size</span><span class="aside">all the top stones</span></div>
+      <div class="row" style="margin:0" id="globalCarat"></div>
+    </div>
+
+    <div class="section">
+      <div class="datum"><span class="num">03</span><span class="ttl">Your wraps</span><span class="aside" id="bandCount"></span></div>
+      <div class="bands" id="bands"></div>
+      <button class="btn wide" id="btnAdd" style="margin-top:8px">Add a wrap</button>
+      <div class="addnote" id="addNote"></div>
+    </div>
+
+    <div class="section">
+      <div class="datum"><span class="num">04</span><span class="ttl">The bottom row</span></div>
+      <label class="twinlbl" style="margin-left:0">
+        <button class="tog" id="featTog" aria-pressed="false" aria-label="Add a bottom row"></button>
+        <span class="twintxt">Add a bottom row</span>
+      </label>
+      <div class="muted" style="margin-top:8px">Statement stones on the lowest wrap &mdash; a diamond, or mom &amp; dad&rsquo;s stones, in any cut.</div>
       <div id="featControls" style="display:none">
-        <div class="bands" id="bottomStones" style="margin-top:10px"></div>
-        <button class="btn wide" id="btnAddBottom" style="margin-top:8px">+ Add a bottom stone</button>
+        <div class="bands" id="bottomStones" style="margin-top:12px"></div>
+        <button class="btn wide" id="btnAddBottom" style="margin-top:8px">Add a bottom stone</button>
+        <div class="addnote" id="addBottomNote"></div>
       </div>
     </div>
   </section>
 
   <!-- ============================ STAGE ============================ -->
   <section class="col stage-col">
-    <div class="stage-head">
-      <div class="eyebrow">Your ring, live</div>
-      <div class="muted">Drag to turn the ring &middot; tap a stone to edit it</div>
-    </div>
-    <div class="stage">
-      <canvas id="scene" aria-label="Rendered preview of your custom birthstone ring"></canvas>
-      <div class="stage-btns">
-        <button class="btn sm" id="btnFront">Front view</button>
-        <button class="btn sm" id="btnTurn">Turn it around</button>
+    <div class="datum" style="margin:0"><span class="ttl">Your ring, live</span><span class="aside">drag to turn it &middot; tap a stone to edit it</span></div>
+    <div class="stagewrap">
+      <div class="stage">
+        <canvas id="scene" aria-label="Rendered preview of your custom birthstone ring"></canvas>
+        <div class="stage-btns">
+          <button class="btn sm" id="btnFront">Front view</button>
+          <button class="btn sm" id="btnTurn">Turn it around</button>
+        </div>
       </div>
     </div>
 
@@ -349,43 +388,42 @@ footer.pagefoot{
 
   <!-- ============================ SUMMARY RAIL ============================ -->
   <section class="col rail">
-    <div class="colhead">
-      <div class="eyebrow">Your ring</div>
-      <div class="muted" id="sumCount"></div>
+    <div>
+      <div class="datum"><span class="num">05</span><span class="ttl">Your design</span><span class="aside" id="sumCount"></span></div>
+      <div class="sumlist" id="sumlist"></div>
     </div>
-    <div class="sumlist" id="sumlist"></div>
     <div class="sizebox">
-      <span class="eyebrow" style="font-size:10px">Ring size</span>
+      <label class="lbl" for="ringSize">Ring size</label>
       <select id="ringSize"></select>
-      <span class="muted">we&rsquo;ll confirm together</span>
+      <span class="muted">we&rsquo;ll confirm it together</span>
     </div>
     <div class="finenote">
       Every ring is made to order, so pricing is quoted per design.
       Send it over and we&rsquo;ll come back to you within a day.
     </div>
     <div class="rail-actions">
+      <button class="btn gold wide" id="btnRequest">Request this design <span class="arr">&rarr;</span></button>
       <button class="btn wide" id="btnSave">Save an image</button>
-      <button class="btn gold wide" id="btnRequest">Request this design</button>
     </div>
   </section>
 </div>
 
 <footer class="pagefoot">
   <span>PK HART Fine Jewelry &middot; Lincolnwood, IL &middot; sales@pkhartjewels.com &middot; +1 (847) 440-4624</span>
-  <span>Studio concept by The Groundwork Co.</span>
+  <span>Made to order in Lincolnwood &middot; studio concept by The Groundwork Co.</span>
 </footer>
 
 <!-- ============================ REQUEST MODAL ============================ -->
 <div class="modal-bg" id="modalBg">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="eyebrow">Request this design</div>
+    <div class="datum" style="margin-bottom:8px"><span class="num">06</span><span class="ttl">Request this design</span></div>
     <h2 id="modalTitle">Here&rsquo;s your ring</h2>
-    <div class="muted">This opens your own email &mdash; nothing is sent until you hit send.</div>
+    <div class="muted">This opens your own email &mdash; nothing is sent until you press send.</div>
     <div class="spec" id="specText"></div>
     <div class="actions">
-      <a class="btn gold" id="btnMailto" href="#">Email it to PK HART</a>
+      <a class="btn gold" id="btnMailto" href="#">Email it to PK HART <span class="arr">&rarr;</span></a>
       <button class="btn" id="btnCopy">Copy the spec</button>
-      <button class="btn" id="btnClose">Close</button>
+      <button class="btn quiet" id="btnClose">Close</button>
     </div>
   </div>
 </div>
@@ -616,6 +654,7 @@ function renderEditor(){
 
   $('#bandCount').textContent = wraps.length + ' of ' + MAX_WRAPS;
   $('#btnAdd').disabled = wraps.length >= MAX_WRAPS;
+  $('#addNote').textContent = wraps.length >= MAX_WRAPS ? 'Five is the most one ring holds. Remove a wrap to swap another in.' : '';
 
   $('#featTog').setAttribute('aria-pressed', String(feature.on));
   $('#featControls').style.display = feature.on ? 'block' : 'none';
@@ -693,6 +732,7 @@ function renderEditor(){
     inp.addEventListener('input', () => { bs.name = inp.value; renderSummary(); });
   });
   $('#btnAddBottom').disabled = feature.stones.length >= MAX_BOTTOM;
+  $('#addBottomNote').textContent = feature.stones.length >= MAX_BOTTOM ? 'Three stones fill the bottom wrap. Remove one to change the mix.' : '';
 }
 
 function shapeIcon(id){
@@ -1314,7 +1354,7 @@ $('#btnClose').addEventListener('click', () => $('#modalBg').classList.remove('o
 $('#modalBg').addEventListener('click', e => { if (e.target === e.currentTarget) $('#modalBg').classList.remove('open'); });
 $('#btnCopy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(buildSpec()); $('#btnCopy').textContent = 'Copied'; }
-  catch { $('#btnCopy').textContent = 'Select + copy above'; }
+  catch { $('#btnCopy').textContent = 'Select the text above and copy it'; }
   setTimeout(() => { $('#btnCopy').textContent = 'Copy the spec'; }, 1600);
 });
 
