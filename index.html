@@ -170,18 +170,6 @@ header.top .sub{font-size:12.5px; color:var(--ink-2); margin-top:5px; max-width:
 .stage canvas{display:block; width:100%; height:100%; touch-action:none; cursor:grab}
 .stage-btns{position:absolute; right:12px; bottom:12px; display:flex; gap:8px}
 .stage-btns .btn{background:rgba(255,255,255,.92)}
-.stage-head .modeseg{margin-left:auto}
-.stage-head .modeseg button{padding:5px 10px}
-/* photo view: her real ring with the chosen stones painted in */
-#photoView{display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:contain; cursor:default}
-.stage.photo #scene, .stage.photo .stage-btns{display:none}
-.stage.photo #photoView{display:block}
-.photocap{
-  display:none; position:absolute; left:10px; right:10px; bottom:10px; font-size:11.5px; line-height:1.45;
-  color:var(--ink-2); background:rgba(255,255,255,.88); border:1px solid var(--sand); border-radius:2px; padding:7px 9px;
-}
-.photocap .note{display:block; color:var(--ink); margin-top:3px}
-.stage.photo .photocap{display:block}
 
 /* ============================ RAIL ============================ */
 .sumlist{display:flex; flex-direction:column}
@@ -252,11 +240,6 @@ footer.pagefoot{
   .stage-col{order:-1; position:sticky; top:0; z-index:20; background:var(--ivory); padding-bottom:10px; max-height:none; overflow:visible}
   .stage{flex:none; min-height:0; height:40vh}
   .stage-head{padding-top:4px}
-  .stage-head .modeseg{margin-left:0}
-  /* on phones the photo view flows: photo on top, caption beneath it, never over it */
-  .stage.photo{height:auto; overflow:visible}
-  .stage.photo #photoView{position:static; display:block; width:100%; height:38vh; object-fit:contain}
-  .stage.photo .photocap{position:static; margin:0; border:0; border-top:1px solid var(--sand); border-radius:0; background:transparent; padding:6px 4px 2px; font-size:11px}
   /* on phones the photos open straight into the lightbox; the strip would push the sticky stage down */
   .refbar{margin-top:6px}
   .reftog{padding:7px 2px 2px}
@@ -335,19 +318,10 @@ footer.pagefoot{
   <section class="col stage-col">
     <div class="stage-head">
       <div class="eyebrow">Your ring, live</div>
-      <div class="muted" id="stageHint">Drag to turn the ring &middot; tap a stone to edit it</div>
-      <div class="sizeseg modeseg" role="group" aria-label="View">
-        <button type="button" id="modeThree" aria-pressed="true">3D</button>
-        <button type="button" id="modePhoto" aria-pressed="false">Photo</button>
-      </div>
+      <div class="muted">Drag to turn the ring &middot; tap a stone to edit it</div>
     </div>
-    <div class="stage" id="stage">
+    <div class="stage">
       <canvas id="scene" aria-label="Rendered preview of your custom birthstone ring"></canvas>
-      <canvas id="photoView" width="1000" height="960" aria-label="Her real ring, photographed, with your stones painted in"></canvas>
-      <div class="photocap" id="photoCap">
-        Her ring, photographed.
-        <span class="note" id="photoNote" hidden></span>
-      </div>
       <div class="stage-btns">
         <button class="btn sm" id="btnFront">Front view</button>
         <button class="btn sm" id="btnTurn">Turn it around</button>
@@ -1095,398 +1069,6 @@ function renderScene(){
   requestRender();
 }
 
-/* ============================ 4b. PHOTO VIEW ============================ */
-/* Her actual ring (img/real-2.jpg), with the chosen stones painted onto the
-   five real stone positions. Centres/radii measured once from the photo;
-   `a` is the wire's local angle (deg, screen y down) and `clone` which way
-   along the wire to borrow bare metal from when a wrap has no stone. */
-const PX = 2;   // photo canvas is drawn at 2x the source for crisper paint
-const PHOTO = {
-  src:'img/real-2.jpg', w:500, h:480,
-  spots:[
-    {x:187, y:142, r:15, a:-18, clone:+1},   // wrap 1 (her ruby)
-    {x:111, y:204, r:14, a:-32, clone:+1},   // wrap 2 (garnet)
-    {x:270, y:208, r:16, a:-10, clone:-1},   // wrap 3 (amethyst)
-    {x:181, y:307, r:15, a:-15, clone:-1},   // wrap 4 (peridot)
-    {x:346, y:300, r:15, a:-22, clone:-1},   // wrap 5 (citrine)
-  ],
-  bottom:{x:272, y:380, w:46, h:40, a:-8, clone:+1},   // emerald-cut diamond
-  /* centre line of each wire, top to bottom (wires 0–4 carry the wraps, wire 5 the
-     bottom row), read off the photo at 4x. Used to paint a wire out when a wrap
-     is removed: the band is filled with the skin from the gaps above and below. */
-  wires:[
-    [[50,238],[60,222],[88,196],[120,165],[150,152],[187,142],[220,135],[270,118],[320,124],[350,122],[378,114],[388,112]],
-    [[42,270],[50,256],[75,235],[94,218],[111,204],[140,197],[170,185],[220,170],[270,150],[320,147],[370,148],[386,150],[396,154]],
-    [[50,272],[60,264],[90,260],[120,250],[170,240],[220,226],[270,209],[320,192],[370,179],[392,170],[404,166]],
-    [[78,334],[90,324],[120,314],[150,308],[181,307],[220,290],[270,276],[320,250],[370,228],[400,200],[412,192]],
-    [[70,330],[82,338],[120,350],[170,362],[220,344],[270,333],[320,309],[346,300],[370,272],[410,242],[428,232]],
-    [[84,362],[96,372],[120,375],[170,384],[220,387],[272,380],[320,365],[370,340],[410,298],[440,272],[450,264]],
-  ],
-  wireHalf:11,   // half-width of the band painted out (the wire is ~7 px either side, plus its shadow)
-};
-let viewMode = 'three';
-const photoCanvas = $('#photoView');
-const photoCtx = photoCanvas.getContext('2d');
-const photoBases = {};     // metal key -> canvas of the tinted photo
-let photoReady = false;
-const photoImg = new Image();
-photoImg.src = PHOTO.src;
-photoImg.decode().then(() => { buildPhotoBases(); photoReady = true; if (viewMode === 'photo') renderPhoto(); }).catch(() => {});
-
-function buildPhotoBases(){
-  const W = PHOTO.w, H = PHOTO.h;
-  const c = document.createElement('canvas'); c.width = W; c.height = H;
-  const g = c.getContext('2d', {willReadFrequently:true});
-  g.drawImage(photoImg, 0, 0, W, H);
-  const src = g.getImageData(0, 0, W, H);
-  // gentle unsharp mask: the crop is small, this just firms the edges up
-  const d = src.data, out = new Uint8ClampedArray(d.length);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){
-    const i = (y*W + x)*4;
-    for (let ch = 0; ch < 3; ch++){
-      let sum = 0, n = 0;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
-        const xx = x+dx, yy = y+dy;
-        if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
-        sum += d[(yy*W + xx)*4 + ch]; n++;
-      }
-      out[i+ch] = d[i+ch] + 0.45 * (d[i+ch] - sum/n);
-    }
-    out[i+3] = 255;
-  }
-  const make = fn => {
-    const cc = document.createElement('canvas'); cc.width = W; cc.height = H;
-    const img = new ImageData(new Uint8ClampedArray(out), W, H);
-    if (fn) tintGold(img.data, fn);
-    cc.getContext('2d').putImageData(img, 0, 0);
-    return cc;
-  };
-  photoBases.y = make(null);
-  photoBases.r = make((r, g2, b) => [Math.min(255, r*1.03 + 6), g2*0.86, Math.min(255, b*1.18 + 8)]);
-  photoBases.w = make((r, g2, b) => { const L = (0.3*r + 0.59*g2 + 0.11*b) * 1.12 + 6; return [L*0.98, L*1.0, L*1.08]; });
-  buildWireMasks(out, W, H);
-  // the reference strip's close-up shows the same cut-out
-  const firstPic = document.querySelector('.refpic');
-  if (firstPic){ const url = photoCut.y.toDataURL('image/jpeg', 0.92); firstPic.href = url; firstPic.querySelector('img').src = url; }
-}
-
-/* ---- cutting the ring out ----
-   Her ring is lifted off the hand and shown on the studio's ivory. One soft
-   mask per wire, built once at load: a band along the wire's measured centre
-   line keeps everything that is not confidently skin (the wire's core is
-   always kept, so a pink reflection never punches a hole), its stone and
-   prongs are kept, small gaps are closed and the edge gets a 1 px feather.
-   Taking a wrap away just leaves that wire's mask out. Every ring pixel is
-   the photo's own. */
-const PHOTO_BG = '#FBF8F4';
-const photoMasks = [];     // per wire: white canvas with the wire's alpha
-const photoCut = {};       // per metal: the whole ring cut out on ivory (for borrowing bare wire)
-const photoCache = {};     // per configuration: union mask + shadow
-function buildWireMasks(src, W, H){
-  const yAt = (pts, x) => {
-    const n = pts.length;
-    if (x <= pts[0][0]) return pts[0][1] + (x - pts[0][0]) * (pts[1][1] - pts[0][1]) / (pts[1][0] - pts[0][0]);
-    if (x >= pts[n-1][0]) return pts[n-1][1] + (x - pts[n-1][0]) * (pts[n-1][1] - pts[n-2][1]) / (pts[n-1][0] - pts[n-2][0]);
-    for (let k = 1; k < n; k++) if (x <= pts[k][0]){ const [x0, y0] = pts[k-1], [x1, y1] = pts[k]; return y0 + (y1 - y0) * (x - x0) / (x1 - x0); }
-  };
-  // metal-like: gold hue, a bright highlight, or the dark shadow between wires (never skin's mid-pink)
-  const metalLike = (x, y) => {
-    const j = (y*W + x)*4, r = src[j]/255, g = src[j+1]/255, b = src[j+2]/255;
-    const mx = Math.max(r,g,b), mn = Math.min(r,g,b), df = mx - mn, sat = mx ? df/mx : 0;
-    if (mx < 0.36) return true;
-    if (mx > 0.86 && sat < 0.3) return true;
-    if (!df) return false;
-    let h = mx === r ? ((g-b)/df) % 6 : mx === g ? (b-r)/df + 2 : (r-g)/df + 4; h *= 60; if (h < 0) h += 360;
-    return h >= 28 && h <= 65 && sat > 0.18;
-  };
-  const confidentSkin = (x, y) => !metalLike(x, y);
-  const HALF = 11, CORE = 6.5;   // the wire itself is ~13 px across in this photo
-  for (let i = 0; i < 6; i++){
-    const pts = PHOTO.wires[i];
-    const bin = new Uint8Array(W*H);
-    const x0 = Math.max(0, pts[0][0] - 2), x1 = Math.min(W-1, pts[pts.length-1][0] + 2);
-    const xm0 = pts[1][0], xm1 = pts[pts.length-2][0];   // the wire's main run; beyond it, it turns away into shadow
-    // per column: how far the metal runs contiguously above and below the core
-    const ups = [], downs = [];
-    for (let x = x0; x <= x1; x++){
-      const yc = yAt(pts, x);
-      const taper = Math.min(1, 0.4 + 0.6 * Math.min(x - x0, x1 - x) / 14);
-      const core = CORE * taper, half = (x >= xm0 && x <= xm1 ? HALF : CORE) * taper;
-      let up = core, down = core;
-      while (up < half && metalLike(x, Math.max(0, Math.round(yc - up - 1)))) up++;
-      while (down < half && metalLike(x, Math.min(H-1, Math.round(yc + down + 1)))) down++;
-      ups.push(up); downs.push(down);
-    }
-    const smoothArr = arr => arr.map((v, k) => { let sum = 0, n = 0; for (let t = -5; t <= 5; t++){ if (arr[k+t] != null){ sum += arr[k+t]; n++; } } return sum / n; });
-    const upS = smoothArr(ups), downS = smoothArr(downs);
-    for (let x = x0; x <= x1; x++){
-      const yc = yAt(pts, x), up = upS[x - x0], down = downS[x - x0];
-      for (let y = Math.max(0, Math.ceil(yc - up)); y <= Math.min(H-1, Math.floor(yc + down)); y++) bin[y*W + x] = 1;
-    }
-    // its stone (or the diamond) with the prongs round it
-    const sp = i < 5 ? {x:PHOTO.spots[i].x, y:PHOTO.spots[i].y, rx:PHOTO.spots[i].r + 5, ry:PHOTO.spots[i].r + 5, solid:PHOTO.spots[i].r + 1}
-                     : {x:PHOTO.bottom.x, y:PHOTO.bottom.y, rx:PHOTO.bottom.w/2 + 7, ry:PHOTO.bottom.h/2 + 7, solid:Math.min(PHOTO.bottom.w, PHOTO.bottom.h)/2};
-    for (let y = Math.max(0, Math.floor(sp.y - sp.ry)); y <= Math.min(H-1, Math.ceil(sp.y + sp.ry)); y++)
-      for (let x = Math.max(0, Math.floor(sp.x - sp.rx)); x <= Math.min(W-1, Math.ceil(sp.x + sp.rx)); x++){
-        const dx = (x - sp.x) / sp.rx, dy = (y - sp.y) / sp.ry;
-        if (dx*dx + dy*dy > 1) continue;
-        if (Math.hypot(x - sp.x, y - sp.y) <= sp.solid || !confidentSkin(x, y)) bin[y*W + x] = 1;
-      }
-    // close small gaps (dilate 2, erode 2), then a 1 px feather
-    const yMin = Math.max(0, Math.floor(Math.min(...pts.map(p => p[1])) - 40)), yMax = Math.min(H-1, Math.ceil(Math.max(...pts.map(p => p[1])) + 40));
-    const bx0 = Math.max(0, Math.min(x0, sp.x - sp.rx - 4) | 0), bx1 = Math.min(W-1, Math.max(x1, sp.x + sp.rx + 4) | 0);
-    const morph = (inp, r, dilate) => {
-      const tmp = new Uint8Array(W*H), res = new Uint8Array(W*H);
-      for (let y = yMin; y <= yMax; y++) for (let x = bx0; x <= bx1; x++){
-        let v = dilate ? 0 : 1;
-        for (let t = -r; t <= r; t++){ const xx = Math.max(0, Math.min(W-1, x + t)); const q = inp[y*W + xx]; if (dilate ? q : !q){ v = dilate ? 1 : 0; break; } }
-        tmp[y*W + x] = v;
-      }
-      for (let y = yMin; y <= yMax; y++) for (let x = bx0; x <= bx1; x++){
-        let v = dilate ? 0 : 1;
-        for (let t = -r; t <= r; t++){ const yy = Math.max(0, Math.min(H-1, y + t)); const q = tmp[yy*W + x]; if (dilate ? q : !q){ v = dilate ? 1 : 0; break; } }
-        res[y*W + x] = v;
-      }
-      return res;
-    };
-    const closed = morph(morph(bin, 2, true), 2, false);
-    const out = new ImageData(W, H), o = out.data;
-    for (let y = yMin; y <= yMax; y++) for (let x = bx0; x <= bx1; x++){
-      let sum = 0;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){ const xx = Math.max(0, Math.min(W-1, x + dx)), yy = Math.max(0, Math.min(H-1, y + dy)); sum += closed[yy*W + xx]; }
-      const j = (y*W + x)*4;
-      o[j] = o[j+1] = o[j+2] = 255; o[j+3] = Math.round(255 * sum / 9);
-    }
-    const mc = document.createElement('canvas'); mc.width = W; mc.height = H;
-    mc.getContext('2d').putImageData(out, 0, 0);
-    photoMasks[i] = mc;
-  }
-  // the whole ring on ivory, per metal (what a plain wrap borrows its bare wire from)
-  const all = unionMask([0,1,2,3,4,5]);
-  for (const k in photoBases){
-    const c = document.createElement('canvas'); c.width = W; c.height = H;
-    const g = c.getContext('2d');
-    g.fillStyle = PHOTO_BG; g.fillRect(0, 0, W, H);
-    g.drawImage(cutout(photoBases[k], all), 0, 0);
-    photoCut[k] = c;
-  }
-}
-function unionMask(wireIds){
-  const c = document.createElement('canvas'); c.width = PHOTO.w; c.height = PHOTO.h;
-  const g = c.getContext('2d');
-  wireIds.forEach(i => g.drawImage(photoMasks[i], 0, 0));
-  return c;
-}
-function cutout(base, mask){
-  const c = document.createElement('canvas'); c.width = PHOTO.w; c.height = PHOTO.h;
-  const g = c.getContext('2d');
-  g.drawImage(base, 0, 0);
-  g.globalCompositeOperation = 'destination-in';
-  g.drawImage(mask, 0, 0);
-  return c;
-}
-/* a soft, subtle shadow under the ring so it sits on the ivory */
-function shadowFor(mask){
-  const W = PHOTO.w, H = PHOTO.h;
-  const sil = document.createElement('canvas'); sil.width = W; sil.height = H;
-  const sg = sil.getContext('2d');
-  sg.drawImage(mask, 0, 0);
-  sg.globalCompositeOperation = 'source-in';
-  sg.fillStyle = '#5a452f'; sg.fillRect(0, 0, W, H);
-  const small = document.createElement('canvas'); small.width = Math.ceil(W/10); small.height = Math.ceil(H/10);
-  const g = small.getContext('2d');
-  g.drawImage(sil, 0, 0, small.width, small.height);
-  return small;
-}
-function configFor(first, bottomOn){
-  const key = first + ':' + bottomOn;
-  if (photoCache[key]) return photoCache[key];
-  const ids = [];
-  for (let i = first; i < 5; i++) ids.push(i);
-  if (bottomOn) ids.push(5);
-  const mask = unionMask(ids);
-  return (photoCache[key] = {mask, shadow: shadowFor(mask)});
-}
-/* shift only the gold-coloured pixels (hue ~48°), leaving skin and stones alone */
-function tintGold(d, fn){
-  for (let i = 0; i < d.length; i += 4){
-    const r = d[i]/255, g = d[i+1]/255, b = d[i+2]/255;
-    const mx = Math.max(r,g,b), mn = Math.min(r,g,b), df = mx - mn;
-    if (!df) continue;
-    let h = mx === r ? ((g-b)/df) % 6 : mx === g ? (b-r)/df + 2 : (r-g)/df + 4;
-    h *= 60; if (h < 0) h += 360;
-    const sat = df/mx;
-    // her gold sits at hue 30–47 in this photo; skin is 8–26
-    const wH = 1 - Math.min(1, Math.max(0, Math.abs(h - 38) - 8) / 7);
-    const wS = Math.min(1, Math.max(0, (sat - 0.18) / 0.18));
-    const wV = Math.min(1, Math.max(0, (mx - 0.32) / 0.2));
-    const w = wH * wS * wV;
-    if (w <= 0) continue;
-    const [nr, ng, nb] = fn(d[i], d[i+1], d[i+2]);
-    d[i]   += (nr - d[i]) * w;
-    d[i+1] += (ng - d[i+1]) * w;
-    d[i+2] += (nb - d[i+2]) * w;
-  }
-}
-function mixHex(hex, to, t){   // blend css hex colour toward 'to' (0..255 grey) by t
-  const n = parseInt(hex.slice(1), 16);
-  const r = (n>>16)&255, g = (n>>8)&255, b = n&255;
-  return `rgb(${Math.round(r + (to-r)*t)},${Math.round(g + (to-g)*t)},${Math.round(b + (to-b)*t)})`;
-}
-function paintGem(g, x, y, r, aDeg, mi, withProngs){
-  const mo = MONTHS[mi];
-  const a = aDeg * Math.PI/180;
-  if (withProngs){
-    for (const [px, py] of [[0.78,0.78],[-0.78,0.78],[0.78,-0.78],[-0.78,-0.78]]){
-      const cx = x + (px*Math.cos(a) - py*Math.sin(a)) * r, cy = y + (px*Math.sin(a) + py*Math.cos(a)) * r;
-      const pg = g.createRadialGradient(cx - r*0.08, cy - r*0.08, 0, cx, cy, r*0.3);
-      pg.addColorStop(0, '#fffaf0'); pg.addColorStop(0.7, metal === 'w' ? '#cfd2d8' : metal === 'r' ? '#d9a58c' : '#d7b36a'); pg.addColorStop(1, 'rgba(120,90,40,0)');
-      g.fillStyle = pg; g.beginPath(); g.arc(cx, cy, r*0.3, 0, 7); g.fill();
-    }
-  }
-  // soft contact shadow
-  g.fillStyle = 'rgba(40,20,10,.28)';
-  g.beginPath(); g.ellipse(x + 1.2, y + 1.6, r*1.04, r*0.98, a, 0, 7); g.fill();
-  // body: recolour whatever is there (her stone's facets and glints survive),
-  // then a translucent gem body to pull the brightness toward the new stone
-  const light = ['Diamond','Pearl','Opal','Aquamarine','Blue Topaz','Peridot','Citrine'].includes(mo.s);
-  g.save();
-  g.translate(x, y); g.rotate(a);
-  g.beginPath(); g.ellipse(0, 0, r, r*0.94, 0, 0, 7); g.clip();
-  g.globalCompositeOperation = 'color'; g.fillStyle = mo.c; g.fillRect(-r, -r, 2*r, 2*r);
-  if (light){ g.globalCompositeOperation = 'screen'; g.globalAlpha = 0.45; g.fillStyle = mixHex(mo.c, 255, 0.5); g.fillRect(-r, -r, 2*r, 2*r); }
-  else { g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.5; g.fillStyle = mo.c; g.fillRect(-r, -r, 2*r, 2*r); }
-  g.globalCompositeOperation = 'source-over'; g.globalAlpha = light ? 0.42 : 0.55;
-  const grd = g.createRadialGradient(-r*0.32, -r*0.36, r*0.08, 0, 0, r);
-  grd.addColorStop(0, mixHex(mo.c, 255, 0.5));
-  grd.addColorStop(0.45, mo.c);
-  grd.addColorStop(0.92, mo.d);
-  grd.addColorStop(1, mixHex(mo.d, 0, 0.3));
-  g.fillStyle = grd; g.fillRect(-r, -r, 2*r, 2*r);
-  g.globalAlpha = 1;
-  // a couple of facet glints
-  g.globalAlpha = 0.16; g.fillStyle = '#fff';
-  for (let k = 0; k < 6; k += 2){
-    g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r, k*Math.PI/3 + 0.25, k*Math.PI/3 + 0.7); g.closePath(); g.fill();
-  }
-  g.globalAlpha = 1;
-  // specular
-  g.fillStyle = 'rgba(255,255,255,.85)';
-  g.beginPath(); g.ellipse(-r*0.34, -r*0.4, r*0.18, r*0.12, -0.6, 0, 7); g.fill();
-  g.fillStyle = 'rgba(255,255,255,.4)';
-  g.beginPath(); g.arc(r*0.32, r*0.3, r*0.07, 0, 7); g.fill();
-  // soft rim so the edge sits into the photo
-  const rim = g.createRadialGradient(0, 0, r*0.8, 0, 0, r);
-  rim.addColorStop(0, 'rgba(20,10,5,0)'); rim.addColorStop(1, 'rgba(20,10,5,.4)');
-  g.fillStyle = rim; g.fillRect(-r, -r, 2*r, 2*r);
-  g.restore();
-}
-/* cover a stone with bare wire borrowed from a little further along the same wire */
-function cloneWire(g, x, y, r, aDeg, dir){
-  const a = aDeg * Math.PI/180, R = r + 9, off = r*2.9 + 6;
-  const sx = x + Math.cos(a)*off*dir, sy = y + Math.sin(a)*off*dir;
-  const P = Math.ceil(R*2) + 2;
-  const pc = document.createElement('canvas'); pc.width = pc.height = P;
-  const pg = pc.getContext('2d');
-  pg.drawImage(photoCut[metal], sx - P/2, sy - P/2, P, P, 0, 0, P, P);
-  pg.globalCompositeOperation = 'destination-in';
-  const m = pg.createRadialGradient(P/2, P/2, R - 7, P/2, P/2, R);
-  m.addColorStop(0, 'rgba(0,0,0,1)'); m.addColorStop(1, 'rgba(0,0,0,0)');
-  pg.fillStyle = m; pg.fillRect(0, 0, P, P);
-  g.drawImage(pc, x - P/2, y - P/2);
-}
-/* recolour her emerald-cut diamond for the chosen bottom stone (keeps its facets) */
-function recolourBottom(g, mi){
-  const mo = MONTHS[mi], B = PHOTO.bottom, a = B.a * Math.PI/180;
-  const light = ['Diamond','Pearl','Opal','Aquamarine','Blue Topaz','Peridot','Citrine'].includes(mo.s);
-  g.save();
-  g.translate(B.x, B.y); g.rotate(a);
-  const w = B.w/2, h = B.h/2, rr = 4;
-  g.beginPath(); g.roundRect(-w, -h, 2*w, 2*h, rr); g.clip();
-  g.globalCompositeOperation = 'color'; g.fillStyle = mo.c; g.fillRect(-w, -h, 2*w, 2*h);
-  g.globalCompositeOperation = 'multiply'; g.globalAlpha = light ? 0.35 : 0.6; g.fillStyle = mo.c; g.fillRect(-w, -h, 2*w, 2*h);
-  if (!light){ g.globalAlpha = 0.25; g.fillStyle = mo.d; g.fillRect(-w, -h, 2*w, 2*h); }
-  g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
-  const sheen = g.createLinearGradient(-w, -h, w, h);
-  sheen.addColorStop(0, 'rgba(255,255,255,.28)'); sheen.addColorStop(0.5, 'rgba(255,255,255,0)'); sheen.addColorStop(1, 'rgba(255,255,255,.14)');
-  g.fillStyle = sheen; g.fillRect(-w, -h, 2*w, 2*h);
-  g.restore();
-}
-function renderPhoto(){
-  if (!photoReady) return;
-  const g = photoCtx;
-  g.setTransform(PX, 0, 0, PX, 0, 0);
-  g.clearRect(0, 0, PHOTO.w, PHOTO.h);
-  // fewer wraps: the top wires are left out of the cut-out (her smaller rings keep the lower wires, bottom row last)
-  const first = PHOTO.spots.length - wraps.length;        // wrap k sits on wire first + k
-  const cfg = configFor(first, feature.on);
-  g.fillStyle = PHOTO_BG; g.fillRect(0, 0, PHOTO.w, PHOTO.h);
-  g.save(); g.globalAlpha = 0.2; g.imageSmoothingEnabled = true; g.drawImage(cfg.shadow, 0, 0, cfg.shadow.width, cfg.shadow.height, -4, 5, PHOTO.w + 8, PHOTO.h + 8); g.restore();
-  g.drawImage(cutout(photoBases[metal], cfg.mask), 0, 0);
-  const rScale = {c05:1, c10:1.12, c15:1.25, c25:1.45}[stoneCarat] || 1;   // 0.05 ct = her actual stones
-  wraps.forEach((wr, k) => {
-    const sp = PHOTO.spots[first + k];
-    const st = wr.stone;
-    if (!st){ cloneWire(g, sp.x, sp.y, sp.r, sp.a, sp.clone); return; }
-    const r = sp.r * rScale;
-    paintGem(g, sp.x, sp.y, r, sp.a, st.month, false);
-    if (st.twin){
-      const a = sp.a * Math.PI/180, off = r*2.5;
-      const dir = -sp.clone;   // put the twin on the side we'd otherwise borrow wire from... the other way
-      paintGem(g, sp.x + Math.cos(a)*off*dir, sp.y + Math.sin(a)*off*dir, r*0.96, sp.a, twinMonth(st), true);
-    }
-  });
-  const B = PHOTO.bottom;
-  if (feature.on && feature.stones.length){
-    const bs = feature.stones[0];
-    if (MONTHS[bs.month].s !== 'Diamond') recolourBottom(g, bs.month);
-  }
-  // halo on the selected stone
-  let sel = null;
-  if (typeof selected === 'number' && wraps[selected] && wraps[selected].stone) sel = PHOTO.spots[first + selected];
-  if (sel){
-    g.strokeStyle = 'rgba(169,132,63,.9)'; g.lineWidth = 1.5;
-    g.beginPath(); g.arc(sel.x, sel.y, sel.r * rScale + 6, 0, 7); g.stroke();
-  } else if (typeof selected === 'string' && feature.on){
-    g.save(); g.translate(B.x, B.y); g.rotate(B.a*Math.PI/180);
-    g.strokeStyle = 'rgba(169,132,63,.9)'; g.lineWidth = 1.5;
-    g.beginPath(); g.roundRect(-B.w/2 - 6, -B.h/2 - 6, B.w + 12, B.h + 12, 6); g.stroke();
-    g.restore();
-  }
-  // notes
-  const notes = [];
-  if (feature.on && feature.stones.length && (feature.stones[0].shape !== 'emerald' || feature.stones.length > 1))
-    notes.push('Her bottom stone is an emerald cut, so only the colour changes here; see the 3D view for the cut.');
-  if (wraps.some(w => w.stone && w.stone.twin)) notes.push('Twins are painted in beside her stone.');
-  const n = $('#photoNote');
-  n.textContent = notes.join(' ');
-  n.hidden = !notes.length;
-}
-function setViewMode(m){
-  viewMode = m;
-  $('#stage').classList.toggle('photo', m === 'photo');
-  $('#modeThree').setAttribute('aria-pressed', String(m === 'three'));
-  $('#modePhoto').setAttribute('aria-pressed', String(m === 'photo'));
-  $('#stageHint').textContent = m === 'photo' ? 'Her real ring, your stones · tap a stone to edit it' : 'Drag to turn the ring · tap a stone to edit it';
-  if (m === 'photo') renderPhoto(); else requestRender();
-}
-$('#modeThree').addEventListener('click', () => setViewMode('three'));
-$('#modePhoto').addEventListener('click', () => setViewMode('photo'));
-/* tap a painted stone to select it */
-photoCanvas.addEventListener('pointerdown', e => {
-  const rct = photoCanvas.getBoundingClientRect();
-  const sc = Math.min(rct.width / PHOTO.w, rct.height / PHOTO.h);
-  const ox = (rct.width - PHOTO.w*sc)/2, oy = (rct.height - PHOTO.h*sc)/2;
-  const x = (e.clientX - rct.left - ox)/sc, y = (e.clientY - rct.top - oy)/sc;
-  let hit = null;
-  const first = PHOTO.spots.length - wraps.length;
-  PHOTO.spots.forEach((sp, i) => { if (hit === null && i >= first && Math.hypot(x - sp.x, y - sp.y) < sp.r + 8) hit = i - first; });
-  const B = PHOTO.bottom;
-  if (hit === null && feature.on && Math.abs(x - B.x) < B.w/2 + 8 && Math.abs(y - B.y) < B.h/2 + 8) hit = 'f0';
-  if (hit !== null){ selected = hit; render(); }
-});
-if (/photo/.test(location.hash)) setViewMode('photo');
-
 /* camera orbit */
 let azim = 0, elev = 1.12, dist = 7;   // looking at the face of the ring, like her photos
 // #back / #side open on the join at the back, or the profile (handy for sharing a view)
@@ -1653,7 +1235,6 @@ function render(){
   renderEditor();
   renderScene();
   renderSummary();
-  if (viewMode === 'photo') renderPhoto();
 }
 
 /* ============================ wiring ============================ */
@@ -1762,18 +1343,12 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape'){ closeLightb
 $('#btnSave').addEventListener('click', () => {
   const a = document.createElement('a');
   a.download = 'pkhart-birthstone-ring.png';
-  if (viewMode === 'photo' && photoReady){
-    a.href = photoCanvas.toDataURL('image/png');
-  } else {
-    renderer.render(scene, camera);
-    a.href = renderer.domElement.toDataURL('image/png');
-  }
+  renderer.render(scene, camera);
+  a.href = renderer.domElement.toDataURL('image/png');
   a.click();
 });
 
 /* go */
 defaultDesign();
-{ const m = /metal=([yrw])/.exec(location.hash); if (m) metal = m[1]; }   // #metal=w etc., for sharing a view
-{ const m = /wraps=([1-5])/.exec(location.hash); if (m) wraps = wraps.slice(0, +m[1]); if (/nobottom/.test(location.hash)) feature.on = false; }
 render();
 </script>
