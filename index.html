@@ -1283,8 +1283,8 @@ function eraseStone(ctx, out, cx, cy, hw, hh){
   const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
   const patch = ctx.createImageData(bw, bh), d = patch.data;
   // where the wire crosses each side, so the fill can follow its curve
-  const yL = wireYAt(out, x0 - 3, cy, hh*0.8), yR = wireYAt(out, x1 + 3, cy, hh*0.8);
-  const follow = yL != null && yR != null;
+  const yL = wireYAt(out, x0 - 3, cy, hh*0.6), yR = wireYAt(out, x1 + 3, cy, hh*0.6);
+  const follow = yL != null && yR != null && Math.abs(yL - yR) < hh*0.45 && Math.abs((yL + yR)/2 - cy) < hh*0.45;
   const col = (x, y) => { y = Math.max(0, Math.min(H - 1, Math.round(y))); const o = (y*W + x)*4; return [src[o], src[o+1], src[o+2]]; };
   const avg3 = (xa, y, dir) => { const a = col(xa, y), b = col(xa + dir, y), c = col(xa + 2*dir, y); return [(a[0]+b[0]+c[0])/3, (a[1]+b[1]+c[1])/3, (a[2]+b[2]+c[2])/3]; };
   const bgMin = metal === 'w' ? 236 : 188;   // bright silver wire is close to white, so be stricter
@@ -1338,12 +1338,12 @@ function paintRound(ctx, base, k, s, mi, scale, dest){
       if (h0 == null) return 0;
       const [hh, sat, mx] = hueSat(r, g, b);
       const dh = Math.min(Math.abs(hh - h0), 360 - Math.abs(hh - h0));
-      return dh < 18 && sat > Math.max(0.35, s0*0.7) && mx > 60 ? 1 : 0;
+      return dh < 24 && sat > Math.max(0.28, s0*0.45) && mx > 35 ? 1 : 0;
     };
     recolor(px, pw, pw, (x, y, r, g, b) => {
       const dd = Math.hypot(x - half, y - half);
       const core = 1 - smooth(R0*0.84, R0*0.96, dd);
-      const rim = dd < R0*1.16 ? stoneLike(r, g, b) * (1 - smooth(R0*1.06, R0*1.16, dd)) : 0;
+      const rim = dd < R0*1.24 ? stoneLike(r, g, b) * (1 - smooth(R0*1.12, R0*1.24, dd)) : 0;
       return Math.max(core, rim);
     }, mi);
   }
