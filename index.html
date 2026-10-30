@@ -4,7 +4,7 @@
 <title>PK HART — Birthstone Ring Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=Jost:wght@400;500&display=swap" rel="stylesheet">
 
 <!--
   PK HART — BIRTHSTONE RING STUDIO (concept demo, v2 — photoreal)
@@ -22,457 +22,246 @@
 -->
 
 <style>
-/* ============================ PK HART — STUDIO STYLE ============================
-   Crisp gallery look: pure white ground, black ink, an editorial serif for
-   display, spaced capitals for labels and buttons, square edges, hairlines.
-   Discipline from the studio's house system: 8px grid, one hairline weight,
-   no shadows, quick flat motion. The ring photos carry all the colour. */
+/* ============================ PK HART — STUDIO ============================
+   Quiet product page: pure white, black ink, one classic serif for the name,
+   small spaced capitals for labels. Square edges, hairlines, no shadows. */
 :root{
-  --ink:#0A0A0A; --ink-2:#3A3A3A; --ink-3:#7A7A7A;
-  --paper:#FFFFFF; --ivory:#FFFFFF; --mist:#F6F6F6; --line-c:#E4E4E4; --line-2:#CFCFCF;
-  --sand:#F1F1F1; --sand-2:#E4E4E4;
-  --gold:#111111; --gold-ink:#111111; --gold-lt:#F6F6F6; --gold-wash:#F6F6F6;
-  --line:1px; --r:0px; --pill:0px;
-  --serif:'Playfair Display', Georgia, 'Times New Roman', serif;
+  --ink:#0B0B0B; --ink-2:#4A4A4A; --ink-3:#8A8A8A;
+  --paper:#FFFFFF; --mist:#F5F5F5; --line-c:#E6E6E6; --line-2:#CCCCCC;
+  --serif:'Bodoni Moda', 'Didot', 'Bodoni 72', Georgia, serif;
   --sans:'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --ease:cubic-bezier(.2,.7,.3,1); --fast:160ms;
-  --rail:320px; --tray:340px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.55; font-weight:400; text-rendering:optimizeLegibility}
-h1,h2{font-family:var(--serif); font-weight:500; letter-spacing:0; margin:0; font-variant-numeric:lining-nums}
-button,input,select{font-family:var(--sans)}
+body{background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; text-rendering:optimizeLegibility}
+h1,h2{font-family:var(--serif); font-weight:400; margin:0; font-variant-numeric:lining-nums}
+button,input,select{font-family:var(--sans); color:var(--ink)}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--ink); outline-offset:2px}
 @media (prefers-reduced-motion:reduce){ *,*::before,*::after{transition:none !important; animation:none !important} }
+[hidden]{display:none !important}
 
-/* small type roles */
-.caps{font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase}
-.eyebrow{font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink)}
-.muted{color:var(--ink-2); font-size:13px}
-.tag{
-  display:inline-block; font-family:var(--sans); font-size:10.5px; font-weight:500; line-height:1; letter-spacing:.16em; text-transform:uppercase;
-  color:var(--ink); border:1px solid var(--ink); padding:6px 9px; background:var(--paper); vertical-align:middle;
-}
-.tag.gold{border-color:var(--ink); color:var(--ink); background:var(--paper)}
-
-/* section opener: spaced caps label over a hairline */
-.datum{display:flex; align-items:baseline; gap:12px; margin:0 0 16px; padding-bottom:10px; border-bottom:1px solid var(--line-c)}
-.datum .num{font-size:11px; font-weight:500; letter-spacing:.12em; color:var(--ink-3); white-space:nowrap}
-.datum .ttl{font-size:12px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink); white-space:nowrap}
-.datum::after{content:none}
-.datum .aside{font-size:12.5px; color:var(--ink-2); white-space:nowrap; margin-left:auto}
-.datum .aside:empty{display:none}
-.section + .section{margin-top:40px}
-
-/* ============================ NAV + HEADER ============================ */
-.nav{
-  display:flex; align-items:center; justify-content:space-between; gap:16px;
-  padding:18px 40px; border-bottom:1px solid var(--line-c); background:var(--paper);
-}
-.wordmark{font-family:var(--serif); font-size:24px; font-weight:500; letter-spacing:.16em; line-height:1; color:var(--ink); text-decoration:none}
-.wordmark small{display:block; font-family:var(--sans); font-size:9.5px; font-weight:500; letter-spacing:.32em; margin-top:6px; color:var(--ink-2)}
-.nav-links{display:flex; gap:28px}
-.nav-links a{font-size:11.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink); text-decoration:none; border-bottom:1px solid transparent; padding-bottom:2px}
-.nav-links a:hover{border-bottom-color:var(--ink)}
-
-header.top{
-  display:flex; flex-wrap:wrap; gap:16px 40px; align-items:flex-end; justify-content:space-between;
-  padding:48px 40px 32px; background:var(--paper);
-}
-header.top .brand{flex:1 1 420px; min-width:0}
-header.top .house{font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-2)}
-header.top h1{font-size:48px; line-height:1.05; margin-top:12px; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
-header.top .sub{font-size:16px; color:var(--ink-2); margin-top:14px; max-width:58ch; line-height:1.6}
-.top-actions{display:flex; gap:8px; align-items:center}
+/* ============================ NAV ============================ */
+.nav{display:flex; align-items:center; justify-content:space-between; padding:22px 48px; border-bottom:1px solid var(--line-c)}
+.wordmark{font-family:var(--serif); font-size:22px; letter-spacing:.22em; color:var(--ink); text-decoration:none}
+.navlink{font-size:11px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); text-decoration:none}
+.navlink:hover{text-decoration:underline; text-underline-offset:4px}
 
 /* ============================ BUTTONS ============================ */
 .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   border:1px solid var(--ink); background:var(--paper); color:var(--ink); border-radius:0;
-  padding:12px 18px; font-size:11.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; line-height:1.2; white-space:nowrap;
-  text-decoration:none;
-  transition:background var(--fast) var(--ease), color var(--fast) var(--ease), border-color var(--fast) var(--ease), transform var(--fast) var(--ease);
+  padding:14px 20px; font-size:11.5px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; line-height:1.2; white-space:nowrap;
+  text-decoration:none; transition:background var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 .btn:hover{background:var(--ink); color:#fff}
-.btn:active{transform:translateY(1px)}
-.btn.gold{background:var(--ink); border-color:var(--ink); color:#fff}
+.btn.gold{background:var(--ink); color:#fff}
 .btn.gold:hover{background:#333; border-color:#333}
 .btn.quiet{border-color:var(--line-2)}
-.btn.quiet:hover{border-color:var(--ink); background:var(--ink); color:#fff}
-.btn:disabled{opacity:.35; cursor:not-allowed; transform:none; background:var(--paper); color:var(--ink)}
-.btn.sm{padding:9px 12px; font-size:10.5px}
+.btn.sm{padding:8px 12px; font-size:10px}
 .btn.wide{width:100%}
-.btn .arr{font-weight:400; letter-spacing:0}
+.link{
+  border:0; background:none; padding:0; font-size:11px; font-weight:500; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink-2); text-decoration:underline; text-decoration-color:transparent; text-underline-offset:4px;
+  transition:color var(--fast) var(--ease), text-decoration-color var(--fast) var(--ease);
+}
+.link:hover{color:var(--ink); text-decoration-color:var(--ink)}
+.link:disabled{opacity:.35; cursor:default; text-decoration:none}
 
 /* ============================ LAYOUT ============================ */
-.wrap{
-  display:grid; grid-template-columns:var(--tray) minmax(0,1fr) var(--rail);
-  gap:0; align-items:start; min-height:560px; border-top:1px solid var(--line-c);
-}
-@media (min-width:981px){
-  .stage-col, .rail{position:sticky; top:0; max-height:100vh; overflow-y:auto}
-}
-.col{padding:32px 32px 48px; min-width:0}
-.tray{border-right:1px solid var(--line-c)}
-.rail{border-left:1px solid var(--line-c); display:flex; flex-direction:column; gap:28px}
-
-/* ============================ BAND EDITOR ============================ */
-.bands{display:flex; flex-direction:column; gap:8px}
-.band-card{
-  border:1px solid var(--line-c); background:var(--paper);
-  padding:16px 16px 18px; cursor:pointer;
-  transition:border-color var(--fast) var(--ease);
-}
-.band-card:hover{border-color:var(--line-2)}
-.band-card.sel{border-color:var(--ink)}
-.band-card .bc-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px}
-.band-card .bc-title{font-family:var(--serif); font-variant-numeric:lining-nums; font-size:18px; font-weight:500; line-height:1.1; min-width:0}
-.band-card .bc-stone{font-family:var(--sans); font-size:12.5px; color:var(--ink-2); margin-left:10px; letter-spacing:0}
-.bc-remove{
-  border:1px solid transparent; background:transparent; color:var(--ink-2); font-size:18px; line-height:1;
-  padding:2px 7px; flex:none;
-  transition:border-color var(--fast) var(--ease), color var(--fast) var(--ease);
-}
-.bc-remove:hover{color:var(--ink); border-color:var(--ink)}
-.row{display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap}
-.row .lbl{font-size:10.5px; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); width:52px; flex:none}
-.addnote{font-size:13px; color:var(--ink-2); margin-top:8px}
-.addnote:empty{display:none}
-
-/* metal swatches: circles because they are swatches of the metal */
-.metals{display:flex; gap:12px}
-.metals.big .metal{width:36px; height:36px}
-.metal{
-  width:26px; height:26px; border-radius:50%; border:1px solid var(--line-2);
-  padding:0; position:relative; transition:border-color var(--fast) var(--ease), outline-color var(--fast) var(--ease);
-  outline:1px solid transparent; outline-offset:3px;
-}
-.metal:hover{border-color:var(--ink-3)}
-.metal[aria-pressed=true]{border-color:var(--ink); outline-color:var(--ink)}
-.metal.y{background:linear-gradient(135deg,#F1D58E 10%,#D1A955 55%,#A98034)}
-.metal.r{background:linear-gradient(135deg,#F3C9B3 10%,#D59A7C 55%,#B07152)}
-.metal.w{background:linear-gradient(135deg,#FAFAFB 10%,#CFD1D7 55%,#A6A9B2)}
-
-/* stone swatches */
-.stones{display:grid; grid-template-columns:repeat(6,1fr); gap:8px; flex:1}
-.stone{
-  width:24px; height:24px; border-radius:50%; border:1px solid rgba(0,0,0,.12);
-  padding:0; justify-self:center; transition:outline-color var(--fast) var(--ease);
-  outline:1px solid transparent; outline-offset:2px;
-}
-.stone:hover{outline-color:var(--line-2)}
-.stone[aria-pressed=true]{outline-color:var(--ink)}
-
-/* rectangular pickers (carat, cut) */
-.sizeseg{display:inline-flex; flex-wrap:wrap; gap:6px}
-.sizeseg button{
-  border:1px solid var(--line-2); background:var(--paper); border-radius:0;
-  padding:8px 12px; font-size:12px; font-weight:500; letter-spacing:.06em; color:var(--ink); white-space:nowrap;
-  transition:background var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease);
-}
-.sizeseg button:hover{border-color:var(--ink)}
-.sizeseg button[aria-pressed=true]{background:var(--ink); border-color:var(--ink); color:#fff}
-.shapes{display:flex; gap:6px; flex-wrap:wrap}
-.shape{
-  border:1px solid var(--line-2); background:var(--paper); border-radius:0; padding:7px 11px 7px 9px;
-  font-size:12px; font-weight:500; letter-spacing:.04em; color:var(--ink); display:inline-flex; align-items:center; gap:6px;
-  transition:background var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease);
-}
-.shape svg{display:block}
-.shape:hover{border-color:var(--ink)}
-.shape[aria-pressed=true]{background:var(--ink); border-color:var(--ink); color:#fff}
-
-/* checkboxes (stone on/off, twins, sideways, bottom row) */
-.twinlbl{display:inline-flex; align-items:center; gap:10px; margin-left:auto; cursor:pointer}
-.twintxt{font-size:13px; font-weight:400; color:var(--ink)}
-.tog{
-  width:18px; height:18px; border-radius:0; border:1px solid var(--ink-3); background:var(--paper);
-  position:relative; padding:0; flex:none; transition:background var(--fast) var(--ease), border-color var(--fast) var(--ease);
-}
-.tog::after{
-  content:""; position:absolute; left:5px; top:1.5px; width:5px; height:9px;
-  border:solid #fff; border-width:0 1.5px 1.5px 0; transform:rotate(45deg); opacity:0; transition:opacity var(--fast) var(--ease);
-}
-.tog:hover{border-color:var(--ink)}
-.tog[aria-pressed=true]{background:var(--ink); border-color:var(--ink)}
-.tog[aria-pressed=true]::after{opacity:1}
-
-.name-in{
-  flex:1; border:0; border-bottom:1px solid var(--line-2); border-radius:0; padding:7px 2px; font-size:14px;
-  color:var(--ink); background:transparent; min-width:0; transition:border-color var(--fast) var(--ease);
-}
-.name-in::placeholder{color:var(--ink-3)}
-.name-in:focus{outline:none; border-bottom-color:var(--ink)}
+.studio{display:grid; grid-template-columns:minmax(0,1.35fr) minmax(360px,1fr); min-height:calc(100vh - 70px)}
+.stage-col{display:flex; flex-direction:column; padding:32px 40px 24px 48px; border-right:1px solid var(--line-c)}
+.panel{padding:44px 48px 48px 44px; max-width:560px}
+@media (min-width:981px){ .stage-col{position:sticky; top:0; height:100vh; max-height:860px} }
 
 /* ============================ STAGE ============================ */
-.stage-col{display:flex; flex-direction:column; padding-left:24px; padding-right:24px}
-.stage-head{display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap}
-.stagewrap{position:relative; flex:1; display:flex; margin:0}
-.stagewrap::before{content:none}
-.stage{
-  flex:1; background:#fff; border:0; border-radius:0;
-  position:relative; min-height:560px; overflow:hidden;
-}
+.stage{flex:1; position:relative; min-height:420px; overflow:hidden; background:#fff}
 .stage canvas#scene{display:block; width:100%; height:100%; touch-action:none; cursor:grab}
-.stage-btns{position:absolute; right:12px; bottom:12px; display:flex; gap:8px}
-.stage-btns .btn{background:var(--paper)}
-.stage-btns .btn:hover{background:var(--ink)}
-/* Photo / 3D switch: studio photographs of the real construction, 1–5 wraps */
-.viewseg{position:absolute; left:0; top:0; z-index:3; display:flex; gap:20px; background:transparent}
-.viewseg button{border:0; border-bottom:1px solid transparent; background:transparent; padding:4px 0; font-size:11.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); transition:color var(--fast) var(--ease), border-color var(--fast) var(--ease)}
+.stage-btns{position:absolute; right:0; bottom:0; display:flex; gap:8px}
+.viewseg{position:absolute; left:0; top:0; z-index:3; display:flex; gap:20px}
+.viewseg button{border:0; border-bottom:1px solid transparent; background:transparent; padding:4px 0; font-size:11px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3)}
 .viewseg button:hover{color:var(--ink)}
 .viewseg button[aria-pressed=true]{color:var(--ink); border-bottom-color:var(--ink)}
-.photo{position:absolute; inset:0; margin:0; background:#fff; display:none; z-index:2}
-.stage.is-photo .photo{display:flex; flex-direction:column; align-items:center; justify-content:center}
+.photo{position:absolute; inset:0; margin:0; background:#fff; display:none; z-index:2; align-items:center; justify-content:center}
+.stage.is-photo .photo{display:flex}
 .stage.is-photo .stage-btns{display:none}
-.photo canvas{display:block; width:300px; height:300px; margin:0}
-.photo figcaption{position:absolute; left:0; right:0; bottom:6px; font-size:12.5px; line-height:1.4; color:var(--ink-2); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.photo canvas{display:block; width:300px; height:300px}
+.stage-foot{display:flex; gap:28px; justify-content:center; padding-top:16px}
 
-/* ============================ RAIL ============================ */
-.sumlist{display:flex; flex-direction:column}
-.sumrow{display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line-c)}
-.sumrow:last-child{border-bottom:0}
-.dotsw{width:14px; height:14px; border-radius:50%; border:1px solid rgba(0,0,0,.14); flex:none}
-.sumrow .what{flex:1; min-width:0; font-size:13.5px}
-.sumrow .what .nm{font-family:var(--serif); font-style:italic; font-size:15px; color:var(--ink-2)}
-.sizebox{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
-.sizebox .lbl{font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase}
-.sizebox select{
-  border:1px solid var(--line-2); border-radius:0; background:var(--paper); padding:9px 12px;
-  font-size:14px; color:var(--ink); transition:border-color var(--fast) var(--ease);
-}
-.sizebox select:hover{border-color:var(--ink)}
-.finenote{font-size:13.5px; color:var(--ink-2); line-height:1.6}
-.rail-actions{display:flex; flex-direction:column; gap:8px}
-.rail-actions .btn{padding:15px 18px}
+/* ============================ PANEL ============================ */
+.panel h1{font-size:44px; line-height:1.05; letter-spacing:.005em}
+.lede{margin:10px 0 0; color:var(--ink-2); font-size:14px}
+.opt{border-top:1px solid var(--line-c); margin-top:28px; padding-top:20px}
+.panel h1 + .lede + .opt{margin-top:32px}
+.opt-h{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; font-size:11px; font-weight:500; letter-spacing:.18em; text-transform:uppercase}
+.opt-h .val{letter-spacing:.04em; text-transform:none; font-size:13px; font-weight:400; color:var(--ink-2)}
+.opt-h .val:empty{display:none}
+.add{margin-top:12px}
 
-/* ============================ MODAL ============================ */
-.modal-bg{
-  position:fixed; inset:0; background:rgba(17,17,17,.4); display:none;
-  align-items:center; justify-content:center; padding:24px; z-index:50;
+/* metal swatches */
+.metals{display:flex; gap:14px}
+.metal{
+  width:34px; height:34px; border-radius:50%; border:0; padding:0;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.10); outline:1px solid transparent; outline-offset:4px;
+  transition:outline-color var(--fast) var(--ease);
 }
+.metal:hover{outline-color:var(--line-2)}
+.metal[aria-pressed=true]{outline-color:var(--ink)}
+.metal.y{background:linear-gradient(140deg,#F3DCA0 0%,#D9B468 45%,#B48A3E 100%)}
+.metal.r{background:linear-gradient(140deg,#F5D3C2 0%,#DDA88C 45%,#B8785B 100%)}
+.metal.w{background:linear-gradient(140deg,#FBFBFC 0%,#D9DBE0 45%,#A9ACB4 100%)}
+
+/* a wrap = one row: number, its stone strip, remove */
+.bands{display:flex; flex-direction:column}
+.wrap-row{display:grid; grid-template-columns:26px minmax(0,1fr) 20px; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line-c)}
+.wrap-row:last-child{border-bottom:0}
+.wrap-n{font-family:var(--serif); font-size:17px; font-variant-numeric:lining-nums}
+.stones{display:flex; flex-wrap:wrap; gap:7px}
+.stone{
+  width:20px; height:20px; border-radius:50%; border:0; padding:0; position:relative;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.14); outline:1px solid transparent; outline-offset:3px;
+  transition:outline-color var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+.stone:hover{transform:scale(1.12)}
+.stone[aria-pressed=true]{outline-color:var(--ink)}
+.stone.none{background:#fff}
+.stone.none::after{content:""; position:absolute; left:3px; right:3px; top:50%; height:1px; background:var(--ink-3); transform:rotate(-45deg)}
+.rm{border:0; background:none; color:var(--ink-3); font-size:17px; line-height:1; padding:0}
+.rm:hover{color:var(--ink)}
+
+/* rectangular pickers */
+.seg{display:flex; flex-wrap:wrap; gap:6px}
+.seg button{
+  border:1px solid var(--line-2); background:var(--paper); padding:8px 12px; min-width:44px;
+  font-size:12px; letter-spacing:.04em; transition:background var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.seg button:hover{border-color:var(--ink)}
+.seg button[aria-pressed=true]{background:var(--ink); border-color:var(--ink); color:#fff}
+.seg button.ico{display:inline-flex; align-items:center; justify-content:center; padding:7px 10px}
+.seg button svg{display:block}
+.bstone{display:grid; grid-template-columns:26px minmax(0,1fr); gap:10px; padding:14px 0; border-bottom:1px solid var(--line-c)}
+.bstone:last-child{border-bottom:0}
+.bstone .rows{display:flex; flex-direction:column; gap:10px}
+#bottomCount{margin-bottom:4px}
+
+.buy{display:flex; flex-direction:column; gap:14px}
+.sizebox{display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:500; letter-spacing:.18em; text-transform:uppercase}
+.sizebox select{border:1px solid var(--line-2); border-radius:0; background:var(--paper); padding:9px 12px; font-size:14px; letter-spacing:0}
+.minor{display:flex; gap:28px; margin-top:22px}
+
+/* ============================ MODAL / LIGHTBOX ============================ */
+.modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; padding:24px; z-index:50}
 .modal-bg.open{display:flex}
-.modal{
-  position:relative; background:var(--paper); border:1px solid var(--ink); border-radius:0;
-  max-width:520px; width:100%; padding:32px; max-height:86vh; overflow:auto;
-}
-.modal::before{content:none}
-.modal h2{font-size:32px; margin:12px 0 6px}
-.spec{
-  white-space:pre-wrap; background:var(--mist); border:1px solid var(--line-c); border-radius:0;
-  padding:14px 16px; font-size:13px; margin:18px 0; line-height:1.65;
-}
+.modal{background:#fff; border:1px solid var(--ink); max-width:480px; width:100%; padding:32px; max-height:86vh; overflow:auto}
+.modal h2{font-size:30px}
+.spec{white-space:pre-wrap; background:var(--mist); padding:14px 16px; font-size:13px; margin:18px 0; line-height:1.65}
 .modal .actions{display:flex; gap:8px; flex-wrap:wrap}
-
-/* ============================ REFERENCE PHOTOS ============================ */
-.refbar{margin-top:16px}
-.reftog{
-  width:100%; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
-  border:0; border-top:1px solid var(--line-c); background:transparent; padding:16px 0 8px;
-  text-align:left;
-}
-.reftog .muted{flex:1; min-width:0}
-.refchev{color:var(--ink-2); font-size:12px; transition:transform var(--fast) var(--ease)}
-.reftog[aria-expanded=true] .refchev{transform:rotate(180deg)}
-.refstrip{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:4px 0 8px}
-.refstrip[hidden]{display:none}
-.refpic{display:block; aspect-ratio:5/4; overflow:hidden; border:1px solid var(--line-c); background:var(--mist); transition:border-color var(--fast) var(--ease)}
-.refpic:hover{border-color:var(--ink)}
-.refpic img{width:100%; height:100%; object-fit:cover; display:block}
-.refnote{grid-column:1 / -1; font-size:13px; line-height:1.55}
-.lightbox{
-  position:fixed; inset:0; background:rgba(17,17,17,.86); display:none; z-index:60;
-  align-items:center; justify-content:center; padding:24px; cursor:zoom-out;
-}
+.lightbox{position:fixed; inset:0; background:rgba(0,0,0,.86); display:none; z-index:60; align-items:center; justify-content:center; padding:24px; cursor:zoom-out}
 .lightbox.open{display:flex}
-.lightbox img{max-width:min(100%,1100px); max-height:80vh; display:block}
+.lightbox img{max-width:min(100%,1100px); max-height:84vh; display:block}
 .lightbox .cap{position:absolute; left:24px; right:24px; bottom:20px; text-align:center; color:#fff; font-size:13px}
 
-footer.pagefoot{
-  border-top:1px solid var(--line-c); padding:24px 40px; display:flex; justify-content:space-between;
-  gap:12px; flex-wrap:wrap; font-size:12px; letter-spacing:.04em; color:var(--ink-2); background:var(--paper);
-}
+footer.pagefoot{border-top:1px solid var(--line-c); padding:22px 48px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
 
-/* ============================ RESPONSIVE ============================ */
-@media (max-width:1200px){
-  :root{--tray:300px; --rail:280px}
-  header.top h1{font-size:44px}
-}
+/* ============================ PHONE ============================ */
 @media (max-width:980px){
-  .wrap{display:flex; flex-direction:column}
-  .nav{padding:14px 16px}
-  .nav-links{display:none}
-  .wordmark{font-size:22px}
-  header.top{padding:28px 16px 20px}
-  header.top h1{font-size:36px}
-  header.top .sub{font-size:15px}
-  .col{padding:20px 16px 32px}
-  /* the ring stays pinned on top while you edit below */
-  .stage-col{order:-1; position:sticky; top:0; z-index:20; background:var(--paper); padding:8px 16px 8px; max-height:none; overflow:visible; border-bottom:1px solid var(--line-c)}
-  .stagewrap{flex:none}
-  .stage{flex:1 1 auto; min-width:0; min-height:0; height:42vh}
-  .photo .more{display:none}
-  .photo figcaption{bottom:2px; font-size:12px}
-  .stage-head{padding-top:4px}
-  /* on phones the photos open straight into the lightbox; the strip would push the sticky stage down */
-  .refbar{margin-top:4px}
-  .reftog{padding:6px 0 0; border-top:0}
-  .reftog .muted{display:none}
-  .refstrip, .refstrip[hidden]{display:none}
-  .refchev{display:none}
-  .reftog .eyebrow::after{content:" \2197"; font-size:11px}
-  .tray{border-right:0}
-  .rail{border-left:0; border-top:1px solid var(--line-c)}
-  footer.pagefoot{padding:20px 16px}
-  /* finger-sized tap targets */
-  .stone{width:30px; height:30px}
-  .metal{width:32px; height:32px}
-  .metals.big .metal{width:40px; height:40px}
-  .sizeseg button, .shape{padding:10px 14px; font-size:13px}
-  .tog{width:22px; height:22px}
-  .tog::after{left:7px; top:3px; width:5px; height:10px}
-  .bc-remove{font-size:20px; padding:4px 9px}
-  .btn{padding:13px 16px}
+  .nav{padding:16px 20px}
+  .studio{display:block}
+  .stage-col{position:sticky; top:0; z-index:20; background:#fff; padding:10px 20px 10px; border-right:0; border-bottom:1px solid var(--line-c)}
+  .stage{height:40vh; min-height:0}
+  .stage-foot{padding-top:6px}
+  .panel{padding:24px 20px 40px; max-width:none}
+  .panel h1{font-size:34px}
+  .stone{width:26px; height:26px}
+  .stones{gap:9px}
+  .seg button{padding:10px 14px}
+  footer.pagefoot{padding:20px}
 }
 </style>
 
 
+
 <nav class="nav">
-  <a class="wordmark" href="https://pkhartjewels.com">PK HART<small>FINE JEWELRY</small></a>
-  <div class="nav-links">
-    <a href="#bands">Design yours</a>
-    <a href="#refStrip" id="navRef">Her ring</a>
-    <a href="mailto:sales@pkhartjewels.com">Contact</a>
-  </div>
+  <a class="wordmark" href="https://pkhartjewels.com">PK HART</a>
+  <a class="navlink" href="mailto:sales@pkhartjewels.com">Contact</a>
 </nav>
-<header class="top">
-  <div class="brand">
-    <div class="house">Made to order &middot; Lincolnwood, IL</div>
-    <h1>Birthstone Ring Studio <span class="tag gold">Concept preview</span></h1>
-    <div class="sub">One ring, up to five wraps, a birthstone for each person you love &mdash; and statement stones on the bottom row. Pick the stones and carats, we place them the way we always do, then send us your design.</div>
-  </div>
-  <div class="top-actions">
-    <button class="btn quiet" id="btnSurprise">Surprise me</button>
-    <button class="btn quiet" id="btnReset">Start over</button>
-  </div>
-</header>
 
-<div class="wrap">
-
-  <!-- ============================ BAND EDITOR ============================ -->
-  <section class="col tray">
-    <div class="section">
-      <div class="datum"><span class="num">01</span><span class="ttl">The metal</span><span class="aside" id="metalLabel"></span></div>
-      <div class="row" style="margin:0">
-        <div class="metals big" id="globalMetal"></div>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="datum"><span class="num">02</span><span class="ttl">Stone size</span><span class="aside">all the top stones</span></div>
-      <div class="row" style="margin:0" id="globalCarat"></div>
-    </div>
-
-    <div class="section">
-      <div class="datum"><span class="num">03</span><span class="ttl">Your wraps</span><span class="aside" id="bandCount"></span></div>
-      <div class="bands" id="bands"></div>
-      <button class="btn wide" id="btnAdd" style="margin-top:8px">Add a wrap</button>
-      <div class="addnote" id="addNote"></div>
-    </div>
-
-    <div class="section">
-      <div class="datum"><span class="num">04</span><span class="ttl">The bottom row</span></div>
-      <label class="twinlbl" style="margin-left:0">
-        <button class="tog" id="featTog" aria-pressed="false" aria-label="Add a bottom row"></button>
-        <span class="twintxt">Add a bottom row</span>
-      </label>
-      <div class="muted" style="margin-top:8px">Statement stones on the lowest wrap &mdash; a diamond, or mom &amp; dad&rsquo;s stones, in any cut.</div>
-      <div id="featControls" style="display:none">
-        <div class="bands" id="bottomStones" style="margin-top:12px"></div>
-        <button class="btn wide" id="btnAddBottom" style="margin-top:8px">Add a bottom stone</button>
-        <div class="addnote" id="addBottomNote"></div>
-      </div>
-    </div>
-  </section>
-
+<main class="studio">
   <!-- ============================ STAGE ============================ -->
-  <section class="col stage-col">
-        <div class="stagewrap">
-      <div class="stage">
-        <canvas id="scene" aria-label="Rendered preview of your custom birthstone ring"></canvas>
-        <figure class="photo" id="photoView">
-          <canvas id="photoCanvas" width="900" height="900" role="img" aria-label="Studio photograph of your ring"></canvas>
-          <figcaption id="photoCap"></figcaption>
-        </figure>
-        <div class="viewseg" role="group" aria-label="How to show the ring">
-          <button type="button" data-view="photo" aria-pressed="true">Photo</button>
-          <button type="button" data-view="3d" aria-pressed="false">3D</button>
-        </div>
-        <div class="stage-btns">
-          <button class="btn sm" id="btnFront">Front view</button>
-          <button class="btn sm" id="btnTurn">Turn it around</button>
-        </div>
+  <section class="stage-col">
+    <div class="stage">
+      <canvas id="scene" aria-label="3D preview of your ring"></canvas>
+      <figure class="photo" id="photoView">
+        <canvas id="photoCanvas" width="900" height="900" role="img" aria-label="Your ring"></canvas>
+      </figure>
+      <div class="viewseg" role="group" aria-label="View">
+        <button type="button" data-view="photo" aria-pressed="true">Photo</button>
+        <button type="button" data-view="3d" aria-pressed="false">3D</button>
+      </div>
+      <div class="stage-btns">
+        <button class="btn sm" id="btnFront">Front</button>
+        <button class="btn sm" id="btnTurn">Turn</button>
       </div>
     </div>
-
-    <!-- the real thing, for comparison -->
-    <div class="refbar">
-      <button class="reftog" id="refTog" aria-expanded="false" aria-controls="refStrip">
-        <span class="eyebrow">Her ring, for reference</span>
-        <span class="muted">the real piece this studio is modelled on</span>
-        <span class="refchev" aria-hidden="true">&#9662;</span>
-      </button>
-      <div class="refstrip" id="refStrip" hidden>
-        <a href="img/real-2.jpg" class="refpic" data-cap="Five wraps and an emerald-cut diamond — the ring the studio opens on">
-          <img src="img/real-2.jpg" alt="Close-up of the real five-wrap birthstone ring with an emerald-cut diamond" loading="lazy">
-        </a>
-        <a href="img/real-1.jpg" class="refpic" data-cap="Two of her rings worn together — note how the wraps draw together at the sides">
-          <img src="img/real-1.jpg" alt="Two real PK HART wrap rings worn on adjacent fingers" loading="lazy">
-        </a>
-        <div class="refnote muted">Polished 14k wire, one birthstone per wrap, the wraps soldered into a single band at the back. Tap a photo to see it large.</div>
-      </div>
+    <div class="stage-foot">
+      <button class="link" id="refTog">Her ring</button>
+      <button class="link" id="btnSave">Save image</button>
+    </div>
+    <div hidden>
+      <a href="img/real-2.jpg" class="refpic" data-cap="The ring this studio is modelled on"><img src="img/real-2.jpg" alt="The real five-wrap ring" loading="lazy"></a>
     </div>
   </section>
 
-  <!-- ============================ SUMMARY RAIL ============================ -->
-  <section class="col rail">
-    <div>
-      <div class="datum"><span class="num">05</span><span class="ttl">Your design</span><span class="aside" id="sumCount"></span></div>
-      <div class="sumlist" id="sumlist"></div>
+  <!-- ============================ CONTROLS ============================ -->
+  <section class="panel">
+    <h1>Birthstone Ring</h1>
+    <p class="lede">Made to order in 14k.</p>
+
+    <div class="opt">
+      <div class="opt-h"><span>Metal</span><span class="val" id="metalLabel"></span></div>
+      <div id="globalMetal"></div>
     </div>
-    <div class="sizebox">
-      <label class="lbl" for="ringSize">Ring size</label>
-      <select id="ringSize"></select>
-      <span class="muted">we&rsquo;ll confirm it together</span>
+
+    <div class="opt">
+      <div class="opt-h"><span>Wraps</span><span class="val" id="bandCount"></span></div>
+      <div class="bands" id="bands"></div>
+      <button class="link add" id="btnAdd">+ Add a wrap</button>
     </div>
-    <div class="finenote">
-      Every ring is made to order, so pricing is quoted per design.
-      Send it over and we&rsquo;ll come back to you within a day.
+
+    <div class="opt">
+      <div class="opt-h"><span>Stone size</span></div>
+      <div id="globalCarat"></div>
     </div>
-    <div class="rail-actions">
-      <button class="btn gold wide" id="btnRequest">Request this design <span class="arr">&rarr;</span></button>
-      <button class="btn wide" id="btnSave">Save an image</button>
+
+    <div class="opt">
+      <div class="opt-h"><span>Bottom stone</span></div>
+      <div id="bottomCount"></div>
+      <div class="bands" id="bottomStones"></div>
+    </div>
+
+    <div class="opt buy">
+      <label class="sizebox"><span>Ring size</span><select id="ringSize"></select></label>
+      <button class="btn gold wide" id="btnRequest">Request this ring</button>
+    </div>
+
+    <div class="minor">
+      <button class="link" id="btnSurprise">Surprise me</button>
+      <button class="link" id="btnReset">Start over</button>
     </div>
   </section>
-</div>
+</main>
 
-<footer class="pagefoot">
-  <span>PK HART Fine Jewelry &middot; Lincolnwood, IL &middot; sales@pkhartjewels.com &middot; +1 (847) 440-4624</span>
-  <span>Made to order in Lincolnwood &middot; studio concept by The Groundwork Co.</span>
-</footer>
+<footer class="pagefoot">PK HART Fine Jewelry &middot; Lincolnwood, IL</footer>
 
 <!-- ============================ REQUEST MODAL ============================ -->
 <div class="modal-bg" id="modalBg">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="datum" style="margin-bottom:8px"><span class="num">06</span><span class="ttl">Request this design</span></div>
-    <h2 id="modalTitle">Here&rsquo;s your ring</h2>
-    <div class="muted">This opens your own email &mdash; nothing is sent until you press send.</div>
+    <h2 id="modalTitle">Your ring</h2>
     <div class="spec" id="specText"></div>
     <div class="actions">
-      <a class="btn gold" id="btnMailto" href="#">Email it to PK HART <span class="arr">&rarr;</span></a>
-      <button class="btn" id="btnCopy">Copy the spec</button>
+      <a class="btn gold" id="btnMailto" href="#">Email PK HART</a>
+      <button class="btn" id="btnCopy">Copy</button>
       <button class="btn quiet" id="btnClose">Close</button>
     </div>
   </div>
@@ -552,7 +341,7 @@ const MAX_BOTTOM = 3;
 const twinMonth = st => (st.month2 == null ? st.month : st.month2);   // twins default to a matching stone
 const stoneText = st => MONTHS[st.month].m + ' (' + MONTHS[st.month].s + ')' +
   (st.twin && twinMonth(st) !== st.month ? ' + ' + MONTHS[twinMonth(st)].m + ' (' + MONTHS[twinMonth(st)].s + ')' : '');
-const swatchBg = mi => 'radial-gradient(circle at 35% 30%, #fff 0%, ' + MONTHS[mi].c + ' 45%, ' + MONTHS[mi].d + ' 100%)';
+const swatchBg = mi => 'radial-gradient(circle at 32% 28%, rgba(255,255,255,.75) 0 10%, rgba(255,255,255,0) 38%), linear-gradient(150deg, ' + MONTHS[mi].c + ' 10%, ' + MONTHS[mi].d + ' 100%)';
 function newWrap(partial){
   return Object.assign({id:++uid, stone:{month:3, name:'', twin:false}}, partial || {});
 }
@@ -571,7 +360,7 @@ function defaultDesign(){
   ];
   metal = 'y';
   stoneCarat = 'c05';
-  feature = {on:true, stones:[newBottomStone({shape:'emerald', month:3, size:'c50'})]};
+  feature = {on:true, stones:[newBottomStone({shape:'emerald', month:3, size:'c50', turn:true})]};
   selected = 0;
 }
 
@@ -588,14 +377,16 @@ function escapeHtml(s){
   return s.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
-/* ============================ 3. BAND EDITOR ============================ */
-function sizePicker(options, current, onPick){
-  const wrap = h('div', 'sizeseg');
-  for (const key of Object.keys(options)){
-    const b = h('button', '', wrap, options[key].label);
+/* ============================ 3. CONTROLS ============================ */
+function seg(items, current, onPick){
+  const wrap = h('div', 'seg');
+  for (const it of items){
+    const b = h('button', it.icon ? 'ico' : '', wrap);
     b.type = 'button';
-    b.setAttribute('aria-pressed', String(key === current));
-    b.addEventListener('click', e => { e.stopPropagation(); onPick(key); });
+    if (it.icon) b.innerHTML = it.icon; else b.textContent = it.label;
+    if (it.title){ b.title = it.title; b.setAttribute('aria-label', it.title); }
+    b.setAttribute('aria-pressed', String(it.key === current));
+    b.addEventListener('click', e => { e.stopPropagation(); onPick(it.key); });
   }
   return wrap;
 }
@@ -607,182 +398,92 @@ function metalPicker(current, onPick){
     b.title = METALS[key].label;
     b.setAttribute('aria-label', METALS[key].label);
     b.setAttribute('aria-pressed', String(key === current));
-    b.addEventListener('click', e => { e.stopPropagation(); onPick(key); });
+    b.addEventListener('click', () => onPick(key));
   }
   return wrap;
 }
+function stoneStrip(current, onPick, withNone){
+  const sw = h('div', 'stones');
+  if (withNone){
+    const b = h('button', 'stone none', sw);
+    b.type = 'button'; b.title = 'No stone'; b.setAttribute('aria-label', 'No stone');
+    b.setAttribute('aria-pressed', String(current == null));
+    b.addEventListener('click', () => onPick(null));
+  }
+  MONTHS.forEach((mo, mi) => {
+    const b = h('button', 'stone', sw);
+    b.type = 'button';
+    b.title = mo.m + ' · ' + mo.s;
+    b.setAttribute('aria-label', mo.m + ' ' + mo.s);
+    b.setAttribute('aria-pressed', String(current === mi));
+    b.style.background = swatchBg(mi);
+    b.addEventListener('click', () => onPick(mi));
+  });
+  return sw;
+}
+const ROTATE_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="5.5" y="2" width="5" height="12" rx=".5" opacity=".35"/><rect x="2" y="5.5" width="12" height="5" rx=".5"/></svg>';
 
 function renderEditor(){
-  const gc = $('#globalCarat');
-  gc.innerHTML = '';
-  gc.appendChild(sizePicker(STONE_CARATS, stoneCarat, key => { stoneCarat = key; render(); }));
-
-  const box = $('#bands');
-  box.innerHTML = '';
-  wraps.forEach((wr, i) => {
-    const card = h('div', 'band-card' + (selected === i ? ' sel' : ''), box);
-    card.addEventListener('click', () => { selected = i; render(); });
-
-    const head = h('div', 'bc-head', card);
-    const title = h('div', 'bc-title', head, 'Wrap ' + (i + 1));
-    h('span', 'bc-stone', title, wr.stone
-      ? (wr.stone.twin && twinMonth(wr.stone) !== wr.stone.month
-          ? MONTHS[wr.stone.month].s + ' + ' + MONTHS[twinMonth(wr.stone)].s
-          : MONTHS[wr.stone.month].m + ' · ' + MONTHS[wr.stone.month].s)
-      : 'plain, no stone');
-    if (wraps.length > 1){
-      const rm = h('button', 'bc-remove', head, '×');
-      rm.type = 'button';
-      rm.title = 'Remove this wrap';
-      rm.addEventListener('click', e => {
-        e.stopPropagation();
-        wraps.splice(i, 1);
-        if (typeof selected === 'number' && selected >= wraps.length) selected = wraps.length - 1;
-        render();
-      });
-    }
-
-    const trow = h('div', 'row', card);
-    const stLbl = h('label', 'twinlbl', trow);
-    stLbl.style.marginLeft = '0';
-    const stBtn = h('button', 'tog mini', stLbl);
-    stBtn.type = 'button';
-    stBtn.setAttribute('aria-pressed', String(Boolean(wr.stone)));
-    stBtn.setAttribute('aria-label', 'This wrap has a stone');
-    stBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      wr.stone = wr.stone ? null : {month:3, name:'', twin:false};
-      selected = i; render();
-    });
-    h('span', 'twintxt', stLbl, wr.stone ? 'Has a stone' : 'Plain band');
-
-    if (wr.stone){
-      const st = wr.stone;
-      const stoneRow = (label, current, onPick) => {
-        const srow = h('div', 'row', card);
-        h('span', 'lbl', srow, label);
-        const sw = h('div', 'stones', srow);
-        MONTHS.forEach((mo, mi) => {
-          const b = h('button', 'stone', sw);
-          b.type = 'button';
-          b.title = mo.m + ' — ' + mo.s;
-          b.setAttribute('aria-label', mo.m + ' ' + mo.s);
-          b.setAttribute('aria-pressed', String(current === mi));
-          b.style.background = swatchBg(mi);
-          b.addEventListener('click', e => { e.stopPropagation(); onPick(mi); selected = i; render(); });
-        });
-      };
-      stoneRow('Stone', st.month, mi => { st.month = mi; });
-
-      const zrow = h('div', 'row', card);
-      const tw = h('label', 'twinlbl', zrow);
-      tw.style.marginLeft = '0';
-      const twBtn = h('button', 'tog mini', tw);
-      twBtn.type = 'button';
-      twBtn.setAttribute('aria-pressed', String(st.twin));
-      twBtn.setAttribute('aria-label', 'Twin stones');
-      twBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        st.twin = !st.twin;
-        if (st.twin && st.month2 == null) st.month2 = st.month;   // starts as a matching pair
-        selected = i; render();
-      });
-      h('span', 'twintxt', tw, st.twin ? 'Twins — two stones on this wrap' : 'Twins');
-      // the second stone can be a different person's birthstone
-      if (st.twin) stoneRow('Twin', twinMonth(st), mi => { st.month2 = mi; });
-
-      const nrow = h('div', 'row', card);
-      h('span', 'lbl', nrow, 'For');
-      const inp = h('input', 'name-in', nrow);
-      inp.placeholder = 'a name (optional)';
-      inp.maxLength = 24;
-      inp.value = st.name;
-      inp.addEventListener('click', e => e.stopPropagation());
-      inp.addEventListener('input', () => { st.name = inp.value; renderSummary(); });
-    }
-  });
-
-  $('#bandCount').textContent = wraps.length + ' of ' + MAX_WRAPS;
-  $('#btnAdd').disabled = wraps.length >= MAX_WRAPS;
-  $('#addNote').textContent = wraps.length >= MAX_WRAPS ? 'Five is the most one ring holds. Remove a wrap to swap another in.' : '';
-
-  $('#featTog').setAttribute('aria-pressed', String(feature.on));
-  $('#featControls').style.display = feature.on ? 'block' : 'none';
   const gm = $('#globalMetal');
   gm.innerHTML = '';
   gm.appendChild(metalPicker(metal, key => { metal = key; render(); }));
   $('#metalLabel').textContent = METALS[metal].label;
 
-  // bottom-row stone cards
-  const bb = $('#bottomStones');
-  bb.innerHTML = '';
-  feature.stones.forEach((bs, i) => {
-    const key = 'f' + i;
-    const card = h('div', 'band-card' + (selected === key ? ' sel' : ''), bb);
-    card.addEventListener('click', () => { selected = key; render(); });
-
-    const head = h('div', 'bc-head', card);
-    const title = h('div', 'bc-title', head, 'Bottom stone ' + (i + 1));
-    h('span', 'bc-stone', title, SHAPES.find(s => s.id === bs.shape).label + ' · ' + MONTHS[bs.month].s);
-    if (feature.stones.length > 1){
-      const rm = h('button', 'bc-remove', head, '×');
-      rm.type = 'button';
-      rm.title = 'Remove this stone';
-      rm.addEventListener('click', e => {
-        e.stopPropagation();
-        feature.stones.splice(i, 1);
-        selected = 'f0';
+  // wraps: one row each — number, its stone (or none), remove
+  const box = $('#bands');
+  box.innerHTML = '';
+  wraps.forEach((wr, i) => {
+    const row = h('div', 'wrap-row', box);
+    h('span', 'wrap-n', row, String(i + 1));
+    row.appendChild(stoneStrip(wr.stone ? wr.stone.month : null, mi => {
+      wr.stone = mi == null ? null : {month:mi, name:'', twin:false};
+      selected = i; render();
+    }, true));
+    if (wraps.length > 1){
+      const rm = h('button', 'rm', row, '×');
+      rm.type = 'button'; rm.title = 'Remove wrap ' + (i + 1); rm.setAttribute('aria-label', 'Remove wrap ' + (i + 1));
+      rm.addEventListener('click', () => {
+        wraps.splice(i, 1);
+        if (typeof selected === 'number' && selected >= wraps.length) selected = wraps.length - 1;
         render();
       });
-    }
-
-    const shrow = h('div', 'row', card);
-    h('span', 'lbl', shrow, 'Cut');
-    const shapes = h('div', 'shapes', shrow);
-    shapes.style.marginTop = '0';
-    SHAPES.forEach(sh => {
-      const b = h('button', 'shape', shapes);
-      b.type = 'button';
-      b.setAttribute('aria-pressed', String(bs.shape === sh.id));
-      b.innerHTML = shapeIcon(sh.id) + '<span>' + sh.label + '</span>';
-      b.addEventListener('click', e => { e.stopPropagation(); bs.shape = sh.id; selected = key; render(); });
-    });
-
-    const srow = h('div', 'row', card);
-    h('span', 'lbl', srow, 'Stone');
-    const sw = h('div', 'stones', srow);
-    MONTHS.forEach((mo, mi) => {
-      const b = h('button', 'stone', sw);
-      b.type = 'button';
-      b.title = mo.m + ' — ' + mo.s;
-      b.setAttribute('aria-label', mo.m + ' ' + mo.s);
-      b.setAttribute('aria-pressed', String(bs.month === mi));
-      b.style.background = 'radial-gradient(circle at 35% 30%, #fff 0%, ' + mo.c + ' 45%, ' + mo.d + ' 100%)';
-      b.addEventListener('click', e => { e.stopPropagation(); bs.month = mi; selected = key; render(); });
-    });
-
-    const crow = h('div', 'row', card);
-    h('span', 'lbl', crow, 'Carat');
-    crow.appendChild(sizePicker(FEATURE_CARATS, bs.size, k => { bs.size = k; selected = key; render(); }));
-    const tn = h('label', 'twinlbl', crow);
-    const tnBtn = h('button', 'tog mini', tn);
-    tnBtn.type = 'button';
-    tnBtn.setAttribute('aria-pressed', String(bs.turn));
-    tnBtn.setAttribute('aria-label', 'Set the stone sideways');
-    tnBtn.addEventListener('click', e => { e.stopPropagation(); bs.turn = !bs.turn; selected = key; render(); });
-    h('span', 'twintxt', tn, 'Sideways');
-
-    const nrow = h('div', 'row', card);
-    h('span', 'lbl', nrow, 'For');
-    const inp = h('input', 'name-in', nrow);
-    inp.placeholder = 'a name (optional)';
-    inp.maxLength = 24;
-    inp.value = bs.name;
-    inp.addEventListener('click', e => e.stopPropagation());
-    inp.addEventListener('input', () => { bs.name = inp.value; renderSummary(); });
+    } else h('span', '', row);
   });
-  $('#btnAddBottom').disabled = feature.stones.length >= MAX_BOTTOM;
-  $('#addBottomNote').textContent = feature.stones.length >= MAX_BOTTOM ? 'Three stones fill the bottom wrap. Remove one to change the mix.' : '';
+  $('#bandCount').textContent = wraps.length + ' of ' + MAX_WRAPS;
+  $('#btnAdd').disabled = wraps.length >= MAX_WRAPS;
+
+  const gc = $('#globalCarat');
+  gc.innerHTML = '';
+  gc.appendChild(seg(Object.keys(STONE_CARATS).map(k => ({key:k, label:STONE_CARATS[k].label})), stoneCarat, key => { stoneCarat = key; render(); }));
+
+  // bottom stone: none, or one to three statement stones
+  const bc = $('#bottomCount');
+  bc.innerHTML = '';
+  const count = feature.on ? feature.stones.length : 0;
+  bc.appendChild(seg([{key:0, label:'None'}, {key:1, label:'1'}, {key:2, label:'2'}, {key:3, label:'3'}], count, n => {
+    if (n === 0){ feature.on = false; }
+    else {
+      feature.on = true;
+      const tmpl = feature.stones[0] || {shape:'emerald', month:3, size:'c50', turn:true};
+      while (feature.stones.length < n) feature.stones.push(newBottomStone({shape:tmpl.shape, month:tmpl.month, size:tmpl.size, turn:tmpl.turn}));
+      feature.stones.length = n;
+    }
+    render();
+  }));
+  const bb = $('#bottomStones');
+  bb.innerHTML = '';
+  if (feature.on) feature.stones.forEach((bs, i) => {
+    const row = h('div', 'bstone', bb);
+    h('span', 'wrap-n', row, feature.stones.length > 1 ? String(i + 1) : '');
+    const rows = h('div', 'rows', row);
+    const top = h('div', '', rows);
+    top.style.cssText = 'display:flex; gap:10px; flex-wrap:wrap';
+    top.appendChild(seg(SHAPES.map(sh => ({key:sh.id, icon:shapeIcon(sh.id), title:sh.label})), bs.shape, k => { bs.shape = k; render(); }));
+    const tw = seg([{key:true, icon:ROTATE_ICON, title:'Sideways'}], bs.turn, () => { bs.turn = !bs.turn; render(); });
+    top.appendChild(tw);
+    rows.appendChild(stoneStrip(bs.month, mi => { bs.month = mi; render(); }, false));
+    rows.appendChild(seg(Object.keys(FEATURE_CARATS).map(k => ({key:k, label:FEATURE_CARATS[k].label})), bs.size, k => { bs.size = k; render(); }));
+  });
 }
 
 function shapeIcon(id){
@@ -1353,6 +1054,19 @@ function loadPhoto(src){
 const hexRgb = hx => [1,3,5].map(i => parseInt(hx.slice(i, i+2), 16));
 const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
 
+/* turn one gold pixel into rose gold or silver (backdrop, highlights and shadows stay) */
+function tintGoldPixel(d, i, m){
+  const r = d[i], g = d[i+1], b = d[i+2];
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
+  if (sat < 0.06 || r < b) return;
+  const amt = Math.min(1, (sat - 0.06) / 0.18);
+  const L = 0.30*r + 0.59*g + 0.11*b;
+  const t = m === 'w' ? [L*0.97 + 6, L*0.985 + 6, L*1.02 + 8]                 // cool polished silver
+                      : [Math.min(255, L*1.06 + 16), L*0.84 + 6, L*0.76 + 4];  // warm pink rose gold
+  d[i]   = r + (t[0] - r) * amt;
+  d[i+1] = g + (t[1] - g) * amt;
+  d[i+2] = b + (t[2] - b) * amt;
+}
 /* Metal: real photos where they exist; otherwise recolour the gold pixels.
    Gold is warm and fairly saturated; stones are masked out separately. */
 function tintedBase(src, img, m, n){
@@ -1386,16 +1100,7 @@ function tintedBase(src, img, m, n){
         else for (const [hx, hy, hr] of holes){ if ((xx-hx)*(xx-hx) + (y-hy)*(y-hy) < hr*hr){ skip = true; break; } }
         if (skip) continue;
         const i = (y*c.width + xx)*4, r = d[i], g = d[i+1], b = d[i+2];
-        const mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
-        if (sat < 0.06 || r < b) continue;                 // background, highlights, shadows stay
-        const amt = Math.min(1, (sat - 0.06) / 0.18);       // how much of this pixel is "gold"
-        const L = 0.30*r + 0.59*g + 0.11*b;
-        let t;
-        if (m === 'w') t = [L*0.97 + 6, L*0.985 + 6, L*1.02 + 8];          // cool polished silver
-        else           t = [Math.min(255, L*1.06 + 16), L*0.84 + 6, L*0.76 + 4];  // warm pink rose gold
-        d[i]   = r + (t[0] - r) * amt;
-        d[i+1] = g + (t[1] - g) * amt;
-        d[i+2] = b + (t[2] - b) * amt;
+        tintGoldPixel(d, i, m);
       }
     }
     x.putImageData(id, 0, 0);
@@ -1450,64 +1155,189 @@ function recolor(ctx, w, h, insideAt, mi){
 }
 const smooth = (e0, e1, v) => { const t = Math.max(0, Math.min(1, (v - e0) / (e1 - e0))); return t*t*(3 - 2*t); };
 
-/* Cut a patch around the stone (stone + prongs), recolour it, and lay it
-   back over the photo scaled to the chosen carat with a soft edge. */
-function paintStone(ctx, base, k, s, mi, scale, round){
-  const halfW = (round ? s.r*1.55 : s.w*0.78) * k, halfH = (round ? s.r*1.55 : s.h*0.78) * k;
-  const pw = Math.ceil(halfW*2), ph = Math.ceil(halfH*2);
+/* ---------- pixels ---------- */
+function hueSat(r, g, b){
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
+  let hue = 0;
+  if (mx !== mn){
+    if (mx === r) hue = 60 * (((g - b) / (mx - mn)) % 6);
+    else if (mx === g) hue = 60 * ((b - r) / (mx - mn) + 2);
+    else hue = 60 * ((r - g) / (mx - mn) + 4);
+    if (hue < 0) hue += 360;
+  }
+  return [hue, sat, mx];
+}
+const isMetalPx = (r, g, b) => {          // gold, or gold already tinted to rose/silver
+  const [hue, sat, mx] = hueSat(r, g, b);
+  if (mx < 60) return false;
+  if (metal === 'w') return sat < 0.12 && mx < 240;
+  return (hue >= 10 && hue <= 58) && sat >= 0.14 && sat <= 0.74;
+};
+const notMetal = (r, g, b) => {
+  const [, sat, mx] = hueSat(r, g, b);
+  if (mx > 236 && sat < 0.06) return 0;  // white backdrop
+  return isMetalPx(r, g, b) ? 0 : 1;
+};
+function pixelsOf(c){
+  if (!c.__px || c.__pxv !== c.__v){ c.__px = c.getContext('2d', {willReadFrequently:true}).getImageData(0, 0, c.width, c.height); c.__pxv = c.__v; }
+  return c.__px;
+}
+/* centre of the wire crossing column x nearest to yGuess (null if no wire there) */
+function wireYAt(c, x, yGuess, range){
+  x = Math.round(x);
+  if (x < 2 || x >= c.width - 2) return null;
+  const id = pixelsOf(c), d = id.data, W = c.width;
+  let best = null, run = 0, start = 0;
+  const y0 = Math.max(0, Math.round(yGuess - range)), y1 = Math.min(c.height - 1, Math.round(yGuess + range));
+  for (let y = y0; y <= y1 + 1; y++){
+    let gold = false;
+    if (y <= y1){ const i = (y*W + x)*4; gold = isMetalPx(d[i], d[i+1], d[i+2]); }
+    if (gold){ if (!run) start = y; run++; }
+    else if (run){
+      if (run >= 8){ const cy = start + run/2; if (best == null || Math.abs(cy - yGuess) < Math.abs(best - yGuess)) best = cy; }
+      run = 0;
+    }
+  }
+  return best;
+}
+function featherInto(px, pw, ph, inner){
+  px.globalCompositeOperation = 'destination-in';
+  const R = Math.min(pw, ph) / 2;
+  const g = px.createRadialGradient(pw/2, ph/2, 0, pw/2, ph/2, R);
+  g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(inner, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  px.setTransform(pw/2 / R, 0, 0, ph/2 / R, 0, 0);
+  px.fillStyle = g; px.fillRect(0, 0, 2*R, 2*R);
+  px.setTransform(1, 0, 0, 1, 0, 0);
+  px.globalCompositeOperation = 'source-over';
+}
+function clearBackdrop(px, pw, ph, isBody){
+  const id = px.getImageData(0, 0, pw, ph), d = id.data;
+  for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
+    if (isBody(x, y)) continue;
+    const i = (y*pw + x)*4, mx = Math.max(d[i], d[i+1], d[i+2]), mn = Math.min(d[i], d[i+1], d[i+2]);
+    if (mx > 196 && (mx - mn) < 26) d[i+3] = Math.min(d[i+3], Math.round(255 * (1 - smooth(196, 228, mn))));
+  }
+  px.putImageData(id, 0, 0);
+}
+
+/* ---------- take a stone out: carry the wire across the spot ----------
+   Every row inside the box is filled by blending the pixels just left and right
+   of it, so the wire runs straight through where the stone and prongs were. */
+function eraseStone(ctx, out, cx, cy, hw, hh){
+  const W = out.width, H = out.height;
+  const x0 = Math.max(3, Math.round(cx - hw)), x1 = Math.min(W - 4, Math.round(cx + hw));
+  const y0 = Math.max(0, Math.round(cy - hh)), y1 = Math.min(H - 1, Math.round(cy + hh));
+  const src = pixelsOf(out).data;
+  const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+  const patch = ctx.createImageData(bw, bh), d = patch.data;
+  const at = (x, y, c) => src[(y*W + x)*4 + c];
+  for (let y = y0; y <= y1; y++){
+    const L = [0,1,2].map(c => (at(x0-1,y,c) + at(x0-2,y,c) + at(x0-3,y,c)) / 3);
+    const R = [0,1,2].map(c => (at(x1+1,y,c) + at(x1+2,y,c) + at(x1+3,y,c)) / 3);
+    // where the wire stops on one side (backdrop there), end it crisply near the stone's edge instead of fading
+    const isBg = c => Math.min(c[0], c[1], c[2]) > 188 && Math.max(c[0], c[1], c[2]) - Math.min(c[0], c[1], c[2]) < 22;
+    const bgL = isBg(L), bgR = isBg(R), cut = bgL && !bgR ? cx - hw*0.45 : (!bgL && bgR ? cx + hw*0.45 : null);
+    for (let x = x0; x <= x1; x++){
+      let t = (x - x0) / (x1 - x0 || 1);
+      if (cut != null) t = smooth(cut - 3, cut + 3, x);
+      const s = cut != null ? t : t*t*(3 - 2*t);
+      const i = ((y - y0)*bw + (x - x0))*4;
+      // a little of the photo's own grain so the filled wire isn't flat
+      const grain = 0;
+      if (bgL && bgR){ d[i] = d[i+1] = d[i+2] = 255; }
+      else {
+        const A = bgL && cut != null ? [255,255,255] : L, Bc = bgR && cut != null ? [255,255,255] : R;
+        d[i]   = A[0] + (Bc[0] - A[0]) * s + grain;
+        d[i+1] = A[1] + (Bc[1] - A[1]) * s;
+        d[i+2] = A[2] + (Bc[2] - A[2]) * s;
+      }
+      const e = Math.max(Math.abs(x - cx) / hw, Math.abs(y - cy) / hh);   // box shape, so the corner prongs go too
+      d[i+3] = Math.round(255 * (1 - smooth(0.80, 1.0, e)));
+    }
+  }
+  const p = document.createElement('canvas'); p.width = bw; p.height = bh;
+  p.getContext('2d').putImageData(patch, 0, 0);
+  ctx.drawImage(p, x0, y0);
+  out.__v = (out.__v || 0) + 1;
+}
+
+/* ---------- round top stones: recolour and resize in place ---------- */
+function paintRound(ctx, base, k, s, mi, scale){
+  if (mi === s.m && scale === 1) return;
+  const half = s.r*1.55*k, pw = Math.ceil(half*2);
+  const p = document.createElement('canvas'); p.width = p.height = pw;
+  const px = p.getContext('2d', {willReadFrequently:true});
+  px.drawImage(base, s.x*k - half, s.y*k - half, pw, pw, 0, 0, pw, pw);
+  const R0 = s.r*k;
+  if (mi !== s.m) recolor(px, pw, pw, (x, y, r, g, b) => {
+    const dd = Math.hypot(x - half, y - half);
+    const core = 1 - smooth(R0*0.80, R0*0.92, dd);
+    const rim = dd < R0*1.14 ? notMetal(r, g, b) * (1 - smooth(R0*1.04, R0*1.14, dd)) : 0;
+    return Math.max(core, rim);
+  }, mi);
+  clearBackdrop(px, pw, pw, (x, y) => Math.hypot(x - half, y - half) < R0);
+  featherInto(px, pw, pw, scale > 1 ? 0.80 : 0.86);
+  ctx.drawImage(p, s.x*k - half*scale, s.y*k - half*scale, pw*scale, pw*scale);
+}
+
+/* ---------- bottom stones: real photographed cuts, laid on the bottom wire ----------
+   Each sprite is cut from a studio photo of this ring (the 5-wrap shot) with that
+   cut on the bottom wire; bw/bh = the stone's body in sprite pixels. */
+const SPRITES = {
+  // bw/bh = the stone's body in sprite pixels; norm brings each cut to the same 0.5 ct footprint
+  'emerald-h':{src:'img/studio/bottom/emerald-h.png', bw:140, bh:104, norm:1},
+  'emerald-v':{src:'img/studio/bottom/emerald-v.png', bw:135, bh:160, norm:0.88},
+  'oval-v':   {src:'img/studio/bottom/oval-v.png',    bw:140, bh:192, norm:0.80},
+  'pear-v':   {src:'img/studio/bottom/pear-v.png',    bw:150, bh:200, norm:0.75},
+  'heart-v':  {src:'img/studio/bottom/heart-v.png',   bw:160, bh:165, norm:0.86},
+  'oval-h':   {src:'img/studio/bottom/oval-h.png',    bw:182, bh:142, norm:0.80},
+  'pear-h':   {src:'img/studio/bottom/pear-h.png',    bw:176, bh:142, norm:0.80},
+};
+const spriteImgs = {};
+function spriteFor(shape, turn){
+  // the photographed cut; if the sideways one isn't there, turn the upright one
+  let key = shape + '-' + (turn ? 'h' : 'v'), rot = false;
+  if (!SPRITES[key]){ key = shape + '-' + (turn ? 'v' : 'h'); rot = true; }
+  const sp = SPRITES[key];
+  if (!sp) return null;
+  if (!spriteImgs[key]){
+    const im = new Image(); im.src = sp.src; spriteImgs[key] = im;
+    im.decode().then(() => renderPhoto()).catch(() => {});
+  }
+  const im = spriteImgs[key];
+  if (!(im.complete && im.naturalWidth)) return null;
+  return rot ? {img:im, ...sp, bw:sp.bh, bh:sp.bw, rot:true} : {img:im, ...sp};
+}
+function paintSprite(ctx, sp, cx, cy, scale, mi){
+  const iw = sp.img.naturalWidth, ih = sp.img.naturalHeight;
+  const pw = sp.rot ? ih : iw, ph = sp.rot ? iw : ih;
   const p = document.createElement('canvas'); p.width = pw; p.height = ph;
   const px = p.getContext('2d', {willReadFrequently:true});
-  px.drawImage(base, s.x*k - halfW, s.y*k - halfH, pw, ph, 0, 0, pw, ph);
-  if (mi !== s.m){
-    // the stone's own pixels: the core of the circle, plus anything near its rim that isn't gold
-    const notGold = (r, g, b) => {
-      const mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
-      if (mx > 236 && sat < 0.06) return 0;                       // white backdrop between wires
-      let hue = 0;
-      if (mx !== mn){
-        if (mx === r) hue = 60 * (((g - b) / (mx - mn)) % 6);
-        else if (mx === g) hue = 60 * ((b - r) / (mx - mn) + 2);
-        else hue = 60 * ((r - g) / (mx - mn) + 4);
-        if (hue < 0) hue += 360;
-      }
-      const gold = hue >= 22 && hue <= 58 && sat >= 0.16 && sat <= 0.74;
-      return gold ? 0 : 1;
-    };
-    const insideAt = round
-      ? (x, y, r, g, b) => {
-          const dd = Math.hypot(x - halfW, y - halfH), R0 = s.r*k;
-          const core = 1 - smooth(R0*0.80, R0*0.92, dd);
-          const rim = dd < R0*1.14 ? notGold(r, g, b) * (1 - smooth(R0*1.04, R0*1.14, dd)) : 0;
-          return Math.max(core, rim);
-        }
-      : (x, y) => (1 - smooth(s.w*k*0.40, s.w*k*0.49, Math.abs(x - halfW))) * (1 - smooth(s.h*k*0.40, s.h*k*0.49, Math.abs(y - halfH)));
-    recolor(px, pw, ph, insideAt, mi);
-  }
-  if (scale !== 1 || mi !== s.m){
-    // white backdrop around the setting goes transparent, so an enlarged stone
-    // never paints a white box over the wires next to it
-    {
-      const id = px.getImageData(0, 0, pw, ph), d = id.data;
-      for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
-        const body = round
-          ? Math.hypot(x - halfW, y - halfH) < s.r*k*1.0
-          : Math.abs(x - halfW) < s.w*k*0.5 && Math.abs(y - halfH) < s.h*k*0.5;
-        if (body) continue;
-        const i = (y*pw + x)*4, mx = Math.max(d[i], d[i+1], d[i+2]), mn = Math.min(d[i], d[i+1], d[i+2]);
-        if (mx > 196 && (mx - mn) < 26) d[i+3] = Math.round(255 * (1 - smooth(196, 228, mn)));
-      }
-      px.putImageData(id, 0, 0);
+  if (sp.rot){ px.translate(pw, 0); px.rotate(Math.PI/2); px.drawImage(sp.img, 0, 0); px.setTransform(1, 0, 0, 1, 0, 0); }
+  else px.drawImage(sp.img, 0, 0);
+  if (metal !== 'y'){
+    const id0 = px.getImageData(0, 0, pw, ph), d0 = id0.data;
+    for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
+      if (((x - pw/2) / (sp.bw*0.47))**2 + ((y - ph/2) / (sp.bh*0.47))**2 < 1) continue;   // leave the stone itself
+      tintGoldPixel(d0, (y*pw + x)*4, metal);
     }
-    // feather the patch so its edge melts into the wire around it
-    px.globalCompositeOperation = 'destination-in';
-    const g = px.createRadialGradient(halfW, halfH, 0, halfW, halfH, Math.min(halfW, halfH));
-    g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(scale > 1 ? 0.80 : 0.86, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-    px.setTransform(halfW / Math.min(halfW, halfH), 0, 0, halfH / Math.min(halfW, halfH), 0, 0);
-    px.fillStyle = g;
-    px.fillRect(0, 0, pw, ph);
-    px.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(p, s.x*k - halfW*scale, s.y*k - halfH*scale, pw*scale, ph*scale);
+    px.putImageData(id0, 0, 0);
   }
+  const inBody = (x, y) => ((x - pw/2) / (sp.bw*0.5))**2 + ((y - ph/2) / (sp.bh*0.5))**2 < 1;
+  if (mi !== 3) recolor(px, pw, ph, (x, y, r, g, b) => {
+    const e = ((x - pw/2) / (sp.bw*0.52))**2 + ((y - ph/2) / (sp.bh*0.52))**2;
+    return e < 1 ? Math.max(1 - smooth(0.55, 0.8, e), notMetal(r, g, b)) * (1 - smooth(0.85, 1, e)) : 0;
+  }, mi);
+  clearBackdrop(px, pw, ph, inBody);
+  // soft square edge (keeps the corner prongs)
+  const id = px.getImageData(0, 0, pw, ph), d = id.data, E = 6;
+  for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
+    const f = smooth(0, E, x) * smooth(0, E, pw - 1 - x) * smooth(0, E, y) * smooth(0, E, ph - 1 - y);
+    d[(y*pw + x)*4 + 3] *= f;
+  }
+  px.putImageData(id, 0, 0);
+  const s = scale * sp.norm;
+  ctx.drawImage(p, cx - pw*s/2, cy - ph*s/2, pw*s, ph*s);
 }
 function photoFor(){
   const n = Math.min(Math.max(wraps.length, 1), MAX_WRAPS);
@@ -1525,41 +1355,103 @@ function renderPhoto(){
   const cv = $('#photoCanvas');
   if (!img) return;                                   // renderPhoto runs again once it loads
   if (cv.width !== img.naturalWidth){ cv.width = img.naturalWidth; cv.height = img.naturalHeight; }
-  const ctx = cv.getContext('2d');
+  const ctx = cv.getContext('2d', {willReadFrequently:true});
   const base = tintedBase(src, img, metal, n);
+  ctx.globalCompositeOperation = 'source-over';
   ctx.drawImage(base, 0, 0);
+  cv.__v = (cv.__v || 0) + 1;
   const k = cv.width / 900, P = PHOTO_STONES[n];
+  const avoid = P.wraps.map(s => [s.x*k, s.y*k, s.r*k*1.5]);
+  const B = P.bottom, bLong = Math.max(B.w, B.h), photoScale = bLong / 140;
+  avoid.push([B.x*k, B.y*k, bLong*k*0.75]);
+
+  // top wraps: plain wraps lose their stone, the rest take the chosen stone and carat
   const topScale = STONE_CARATS[stoneCarat].scale / STONE_CARATS.c05.scale;
   P.wraps.forEach((s, i) => {
     const st = wraps[i] && wraps[i].stone;
-    paintStone(ctx, base, k, s, st ? st.month : s.m, st ? topScale : 1, true);
+    if (!st) eraseStone(ctx, cv, s.x*k, s.y*k, s.r*1.85*k, s.r*1.45*k);
   });
-  const bs = feature.on && feature.stones[0];
-  if (bs) paintStone(ctx, base, k, P.bottom, bs.month, FEATURE_CARATS[bs.size].scale / FEATURE_CARATS.c50.scale, false);
+  P.wraps.forEach((s, i) => {
+    const st = wraps[i] && wraps[i].stone;
+    if (st) paintRound(ctx, base, k, s, st.month, topScale);
+  });
 
+  // bottom wire
+  const origSideways = B.w > B.h;
+  const stones = feature.on ? feature.stones : [];
+  const same = stones.length === 1 && stones[0].shape === 'emerald' && Boolean(stones[0].turn) === origSideways;
+  if (same){
+    const bs = stones[0], sc = FEATURE_CARATS[bs.size].scale / FEATURE_CARATS.c50.scale;
+    paintEmeraldInPlace(ctx, base, k, B, bs.month, sc);
+  } else {
+    eraseStone(ctx, cv, B.x*k, B.y*k, B.w*0.70*k, B.h*0.98*k);
+    const sprites = stones.map(bs => spriteFor(bs.shape, bs.turn));
+    if (stones.length && sprites.every(Boolean)){
+      let scales = stones.map(bs => photoScale * k * FEATURE_CARATS[bs.size].scale / FEATURE_CARATS.c50.scale);
+      let widths = sprites.map((sp, i) => sp.bw * sp.norm * scales[i]);
+      const x0 = B.x*k, y0 = B.y*k;
+      // follow the bottom wire both ways from the stone's spot to find how much wire there is
+      const trace = dir => {
+        let x = x0, y = y0, last = x0;
+        for (let step = 0; step < 120; step++){
+          x += dir * 6*k;
+          const yw = wireYAt(cv, x, y, 26*k);
+          if (yw == null) break;
+          y = yw; last = x;
+        }
+        return last;
+      };
+      const leftEnd = trace(-1), rightEnd = trace(1);
+      let gap = 22 * k;
+      let total = widths.reduce((a, b) => a + b, 0) + gap * (stones.length - 1);
+      const room = Math.max(widths[0], (rightEnd - leftEnd) - 20*k);
+      if (total > room){                       // smaller stones when several share the wire
+        const f = room / total;
+        scales = scales.map(s => s * f); widths = widths.map(w => w * f); gap *= f; total = room;
+      }
+      let left = Math.max(leftEnd + 10*k, Math.min(x0 - total/2, rightEnd - 10*k - total));
+      if (stones.length === 1) left = x0 - widths[0]/2;
+      let x = left, yPrev = y0;
+      const yAtX0 = wireYAt(cv, x0, y0, 30*k);
+      stones.forEach((bs, i) => {
+        const cx = x + widths[i]/2;
+        const yw = wireYAt(cv, cx, yPrev, 40*k);
+        const cy = (yw != null && yAtX0 != null) ? y0 + (yw - yAtX0) : y0;
+        if (yw != null) yPrev = yw;
+        paintSprite(ctx, sprites[i], cx, cy, scales[i], bs.month);
+        x += widths[i] + gap;
+      });
+    }
+  }
   const what = n + ' wrap' + (n !== 1 ? 's' : '') + ' in ' + METALS[metal].label.toLowerCase();
-  cv.setAttribute('aria-label', 'Studio photograph of the ring with ' + what + ', showing your stones');
-  const cap = $('#photoCap');
-  cap.textContent = what.charAt(0).toUpperCase() + what.slice(1);
-  h('span', 'more', cap, ' · your stones, at your carat');
+  cv.setAttribute('aria-label', 'Photograph of your ring, ' + what);
+}
+function paintEmeraldInPlace(ctx, base, k, s, mi, scale){
+  if (mi === s.m && scale === 1) return;
+  const hw = s.w*0.78*k, hh = s.h*0.78*k, pw = Math.ceil(hw*2), ph = Math.ceil(hh*2);
+  const p = document.createElement('canvas'); p.width = pw; p.height = ph;
+  const px = p.getContext('2d', {willReadFrequently:true});
+  px.drawImage(base, s.x*k - hw, s.y*k - hh, pw, ph, 0, 0, pw, ph);
+  if (mi !== s.m) recolor(px, pw, ph, (x, y) => (1 - smooth(s.w*k*0.40, s.w*k*0.49, Math.abs(x - hw))) * (1 - smooth(s.h*k*0.40, s.h*k*0.49, Math.abs(y - hh))), mi);
+  clearBackdrop(px, pw, ph, (x, y) => Math.abs(x - hw) < s.w*k*0.5 && Math.abs(y - hh) < s.h*k*0.5);
+  featherInto(px, pw, ph, scale > 1 ? 0.80 : 0.86);
+  ctx.drawImage(p, s.x*k - hw*scale, s.y*k - hh*scale, pw*scale, ph*scale);
 }
 document.querySelectorAll('.viewseg button').forEach(b => b.addEventListener('click', () => { view = b.dataset.view; renderPhoto(); }));
-// fit the photo to its frame (leaving room for the switch above and the caption below)
+// fit the photo to its frame
 function fitPhoto(){
   const f = $('#photoView'), cv = $('#photoCanvas');
   if (!f || !f.clientWidth) return;
-  const top = isPhoneW() ? 30 : 40, bottom = isPhoneW() ? 24 : 34;
+  const top = 34, bottom = 4;
   const side = Math.max(120, Math.min(f.clientWidth, f.clientHeight - top - bottom));
   cv.style.width = cv.style.height = side + 'px';
   cv.style.marginTop = (top - bottom) + 'px';
 }
-const isPhoneW = () => matchMedia('(max-width:980px)').matches;
 new ResizeObserver(fitPhoto).observe($('.stage'));
 
 function render(){
   renderEditor();
   renderScene();
-  renderSummary();
   renderPhoto();
 }
 
@@ -1574,19 +1466,7 @@ $('#btnAdd').addEventListener('click', () => {
   render();
 });
 
-$('#btnAddBottom').addEventListener('click', () => {
-  if (feature.stones.length >= MAX_BOTTOM) return;
-  feature.stones.push(newBottomStone({shape: ['pear','emerald','heart'][feature.stones.length % 3], month: 3, size:'c50'}));
-  selected = 'f' + (feature.stones.length - 1);
-  render();
-});
 
-$('#featTog').addEventListener('click', () => {
-  feature.on = !feature.on;
-  if (feature.on && !feature.stones.length) feature.stones.push(newBottomStone());
-  selected = feature.on ? 'f0' : 0;
-  render();
-});
 
 $('#btnReset').addEventListener('click', () => { defaultDesign(); render(); });
 
@@ -1603,7 +1483,7 @@ $('#btnSurprise').addEventListener('click', () => {
   const months = [...Array(12).keys()].sort(() => Math.random() - .5);
   wraps = Array.from({length: n}, (_, i) => newWrap({
     stone: Math.random() < .85
-      ? {month: months[i % 12], month2: months[(i + 5) % 12], name:'', twin: Math.random() < .15}
+      ? {month: months[i % 12], name:'', twin: false}
       : null,
   }));
   stoneCarat = ['c05','c05','c10','c15','c25'][Math.floor(Math.random()*5)];
@@ -1641,7 +1521,7 @@ $('#modalBg').addEventListener('click', e => { if (e.target === e.currentTarget)
 $('#btnCopy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(buildSpec()); $('#btnCopy').textContent = 'Copied'; }
   catch { $('#btnCopy').textContent = 'Select the text above and copy it'; }
-  setTimeout(() => { $('#btnCopy').textContent = 'Copy the spec'; }, 1600);
+  setTimeout(() => { $('#btnCopy').textContent = 'Copy'; }, 1600);
 });
 
 /* reference photos: inline strip on desktop, straight to the lightbox on phones */
@@ -1654,21 +1534,8 @@ function openLightbox(a){
   $('#lightbox').classList.add('open');
 }
 function closeLightbox(){ $('#lightbox').classList.remove('open'); }
-$('#refTog').addEventListener('click', () => {
-  if (isPhone()){ openLightbox(refPics[0]); return; }
-  const strip = $('#refStrip');
-  const open = strip.hidden;
-  strip.hidden = !open;
-  $('#refTog').setAttribute('aria-expanded', String(open));
-});
+$('#refTog').addEventListener('click', () => openLightbox(refPics[0]));
 refPics.forEach(a => a.addEventListener('click', e => { e.preventDefault(); openLightbox(a); }));
-$('#navRef').addEventListener('click', e => {
-  e.preventDefault();
-  if (isPhone()){ openLightbox(refPics[0]); return; }
-  $('#refStrip').hidden = false; $('#refTog').setAttribute('aria-expanded', 'true');
-  $('#refTog').scrollIntoView({behavior:'smooth', block:'center'});
-});
-if (/ref/.test(location.hash) && !isPhone()){ $('#refStrip').hidden = false; $('#refTog').setAttribute('aria-expanded', 'true'); }
 $('#lightbox').addEventListener('click', closeLightbox);
 document.addEventListener('keydown', e => { if (e.key === 'Escape'){ closeLightbox(); $('#modalBg').classList.remove('open'); } });
 
