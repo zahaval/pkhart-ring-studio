@@ -2,6 +2,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PK HART — Birthstone Ring Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@400;500&display=swap" rel="stylesheet">
 
 <!--
   PK HART — BIRTHSTONE RING STUDIO (concept demo, v2 — photoreal)
@@ -19,146 +22,162 @@
 -->
 
 <style>
-/* ============================ PK HART TOKENS ============================
-   PK HART's own palette and type. The layout discipline (8px grid, one
-   border weight, one small radius, flat offset depth, numbered section
-   openers, quick flat motion) is borrowed from the studio's house system. */
+/* ============================ PK HART — STUDIO STYLE ============================
+   Crisp gallery look: pure white ground, black ink, an editorial serif for
+   display, spaced capitals for labels and buttons, square edges, hairlines.
+   Discipline from the studio's house system: 8px grid, one hairline weight,
+   no shadows, quick flat motion. The ring photos carry all the colour. */
 :root{
-  --ink:#14110F; --ink-2:#5B5148; --ink-3:#8C8178;
-  --ivory:#FBF8F4; --paper:#FFFFFF; --sand:#EFE8DC; --sand-2:#E2D8C7;
-  --gold:#A9843F; --gold-ink:#8A6A2C; --gold-lt:#E7D9B8; --gold-wash:#F4ECDC;
-  --line:1.5px; --r:2px; --pill:999px;
-  --serif:Georgia,'Times New Roman',serif;
-  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  --ink:#111111; --ink-2:#5E5E5E; --ink-3:#9A9A9A;
+  --paper:#FFFFFF; --ivory:#FFFFFF; --mist:#F6F6F6; --line-c:#E4E4E4; --line-2:#CFCFCF;
+  --sand:#F1F1F1; --sand-2:#E4E4E4;
+  --gold:#111111; --gold-ink:#111111; --gold-lt:#F6F6F6; --gold-wash:#F6F6F6;
+  --line:1px; --r:0px; --pill:0px;
+  --serif:'Cormorant Garamond', 'Cormorant', Georgia, 'Times New Roman', serif;
+  --sans:'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --ease:cubic-bezier(.2,.7,.3,1); --fast:160ms;
-  --rail:312px; --tray:312px;
+  --rail:320px; --tray:340px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--ivory); color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased}
-h1,h2{font-family:var(--serif); font-weight:400; letter-spacing:.005em; margin:0}
+body{background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:14.5px; line-height:1.55; -webkit-font-smoothing:antialiased}
+h1,h2{font-family:var(--serif); font-weight:500; letter-spacing:0; margin:0; font-variant-numeric:lining-nums}
 button,input,select{font-family:var(--sans)}
 button{cursor:pointer}
-:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
 @media (prefers-reduced-motion:reduce){ *,*::before,*::after{transition:none !important; animation:none !important} }
 
 /* small type roles */
-.eyebrow{font-size:12px; font-weight:600; color:var(--ink); letter-spacing:0}
-.muted{color:var(--ink-2); font-size:12.5px}
+.caps{font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase}
+.eyebrow{font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink)}
+.muted{color:var(--ink-2); font-size:13px}
 .tag{
-  display:inline-block; font-family:var(--sans); font-size:11.5px; font-weight:500; line-height:1; color:var(--ink);
-  border:var(--line) solid var(--ink); border-radius:var(--pill); padding:5px 10px; background:var(--paper);
+  display:inline-block; font-family:var(--sans); font-size:10.5px; font-weight:500; line-height:1; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink); border:1px solid var(--ink); padding:6px 9px; background:var(--paper); vertical-align:middle;
 }
-.tag.gold{border-color:var(--gold); color:var(--gold-ink); background:var(--gold-wash)}
+.tag.gold{border-color:var(--ink); color:var(--ink); background:var(--paper)}
 
-/* section opener: thin rule + tiny numbered label sitting on it */
-.datum{display:flex; align-items:center; gap:12px; margin:0 0 16px}
-.datum .num{font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--gold-ink); white-space:nowrap}
-.datum .ttl{font-size:13px; font-weight:600; color:var(--ink); white-space:nowrap}
-.datum::after{content:""; flex:1; height:1px; background:var(--sand-2)}
-.datum .aside{font-size:12px; color:var(--ink-2); white-space:nowrap}
+/* section opener: spaced caps label over a hairline */
+.datum{display:flex; align-items:baseline; gap:12px; margin:0 0 16px; padding-bottom:10px; border-bottom:1px solid var(--line-c)}
+.datum .num{font-size:11px; font-weight:500; letter-spacing:.12em; color:var(--ink-3); white-space:nowrap}
+.datum .ttl{font-size:12px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink); white-space:nowrap}
+.datum::after{content:none}
+.datum .aside{font-size:12.5px; color:var(--ink-2); white-space:nowrap; margin-left:auto}
 .datum .aside:empty{display:none}
-.section + .section{margin-top:32px}
+.section + .section{margin-top:40px}
 
-/* ============================ HEADER ============================ */
-header.top{
-  display:flex; flex-wrap:wrap; gap:16px 32px; align-items:flex-end;
-  padding:32px 32px 24px; border-bottom:1px solid var(--sand-2); background:var(--paper);
+/* ============================ NAV + HEADER ============================ */
+.nav{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:18px 40px; border-bottom:1px solid var(--line-c); background:var(--paper);
 }
-header.top .brand{flex:1 1 320px; min-width:0}
-header.top .house{font-size:12px; font-weight:600; color:var(--gold-ink); letter-spacing:.02em}
-header.top h1{font-size:30px; line-height:1.1; margin-top:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap}
-header.top .sub{font-size:14px; color:var(--ink-2); margin-top:8px; max-width:60ch}
+.wordmark{font-family:var(--serif); font-size:28px; font-weight:500; letter-spacing:.14em; line-height:1; color:var(--ink); text-decoration:none}
+.wordmark small{display:block; font-family:var(--sans); font-size:9.5px; font-weight:500; letter-spacing:.32em; margin-top:6px; color:var(--ink-2)}
+.nav-links{display:flex; gap:28px}
+.nav-links a{font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink); text-decoration:none; border-bottom:1px solid transparent; padding-bottom:2px}
+.nav-links a:hover{border-bottom-color:var(--ink)}
+
+header.top{
+  display:flex; flex-wrap:wrap; gap:16px 40px; align-items:flex-end; justify-content:space-between;
+  padding:48px 40px 32px; background:var(--paper);
+}
+header.top .brand{flex:1 1 420px; min-width:0}
+header.top .house{font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-2)}
+header.top h1{font-size:54px; line-height:1.02; margin-top:12px; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+header.top .sub{font-size:16px; color:var(--ink-2); margin-top:14px; max-width:58ch; line-height:1.6}
 .top-actions{display:flex; gap:8px; align-items:center}
 
 /* ============================ BUTTONS ============================ */
 .btn{
-  display:inline-flex; align-items:center; justify-content:center; gap:6px;
-  border:var(--line) solid var(--ink); background:var(--paper); color:var(--ink); border-radius:var(--r);
-  padding:9px 14px; font-size:13.5px; font-weight:500; line-height:1.2; white-space:nowrap;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  border:1px solid var(--ink); background:var(--paper); color:var(--ink); border-radius:0;
+  padding:12px 18px; font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; line-height:1.2; white-space:nowrap;
+  text-decoration:none;
   transition:background var(--fast) var(--ease), color var(--fast) var(--ease), border-color var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
-.btn:hover{background:var(--gold-wash)}
-.btn:active{transform:translate(1px,1px)}
-.btn.gold{background:var(--gold); border-color:var(--gold); color:#fff; font-weight:600}
-.btn.gold:hover{background:var(--gold-ink); border-color:var(--gold-ink)}
-.btn.quiet{border-color:var(--sand-2)}
-.btn.quiet:hover{border-color:var(--ink)}
-.btn:disabled{opacity:.4; cursor:not-allowed; transform:none}
-.btn.sm{padding:7px 10px; font-size:12.5px}
+.btn:hover{background:var(--ink); color:#fff}
+.btn:active{transform:translateY(1px)}
+.btn.gold{background:var(--ink); border-color:var(--ink); color:#fff}
+.btn.gold:hover{background:#333; border-color:#333}
+.btn.quiet{border-color:var(--line-2)}
+.btn.quiet:hover{border-color:var(--ink); background:var(--ink); color:#fff}
+.btn:disabled{opacity:.35; cursor:not-allowed; transform:none; background:var(--paper); color:var(--ink)}
+.btn.sm{padding:9px 12px; font-size:10.5px}
 .btn.wide{width:100%}
-.btn .arr{font-weight:400}
+.btn .arr{font-weight:400; letter-spacing:0}
 
 /* ============================ LAYOUT ============================ */
 .wrap{
   display:grid; grid-template-columns:var(--tray) minmax(0,1fr) var(--rail);
-  gap:0; align-items:start; min-height:560px;
+  gap:0; align-items:start; min-height:560px; border-top:1px solid var(--line-c);
 }
 @media (min-width:981px){
   .stage-col, .rail{position:sticky; top:0; max-height:100vh; overflow-y:auto}
 }
-.col{padding:24px 24px 40px; min-width:0}
-.tray{border-right:1px solid var(--sand-2)}
-.rail{border-left:1px solid var(--sand-2); display:flex; flex-direction:column; gap:24px}
+.col{padding:32px 32px 48px; min-width:0}
+.tray{border-right:1px solid var(--line-c)}
+.rail{border-left:1px solid var(--line-c); display:flex; flex-direction:column; gap:28px}
 
 /* ============================ BAND EDITOR ============================ */
 .bands{display:flex; flex-direction:column; gap:8px}
 .band-card{
-  border:var(--line) solid var(--sand-2); border-radius:var(--r); background:var(--paper);
-  padding:12px 12px 14px; cursor:pointer;
-  transition:border-color var(--fast) var(--ease), background var(--fast) var(--ease);
+  border:1px solid var(--line-c); background:var(--paper);
+  padding:16px 16px 18px; cursor:pointer;
+  transition:border-color var(--fast) var(--ease);
 }
-.band-card:hover{border-color:var(--ink-3)}
-.band-card.sel{border-color:var(--gold); background:#FFFDF9}
+.band-card:hover{border-color:var(--line-2)}
+.band-card.sel{border-color:var(--ink)}
 .band-card .bc-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px}
-.band-card .bc-title{font-family:var(--serif); font-size:15.5px; min-width:0}
-.band-card .bc-stone{font-family:var(--sans); font-size:12px; color:var(--ink-2); margin-left:8px}
+.band-card .bc-title{font-family:var(--serif); font-variant-numeric:lining-nums; font-size:21px; font-weight:500; line-height:1.1; min-width:0}
+.band-card .bc-stone{font-family:var(--sans); font-size:12.5px; color:var(--ink-2); margin-left:10px; letter-spacing:0}
 .bc-remove{
-  border:var(--line) solid transparent; background:transparent; color:var(--ink-2); font-size:16px; line-height:1;
-  padding:2px 6px; border-radius:var(--r); flex:none;
+  border:1px solid transparent; background:transparent; color:var(--ink-2); font-size:18px; line-height:1;
+  padding:2px 7px; flex:none;
   transition:border-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 .bc-remove:hover{color:var(--ink); border-color:var(--ink)}
-.row{display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap}
-.row .lbl{font-size:12px; font-weight:500; color:var(--ink-2); width:48px; flex:none}
-.addnote{font-size:12.5px; color:var(--ink-2); margin-top:8px}
+.row{display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap}
+.row .lbl{font-size:10.5px; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); width:52px; flex:none}
+.addnote{font-size:13px; color:var(--ink-2); margin-top:8px}
 .addnote:empty{display:none}
 
 /* metal swatches: circles because they are swatches of the metal */
-.metals{display:flex; gap:8px}
-.metals.big .metal{width:32px; height:32px}
+.metals{display:flex; gap:12px}
+.metals.big .metal{width:36px; height:36px}
 .metal{
-  width:24px; height:24px; border-radius:50%; border:var(--line) solid var(--sand-2);
-  padding:0; position:relative; transition:border-color var(--fast) var(--ease);
+  width:26px; height:26px; border-radius:50%; border:1px solid var(--line-2);
+  padding:0; position:relative; transition:border-color var(--fast) var(--ease), outline-color var(--fast) var(--ease);
+  outline:1px solid transparent; outline-offset:3px;
 }
 .metal:hover{border-color:var(--ink-3)}
-.metal[aria-pressed=true]{border-color:var(--ink); outline:var(--line) solid var(--gold); outline-offset:2px}
-.metal.y{background:linear-gradient(135deg,#EDCB7E 15%,#C59A48 60%,#A87F35)}
-.metal.r{background:linear-gradient(135deg,#EFC0A6 15%,#CE8F70 60%,#B07152)}
-.metal.w{background:linear-gradient(135deg,#F7F7F9 15%,#C9CBD2 60%,#A5A8B1)}
+.metal[aria-pressed=true]{border-color:var(--ink); outline-color:var(--ink)}
+.metal.y{background:linear-gradient(135deg,#F1D58E 10%,#D1A955 55%,#A98034)}
+.metal.r{background:linear-gradient(135deg,#F3C9B3 10%,#D59A7C 55%,#B07152)}
+.metal.w{background:linear-gradient(135deg,#FAFAFB 10%,#CFD1D7 55%,#A6A9B2)}
 
 /* stone swatches */
-.stones{display:grid; grid-template-columns:repeat(6,1fr); gap:6px; flex:1}
+.stones{display:grid; grid-template-columns:repeat(6,1fr); gap:8px; flex:1}
 .stone{
-  width:22px; height:22px; border-radius:50%; border:var(--line) solid var(--sand-2);
-  padding:0; justify-self:center; transition:border-color var(--fast) var(--ease);
+  width:24px; height:24px; border-radius:50%; border:1px solid rgba(0,0,0,.12);
+  padding:0; justify-self:center; transition:outline-color var(--fast) var(--ease);
+  outline:1px solid transparent; outline-offset:2px;
 }
-.stone:hover{border-color:var(--ink-3)}
-.stone[aria-pressed=true]{border-color:var(--ink); outline:var(--line) solid var(--gold); outline-offset:2px}
+.stone:hover{outline-color:var(--line-2)}
+.stone[aria-pressed=true]{outline-color:var(--ink)}
 
-/* pill pickers (carat, cut) — the one rounded element */
+/* rectangular pickers (carat, cut) */
 .sizeseg{display:inline-flex; flex-wrap:wrap; gap:6px}
 .sizeseg button{
-  border:var(--line) solid var(--sand-2); background:var(--paper); border-radius:var(--pill);
-  padding:5px 11px; font-size:12px; font-weight:500; color:var(--ink); white-space:nowrap;
+  border:1px solid var(--line-2); background:var(--paper); border-radius:0;
+  padding:8px 12px; font-size:12px; font-weight:500; letter-spacing:.06em; color:var(--ink); white-space:nowrap;
   transition:background var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 .sizeseg button:hover{border-color:var(--ink)}
 .sizeseg button[aria-pressed=true]{background:var(--ink); border-color:var(--ink); color:#fff}
 .shapes{display:flex; gap:6px; flex-wrap:wrap}
 .shape{
-  border:var(--line) solid var(--sand-2); background:var(--paper); border-radius:var(--pill); padding:5px 11px 5px 9px;
-  font-size:12px; font-weight:500; color:var(--ink); display:inline-flex; align-items:center; gap:6px;
+  border:1px solid var(--line-2); background:var(--paper); border-radius:0; padding:7px 11px 7px 9px;
+  font-size:12px; font-weight:500; letter-spacing:.04em; color:var(--ink); display:inline-flex; align-items:center; gap:6px;
   transition:background var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 .shape svg{display:block}
@@ -166,89 +185,84 @@ header.top .sub{font-size:14px; color:var(--ink-2); margin-top:8px; max-width:60
 .shape[aria-pressed=true]{background:var(--ink); border-color:var(--ink); color:#fff}
 
 /* checkboxes (stone on/off, twins, sideways, bottom row) */
-.twinlbl{display:inline-flex; align-items:center; gap:8px; margin-left:auto; cursor:pointer}
-.twintxt{font-size:12.5px; font-weight:500; color:var(--ink)}
+.twinlbl{display:inline-flex; align-items:center; gap:10px; margin-left:auto; cursor:pointer}
+.twintxt{font-size:13px; font-weight:400; color:var(--ink)}
 .tog{
-  width:18px; height:18px; border-radius:var(--r); border:var(--line) solid var(--ink-3); background:var(--paper);
+  width:18px; height:18px; border-radius:0; border:1px solid var(--ink-3); background:var(--paper);
   position:relative; padding:0; flex:none; transition:background var(--fast) var(--ease), border-color var(--fast) var(--ease);
 }
 .tog::after{
   content:""; position:absolute; left:5px; top:1.5px; width:5px; height:9px;
-  border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); opacity:0; transition:opacity var(--fast) var(--ease);
+  border:solid #fff; border-width:0 1.5px 1.5px 0; transform:rotate(45deg); opacity:0; transition:opacity var(--fast) var(--ease);
 }
 .tog:hover{border-color:var(--ink)}
-.tog[aria-pressed=true]{background:var(--gold); border-color:var(--gold)}
+.tog[aria-pressed=true]{background:var(--ink); border-color:var(--ink)}
 .tog[aria-pressed=true]::after{opacity:1}
 
 .name-in{
-  flex:1; border:var(--line) solid var(--sand-2); border-radius:var(--r); padding:7px 10px; font-size:13.5px;
-  color:var(--ink); background:var(--paper); min-width:0; transition:border-color var(--fast) var(--ease);
+  flex:1; border:0; border-bottom:1px solid var(--line-2); border-radius:0; padding:7px 2px; font-size:14px;
+  color:var(--ink); background:transparent; min-width:0; transition:border-color var(--fast) var(--ease);
 }
 .name-in::placeholder{color:var(--ink-3)}
-.name-in:focus{outline:none; border-color:var(--gold)}
+.name-in:focus{outline:none; border-bottom-color:var(--ink)}
 
 /* ============================ STAGE ============================ */
-.stage-col{display:flex; flex-direction:column}
+.stage-col{display:flex; flex-direction:column; padding-left:24px; padding-right:24px}
 .stage-head{display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap}
-/* depth is a flat offset layer behind the stage, not a shadow */
-.stagewrap{position:relative; z-index:0; flex:1; display:flex; margin:16px 10px 10px 0}
-.stagewrap::before{
-  content:""; position:absolute; inset:0; transform:translate(10px,10px);
-  background:var(--gold-lt); border:var(--line) solid var(--ink); border-radius:var(--r); z-index:-1;
-}
+.stagewrap{position:relative; flex:1; display:flex; margin:0}
+.stagewrap::before{content:none}
 .stage{
-  flex:1; background:var(--ivory); border:var(--line) solid var(--ink); border-radius:var(--r);
-  position:relative; min-height:480px; overflow:hidden;
+  flex:1; background:#fff; border:0; border-radius:0;
+  position:relative; min-height:560px; overflow:hidden;
 }
-.stage canvas{display:block; width:100%; height:100%; touch-action:none; cursor:grab}
+.stage canvas#scene{display:block; width:100%; height:100%; touch-action:none; cursor:grab}
 .stage-btns{position:absolute; right:12px; bottom:12px; display:flex; gap:8px}
 .stage-btns .btn{background:var(--paper)}
-/* Photo / 3D switch: studio photographs of the real construction, 1–5 wraps per metal */
-.viewseg{position:absolute; left:12px; top:12px; z-index:3; display:flex; border:var(--line) solid var(--ink); border-radius:var(--r); overflow:hidden; background:var(--paper)}
-.viewseg button{border:0; background:transparent; padding:7px 12px; font-size:12.5px; font-weight:500; color:var(--ink); transition:background var(--fast) var(--ease)}
-.viewseg button + button{border-left:var(--line) solid var(--ink)}
-.viewseg button[aria-pressed=true]{background:var(--ink); color:#fff}
-.photo{position:absolute; inset:0; margin:0; background:#FEFEFB; display:none; z-index:2}
-.stage.is-photo .photo{display:block}
+.stage-btns .btn:hover{background:var(--ink)}
+/* Photo / 3D switch: studio photographs of the real construction, 1–5 wraps */
+.viewseg{position:absolute; left:0; top:0; z-index:3; display:flex; gap:20px; background:transparent}
+.viewseg button{border:0; border-bottom:1px solid transparent; background:transparent; padding:4px 0; font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); transition:color var(--fast) var(--ease), border-color var(--fast) var(--ease)}
+.viewseg button:hover{color:var(--ink)}
+.viewseg button[aria-pressed=true]{color:var(--ink); border-bottom-color:var(--ink)}
+.photo{position:absolute; inset:0; margin:0; background:#fff; display:none; z-index:2}
+.stage.is-photo .photo{display:flex; flex-direction:column; align-items:center; justify-content:center}
 .stage.is-photo .stage-btns{display:none}
-.photo img{width:100%; height:calc(100% - 92px); object-fit:contain; display:block; margin-top:52px}
-.photo figcaption{position:absolute; left:12px; right:12px; bottom:10px; font-size:12.5px; line-height:1.4; color:var(--ink-2); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.photo canvas{display:block; flex:1 1 auto; min-height:0; max-width:100%; aspect-ratio:1/1; width:auto; height:100%; margin-top:36px; margin-bottom:36px}
+.photo figcaption{position:absolute; left:0; right:0; bottom:6px; font-size:12.5px; line-height:1.4; color:var(--ink-2); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
 /* ============================ RAIL ============================ */
 .sumlist{display:flex; flex-direction:column}
-.sumrow{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--sand)}
+.sumrow{display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line-c)}
 .sumrow:last-child{border-bottom:0}
-.dotsw{width:14px; height:14px; border-radius:50%; border:1px solid rgba(20,17,15,.18); flex:none}
-.sumrow .what{flex:1; min-width:0; font-size:13px}
-.sumrow .what .nm{font-style:italic; color:var(--ink-2)}
-.sizebox{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-.sizebox .lbl{font-size:12.5px; font-weight:500}
+.dotsw{width:14px; height:14px; border-radius:50%; border:1px solid rgba(0,0,0,.14); flex:none}
+.sumrow .what{flex:1; min-width:0; font-size:13.5px}
+.sumrow .what .nm{font-family:var(--serif); font-style:italic; font-size:15px; color:var(--ink-2)}
+.sizebox{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.sizebox .lbl{font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase}
 .sizebox select{
-  border:var(--line) solid var(--sand-2); border-radius:var(--r); background:var(--paper); padding:7px 10px;
-  font-size:13.5px; color:var(--ink); transition:border-color var(--fast) var(--ease);
+  border:1px solid var(--line-2); border-radius:0; background:var(--paper); padding:9px 12px;
+  font-size:14px; color:var(--ink); transition:border-color var(--fast) var(--ease);
 }
 .sizebox select:hover{border-color:var(--ink)}
-.finenote{font-size:13px; color:var(--ink-2); line-height:1.55}
+.finenote{font-size:13.5px; color:var(--ink-2); line-height:1.6}
 .rail-actions{display:flex; flex-direction:column; gap:8px}
+.rail-actions .btn{padding:15px 18px}
 
 /* ============================ MODAL ============================ */
 .modal-bg{
-  position:fixed; inset:0; background:rgba(20,17,15,.45); display:none;
+  position:fixed; inset:0; background:rgba(17,17,17,.4); display:none;
   align-items:center; justify-content:center; padding:24px; z-index:50;
 }
 .modal-bg.open{display:flex}
 .modal{
-  position:relative; z-index:0; background:var(--paper); border:var(--line) solid var(--ink); border-radius:var(--r);
-  max-width:480px; width:100%; padding:24px; max-height:86vh; overflow:auto;
+  position:relative; background:var(--paper); border:1px solid var(--ink); border-radius:0;
+  max-width:520px; width:100%; padding:32px; max-height:86vh; overflow:auto;
 }
-.modal::before{
-  content:""; position:absolute; inset:0; transform:translate(10px,10px);
-  background:var(--gold-lt); border:var(--line) solid var(--ink); border-radius:var(--r); z-index:-1;
-}
-.modal h2{font-size:22px; margin:8px 0 4px}
+.modal::before{content:none}
+.modal h2{font-size:32px; margin:12px 0 6px}
 .spec{
-  white-space:pre-wrap; background:var(--ivory); border:var(--line) solid var(--sand-2); border-radius:var(--r);
-  padding:12px 14px; font-size:13px; margin:16px 0; line-height:1.6;
+  white-space:pre-wrap; background:var(--mist); border:1px solid var(--line-c); border-radius:0;
+  padding:14px 16px; font-size:13px; margin:18px 0; line-height:1.65;
 }
 .modal .actions{display:flex; gap:8px; flex-wrap:wrap}
 
@@ -256,72 +270,87 @@ header.top .sub{font-size:14px; color:var(--ink-2); margin-top:8px; max-width:60
 .refbar{margin-top:16px}
 .reftog{
   width:100%; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
-  border:0; border-top:1px solid var(--sand-2); background:transparent; padding:14px 2px 8px;
+  border:0; border-top:1px solid var(--line-c); background:transparent; padding:16px 0 8px;
   text-align:left;
 }
-.reftog .eyebrow{font-size:13px}
 .reftog .muted{flex:1; min-width:0}
 .refchev{color:var(--ink-2); font-size:12px; transition:transform var(--fast) var(--ease)}
 .reftog[aria-expanded=true] .refchev{transform:rotate(180deg)}
 .refstrip{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:4px 0 8px}
 .refstrip[hidden]{display:none}
-.refpic{display:block; aspect-ratio:5/4; overflow:hidden; border-radius:var(--r); border:var(--line) solid var(--sand-2); background:var(--sand); transition:border-color var(--fast) var(--ease)}
+.refpic{display:block; aspect-ratio:5/4; overflow:hidden; border:1px solid var(--line-c); background:var(--mist); transition:border-color var(--fast) var(--ease)}
 .refpic:hover{border-color:var(--ink)}
 .refpic img{width:100%; height:100%; object-fit:cover; display:block}
-.refnote{grid-column:1 / -1; font-size:12.5px; line-height:1.55}
+.refnote{grid-column:1 / -1; font-size:13px; line-height:1.55}
 .lightbox{
-  position:fixed; inset:0; background:rgba(20,17,15,.82); display:none; z-index:60;
+  position:fixed; inset:0; background:rgba(17,17,17,.86); display:none; z-index:60;
   align-items:center; justify-content:center; padding:24px; cursor:zoom-out;
 }
 .lightbox.open{display:flex}
-.lightbox img{max-width:min(100%,1100px); max-height:80vh; display:block; border-radius:var(--r); border:var(--line) solid var(--ivory)}
-.lightbox .cap{position:absolute; left:24px; right:24px; bottom:20px; text-align:center; color:var(--ivory); font-size:13px}
+.lightbox img{max-width:min(100%,1100px); max-height:80vh; display:block}
+.lightbox .cap{position:absolute; left:24px; right:24px; bottom:20px; text-align:center; color:#fff; font-size:13px}
 
 footer.pagefoot{
-  border-top:1px solid var(--sand-2); padding:16px 32px; display:flex; justify-content:space-between;
-  gap:12px; flex-wrap:wrap; font-size:12px; color:var(--ink-2); background:var(--paper);
+  border-top:1px solid var(--line-c); padding:24px 40px; display:flex; justify-content:space-between;
+  gap:12px; flex-wrap:wrap; font-size:12px; letter-spacing:.04em; color:var(--ink-2); background:var(--paper);
 }
 
 /* ============================ RESPONSIVE ============================ */
+@media (max-width:1200px){
+  :root{--tray:300px; --rail:280px}
+  header.top h1{font-size:44px}
+}
 @media (max-width:980px){
   .wrap{display:flex; flex-direction:column}
-  header.top{padding:24px 16px 16px}
-  .col{padding:16px 16px 32px}
+  .nav{padding:14px 16px}
+  .nav-links{display:none}
+  .wordmark{font-size:22px}
+  header.top{padding:28px 16px 20px}
+  header.top h1{font-size:36px}
+  header.top .sub{font-size:15px}
+  .col{padding:20px 16px 32px}
   /* the ring stays pinned on top while you edit below */
-  .stage-col{order:-1; position:sticky; top:0; z-index:20; background:var(--ivory); padding-bottom:8px; max-height:none; overflow:visible}
-  .stagewrap{margin:8px 8px 8px 0; flex:none}
-  .stage{flex:1 1 auto; min-width:0; min-height:0; height:40vh}
+  .stage-col{order:-1; position:sticky; top:0; z-index:20; background:var(--paper); padding:8px 16px 8px; max-height:none; overflow:visible; border-bottom:1px solid var(--line-c)}
+  .stagewrap{flex:none}
+  .stage{flex:1 1 auto; min-width:0; min-height:0; height:42vh}
   .photo .more{display:none}
-  .viewseg{left:8px; top:8px}
-  .viewseg button{padding:6px 10px}
-  .photo img{height:calc(100% - 66px); margin-top:40px}
-  .photo figcaption{bottom:6px; font-size:12px}
+  .photo canvas{margin-top:28px; margin-bottom:24px}
+  .photo figcaption{bottom:2px; font-size:12px}
   .stage-head{padding-top:4px}
   /* on phones the photos open straight into the lightbox; the strip would push the sticky stage down */
-  .refbar{margin-top:8px}
-  .reftog{padding:8px 2px 2px}
+  .refbar{margin-top:4px}
+  .reftog{padding:6px 0 0; border-top:0}
   .reftog .muted{display:none}
   .refstrip, .refstrip[hidden]{display:none}
   .refchev{display:none}
   .reftog .eyebrow::after{content:" \2197"; font-size:11px}
-  .tray{border-right:0; border-top:1px solid var(--sand-2)}
-  .rail{border-left:0; border-top:1px solid var(--sand-2)}
-  footer.pagefoot{padding:16px}
+  .tray{border-right:0}
+  .rail{border-left:0; border-top:1px solid var(--line-c)}
+  footer.pagefoot{padding:20px 16px}
   /* finger-sized tap targets */
-  .stone{width:28px; height:28px}
-  .metal{width:30px; height:30px}
-  .metals.big .metal{width:36px; height:36px}
-  .sizeseg button, .shape{padding:8px 13px; font-size:13px}
+  .stone{width:30px; height:30px}
+  .metal{width:32px; height:32px}
+  .metals.big .metal{width:40px; height:40px}
+  .sizeseg button, .shape{padding:10px 14px; font-size:13px}
   .tog{width:22px; height:22px}
   .tog::after{left:7px; top:3px; width:5px; height:10px}
-  .bc-remove{font-size:18px; padding:4px 8px}
-  .btn{padding:11px 14px}
+  .bc-remove{font-size:20px; padding:4px 9px}
+  .btn{padding:13px 16px}
 }
 </style>
 
+
+<nav class="nav">
+  <a class="wordmark" href="https://pkhartjewels.com">PK HART<small>FINE JEWELRY</small></a>
+  <div class="nav-links">
+    <a href="#bands">Design yours</a>
+    <a href="#refStrip" id="navRef">Her ring</a>
+    <a href="mailto:sales@pkhartjewels.com">Contact</a>
+  </div>
+</nav>
 <header class="top">
   <div class="brand">
-    <div class="house">PK HART Fine Jewelry</div>
+    <div class="house">Made to order &middot; Lincolnwood, IL</div>
     <h1>Birthstone Ring Studio <span class="tag gold">Concept preview</span></h1>
     <div class="sub">One ring, up to five wraps, a birthstone for each person you love &mdash; and statement stones on the bottom row. Pick the stones and carats, we place them the way we always do, then send us your design.</div>
   </div>
@@ -371,12 +400,11 @@ footer.pagefoot{
 
   <!-- ============================ STAGE ============================ -->
   <section class="col stage-col">
-    <div class="datum" style="margin:0"><span class="ttl">Your ring, live</span><span class="aside">drag to turn it &middot; tap a stone to edit it</span></div>
-    <div class="stagewrap">
+        <div class="stagewrap">
       <div class="stage">
         <canvas id="scene" aria-label="Rendered preview of your custom birthstone ring"></canvas>
         <figure class="photo" id="photoView">
-          <img id="photoImg" alt="">
+          <canvas id="photoCanvas" width="900" height="900" role="img" aria-label="Studio photograph of your ring"></canvas>
           <figcaption id="photoCap"></figcaption>
         </figure>
         <div class="viewseg" role="group" aria-label="How to show the ring">
@@ -778,7 +806,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xFBF8F4);
+scene.background = new THREE.Color(0xFFFFFF);
 
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -813,7 +841,7 @@ scene.add(ground);
 // faint sheen under the piece, like a seamless studio sweep
 const sweep = new THREE.Mesh(
   new THREE.CircleGeometry(4.2, 48),
-  new THREE.MeshStandardMaterial({color:0xf6f0e6, roughness:0.95, metalness:0})
+  new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.95, metalness:0})
 );
 sweep.rotation.x = -Math.PI/2;
 sweep.position.y = ground.position.y - 0.001;
@@ -1296,30 +1324,224 @@ function buildSpec(){
 /* ============================ render root ============================ */
 /* ============================ studio photos ============================
    Real-construction photographs: the wraps joined into one band at the back,
-   one per wrap count (1–5) and metal. The default design is exactly the
-   five-wrap photo; other designs show the matching wrap count. */
+   one photo per wrap count (1–5). The page repaints each stone in the photo
+   with the stone the visitor picked, at the carat they picked, and tints the
+   metal for rose gold and silver. Stone positions are measured on the 900px
+   photos in img/studio (re-measure if a photo is replaced). */
 const STUDIO = {y:'gold', r:'rose', w:'silver'};
-const STUDIO_READY = {y:[1,2,3,4,5], r:[], w:[]};   // which photos exist per metal
+const STUDIO_READY = {y:[1,2,3,4,5], r:[], w:[]};   // real photos per metal; others are tinted from gold
+// x, y = stone centre; r = stone radius (round stones); w, h = emerald-cut body; m = the stone in the photo
+const PHOTO_STONES = {
+  1:{wraps:[{x:612,y:400,r:50,m:10}], bottom:{x:461,y:550,w:128,h:100,m:3}},
+  2:{wraps:[{x:290,y:317,r:53,m:7},{x:650,y:458,r:50,m:10}], bottom:{x:458,y:618,w:114,h:138,m:3}},
+  3:{wraps:[{x:588,y:258,r:46,m:1},{x:290,y:358,r:51,m:7},{x:651,y:495,r:50,m:10}], bottom:{x:459,y:662,w:114,h:136,m:3}},
+  4:{wraps:[{x:227,y:163,r:41,m:0},{x:587,y:290,r:45,m:1},{x:304,y:468,r:42,m:7},{x:707,y:557,r:41,m:10}], bottom:{x:472,y:714,w:140,h:102,m:3}},
+  5:{wraps:[{x:456,y:103,r:42,m:6},{x:229,y:222,r:40,m:0},{x:587,y:349,r:45,m:1},{x:306,y:527,r:42,m:7},{x:708,y:618,r:40,m:10}], bottom:{x:472,y:770,w:140,h:104,m:3}},
+};
 let view = /3d|back|side/.test(location.hash) ? '3d' : 'photo';
+const photoImgs = {};          // src -> HTMLImageElement
+const metalBase = {};          // src|metal -> canvas with the metal tinted
+function loadPhoto(src){
+  if (!photoImgs[src]){
+    const im = new Image();
+    im.src = src;
+    photoImgs[src] = im;
+    im.decode().then(() => renderPhoto()).catch(() => {});
+  }
+  const im = photoImgs[src];
+  return im.complete && im.naturalWidth ? im : null;
+}
+const hexRgb = hx => [1,3,5].map(i => parseInt(hx.slice(i, i+2), 16));
+const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+
+/* Metal: real photos where they exist; otherwise recolour the gold pixels.
+   Gold is warm and fairly saturated; stones are masked out separately. */
+function tintedBase(src, img, m, n){
+  const key = src + '|' + m;
+  if (metalBase[key]) return metalBase[key];
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const x = c.getContext('2d', {willReadFrequently:true});
+  x.drawImage(img, 0, 0);
+  {
+    // lift the studio backdrop to pure white so the photo sits on the page with no grey box
+    const id = x.getImageData(0, 0, c.width, c.height), d = id.data;
+    for (let i = 0; i < d.length; i += 4){
+      const mn = Math.min(d[i], d[i+1], d[i+2]), mx = Math.max(d[i], d[i+1], d[i+2]);
+      if (mn > 222 && mx - mn < 14){
+        const t = Math.min(1, (mn - 222) / 24);
+        d[i] += (255 - d[i]) * t; d[i+1] += (255 - d[i+1]) * t; d[i+2] += (255 - d[i+2]) * t;
+      }
+    }
+    x.putImageData(id, 0, 0);
+  }
+  if (m !== 'y' && !STUDIO_READY[m].includes(n)){
+    const id = x.getImageData(0, 0, c.width, c.height), d = id.data;
+    const P = PHOTO_STONES[n], k = c.width / 900;
+    const holes = P.wraps.map(s => [s.x*k, s.y*k, s.r*k*0.96]);
+    const bx = P.bottom.x*k, by = P.bottom.y*k, bw = P.bottom.w*k*0.42, bh = P.bottom.h*k*0.42;
+    for (let y = 0; y < c.height; y++){
+      for (let xx = 0; xx < c.width; xx++){
+        let skip = false;
+        if (Math.abs(xx - bx) < bw && Math.abs(y - by) < bh) skip = true;
+        else for (const [hx, hy, hr] of holes){ if ((xx-hx)*(xx-hx) + (y-hy)*(y-hy) < hr*hr){ skip = true; break; } }
+        if (skip) continue;
+        const i = (y*c.width + xx)*4, r = d[i], g = d[i+1], b = d[i+2];
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
+        if (sat < 0.06 || r < b) continue;                 // background, highlights, shadows stay
+        const amt = Math.min(1, (sat - 0.06) / 0.18);       // how much of this pixel is "gold"
+        const L = 0.30*r + 0.59*g + 0.11*b;
+        let t;
+        if (m === 'w') t = [L*0.97 + 6, L*0.985 + 6, L*1.02 + 8];          // cool polished silver
+        else           t = [Math.min(255, L*1.06 + 16), L*0.84 + 6, L*0.76 + 4];  // warm pink rose gold
+        d[i]   = r + (t[0] - r) * amt;
+        d[i+1] = g + (t[1] - g) * amt;
+        d[i+2] = b + (t[2] - b) * amt;
+      }
+    }
+    x.putImageData(id, 0, 0);
+  }
+  return (metalBase[key] = c);
+}
+
+/* Paint a stone's facets in a new colour: keep the photo's light and dark
+   pattern, map it onto the birthstone's own dark → mid → light ramp. */
+function stoneRamp(mi){
+  const mo = MONTHS[mi], c = hexRgb(mo.c), d = hexRgb(mo.d);
+  const light = (c[0] + c[1] + c[2]) / 3 > 215;      // diamond, pearl, opal
+  return light
+    ? [[0, [112,118,128]], [0.40, d], [0.78, c], [1, [255,255,255]]]
+    : [[0, d.map(v => v*(0.42 + 0.33*Math.max(0, Math.min(1, ((c[0]+c[1]+c[2])/3 - 120) / 90))))], [0.38, d], [0.72, c], [1, mix(c, [255,255,255], 0.62)]];
+}
+function rampAt(stops, t){
+  for (let i = 1; i < stops.length; i++){
+    if (t <= stops[i][0]){
+      const [t0, c0] = stops[i-1], [t1, c1] = stops[i];
+      return mix(c0, c1, (t - t0) / (t1 - t0));
+    }
+  }
+  return stops[stops.length - 1][1];
+}
+function recolor(ctx, w, h, insideAt, mi){
+  const id = ctx.getImageData(0, 0, w, h), d = id.data;
+  const A = new Float32Array(w*h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    const i = (y*w + x)*4;
+    A[y*w + x] = insideAt(x, y, d[i], d[i+1], d[i+2]);
+  }
+  const inside = (x, y) => A[y*w + x];
+  const Ls = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    if (inside(x, y) > 0.5){ const i = (y*w + x)*4; Ls.push(0.30*d[i] + 0.59*d[i+1] + 0.11*d[i+2]); }
+  }
+  if (!Ls.length) return;
+  Ls.sort((a, b) => a - b);
+  const lo = Ls[Math.floor(Ls.length*0.04)], hi = Ls[Math.floor(Ls.length*0.97)], span = Math.max(20, hi - lo);
+  const stops = stoneRamp(mi);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    const a = inside(x, y);
+    if (a <= 0) continue;
+    const i = (y*w + x)*4, L = 0.30*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
+    const col = rampAt(stops, Math.max(0, Math.min(1, (L - lo) / span)));
+    d[i]   = d[i]   + (col[0] - d[i])   * a;
+    d[i+1] = d[i+1] + (col[1] - d[i+1]) * a;
+    d[i+2] = d[i+2] + (col[2] - d[i+2]) * a;
+  }
+  ctx.putImageData(id, 0, 0);
+}
+const smooth = (e0, e1, v) => { const t = Math.max(0, Math.min(1, (v - e0) / (e1 - e0))); return t*t*(3 - 2*t); };
+
+/* Cut a patch around the stone (stone + prongs), recolour it, and lay it
+   back over the photo scaled to the chosen carat with a soft edge. */
+function paintStone(ctx, base, k, s, mi, scale, round){
+  const halfW = (round ? s.r*1.55 : s.w*0.78) * k, halfH = (round ? s.r*1.55 : s.h*0.78) * k;
+  const pw = Math.ceil(halfW*2), ph = Math.ceil(halfH*2);
+  const p = document.createElement('canvas'); p.width = pw; p.height = ph;
+  const px = p.getContext('2d', {willReadFrequently:true});
+  px.drawImage(base, s.x*k - halfW, s.y*k - halfH, pw, ph, 0, 0, pw, ph);
+  if (mi !== s.m){
+    // the stone's own pixels: the core of the circle, plus anything near its rim that isn't gold
+    const notGold = (r, g, b) => {
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
+      if (mx > 236 && sat < 0.06) return 0;                       // white backdrop between wires
+      let hue = 0;
+      if (mx !== mn){
+        if (mx === r) hue = 60 * (((g - b) / (mx - mn)) % 6);
+        else if (mx === g) hue = 60 * ((b - r) / (mx - mn) + 2);
+        else hue = 60 * ((r - g) / (mx - mn) + 4);
+        if (hue < 0) hue += 360;
+      }
+      const gold = hue >= 22 && hue <= 58 && sat >= 0.16 && sat <= 0.74;
+      return gold ? 0 : 1;
+    };
+    const insideAt = round
+      ? (x, y, r, g, b) => {
+          const dd = Math.hypot(x - halfW, y - halfH), R0 = s.r*k;
+          const core = 1 - smooth(R0*0.80, R0*0.92, dd);
+          const rim = dd < R0*1.14 ? notGold(r, g, b) * (1 - smooth(R0*1.04, R0*1.14, dd)) : 0;
+          return Math.max(core, rim);
+        }
+      : (x, y) => (1 - smooth(s.w*k*0.40, s.w*k*0.49, Math.abs(x - halfW))) * (1 - smooth(s.h*k*0.40, s.h*k*0.49, Math.abs(y - halfH)));
+    recolor(px, pw, ph, insideAt, mi);
+  }
+  if (scale !== 1 || mi !== s.m){
+    // white backdrop around the setting goes transparent, so an enlarged stone
+    // never paints a white box over the wires next to it
+    {
+      const id = px.getImageData(0, 0, pw, ph), d = id.data;
+      for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
+        const body = round
+          ? Math.hypot(x - halfW, y - halfH) < s.r*k*1.0
+          : Math.abs(x - halfW) < s.w*k*0.5 && Math.abs(y - halfH) < s.h*k*0.5;
+        if (body) continue;
+        const i = (y*pw + x)*4, mx = Math.max(d[i], d[i+1], d[i+2]), mn = Math.min(d[i], d[i+1], d[i+2]);
+        if (mx > 196 && (mx - mn) < 26) d[i+3] = Math.round(255 * (1 - smooth(196, 228, mn)));
+      }
+      px.putImageData(id, 0, 0);
+    }
+    // feather the patch so its edge melts into the wire around it
+    px.globalCompositeOperation = 'destination-in';
+    const g = px.createRadialGradient(halfW, halfH, 0, halfW, halfH, Math.min(halfW, halfH));
+    g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(scale > 1 ? 0.80 : 0.86, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    px.setTransform(halfW / Math.min(halfW, halfH), 0, 0, halfH / Math.min(halfW, halfH), 0, 0);
+    px.fillStyle = g;
+    px.fillRect(0, 0, pw, ph);
+    px.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(p, s.x*k - halfW*scale, s.y*k - halfH*scale, pw*scale, ph*scale);
+  }
+}
 function photoFor(){
   const n = Math.min(Math.max(wraps.length, 1), MAX_WRAPS);
-  const m = STUDIO_READY[metal].includes(n) ? metal : 'y';
-  return {n, m, src:'img/studio/' + STUDIO[m] + '-' + n + '.jpg'};
+  const real = STUDIO_READY[metal].includes(n);
+  return {n, real, src:'img/studio/' + STUDIO[real ? metal : 'y'] + '-' + n + '.jpg'};
 }
 function renderPhoto(){
   const stage = $('.stage');
   stage.classList.toggle('is-photo', view === 'photo');
   document.querySelectorAll('.viewseg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
   if (view !== 'photo') return;
-  const {n, m, src} = photoFor();
-  const img = $('#photoImg');
-  if (img.getAttribute('src') !== src) img.src = src;
-  const what = n + ' wrap' + (n !== 1 ? 's' : '') + ' in ' + METALS[m].label.toLowerCase();
-  img.alt = 'Studio photograph of the ring with ' + what + ', wraps joined into one band at the back';
-  $('#photoCap').innerHTML = '';
-  $('#photoCap').append(n + ' wrap' + (n !== 1 ? 's' : '') + ', ' + METALS[m].label.toLowerCase() +
-    (m !== metal ? ' (photo coming in ' + METALS[metal].label.toLowerCase() + ')' : ''));
-  h('span', 'more', $('#photoCap'), ' · your stones sit in the same places');
+  const {n, src} = photoFor();
+  const img = loadPhoto(src);
+  const cv = $('#photoCanvas');
+  if (!img) return;                                   // renderPhoto runs again once it loads
+  if (cv.width !== img.naturalWidth){ cv.width = img.naturalWidth; cv.height = img.naturalHeight; }
+  const ctx = cv.getContext('2d');
+  const base = tintedBase(src, img, metal, n);
+  ctx.drawImage(base, 0, 0);
+  const k = cv.width / 900, P = PHOTO_STONES[n];
+  const topScale = STONE_CARATS[stoneCarat].scale / STONE_CARATS.c05.scale;
+  P.wraps.forEach((s, i) => {
+    const st = wraps[i] && wraps[i].stone;
+    paintStone(ctx, base, k, s, st ? st.month : s.m, st ? topScale : 1, true);
+  });
+  const bs = feature.on && feature.stones[0];
+  if (bs) paintStone(ctx, base, k, P.bottom, bs.month, FEATURE_CARATS[bs.size].scale / FEATURE_CARATS.c50.scale, false);
+
+  const what = n + ' wrap' + (n !== 1 ? 's' : '') + ' in ' + METALS[metal].label.toLowerCase();
+  cv.setAttribute('aria-label', 'Studio photograph of the ring with ' + what + ', showing your stones');
+  const cap = $('#photoCap');
+  cap.textContent = what.charAt(0).toUpperCase() + what.slice(1);
+  h('span', 'more', cap, ' · your stones, at your carat');
 }
 document.querySelectorAll('.viewseg button').forEach(b => b.addEventListener('click', () => { view = b.dataset.view; renderPhoto(); }));
 
@@ -1429,6 +1651,12 @@ $('#refTog').addEventListener('click', () => {
   $('#refTog').setAttribute('aria-expanded', String(open));
 });
 refPics.forEach(a => a.addEventListener('click', e => { e.preventDefault(); openLightbox(a); }));
+$('#navRef').addEventListener('click', e => {
+  e.preventDefault();
+  if (isPhone()){ openLightbox(refPics[0]); return; }
+  $('#refStrip').hidden = false; $('#refTog').setAttribute('aria-expanded', 'true');
+  $('#refTog').scrollIntoView({behavior:'smooth', block:'center'});
+});
 if (/ref/.test(location.hash) && !isPhone()){ $('#refStrip').hidden = false; $('#refTog').setAttribute('aria-expanded', 'true'); }
 $('#lightbox').addEventListener('click', closeLightbox);
 document.addEventListener('keydown', e => { if (e.key === 'Escape'){ closeLightbox(); $('#modalBg').classList.remove('open'); } });
@@ -1436,8 +1664,8 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape'){ closeLightb
 $('#btnSave').addEventListener('click', () => {
   const a = document.createElement('a');
   a.download = 'pkhart-birthstone-ring.png';
-  renderer.render(scene, camera);
-  a.href = renderer.domElement.toDataURL('image/png');
+  if (view === 'photo') a.href = $('#photoCanvas').toDataURL('image/png');
+  else { renderer.render(scene, camera); a.href = renderer.domElement.toDataURL('image/png'); }
   a.click();
 });
 
