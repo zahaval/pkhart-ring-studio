@@ -203,6 +203,16 @@ header.top .sub{font-size:14px; color:var(--ink-2); margin-top:8px; max-width:60
 .stage canvas{display:block; width:100%; height:100%; touch-action:none; cursor:grab}
 .stage-btns{position:absolute; right:12px; bottom:12px; display:flex; gap:8px}
 .stage-btns .btn{background:var(--paper)}
+/* Photo / 3D switch: studio photographs of the real construction, 1–5 wraps per metal */
+.viewseg{position:absolute; left:12px; top:12px; z-index:3; display:flex; border:var(--line) solid var(--ink); border-radius:var(--r); overflow:hidden; background:var(--paper)}
+.viewseg button{border:0; background:transparent; padding:7px 12px; font-size:12.5px; font-weight:500; color:var(--ink); transition:background var(--fast) var(--ease)}
+.viewseg button + button{border-left:var(--line) solid var(--ink)}
+.viewseg button[aria-pressed=true]{background:var(--ink); color:#fff}
+.photo{position:absolute; inset:0; margin:0; background:#FEFEFB; display:none; z-index:2}
+.stage.is-photo .photo{display:block}
+.stage.is-photo .stage-btns{display:none}
+.photo img{width:100%; height:calc(100% - 92px); object-fit:contain; display:block; margin-top:52px}
+.photo figcaption{position:absolute; left:12px; right:12px; bottom:10px; font-size:12.5px; line-height:1.4; color:var(--ink-2); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
 /* ============================ RAIL ============================ */
 .sumlist{display:flex; flex-direction:column}
@@ -280,7 +290,12 @@ footer.pagefoot{
   /* the ring stays pinned on top while you edit below */
   .stage-col{order:-1; position:sticky; top:0; z-index:20; background:var(--ivory); padding-bottom:8px; max-height:none; overflow:visible}
   .stagewrap{margin:8px 8px 8px 0; flex:none}
-  .stage{flex:none; min-height:0; height:40vh}
+  .stage{flex:1 1 auto; min-width:0; min-height:0; height:40vh}
+  .photo .more{display:none}
+  .viewseg{left:8px; top:8px}
+  .viewseg button{padding:6px 10px}
+  .photo img{height:calc(100% - 66px); margin-top:40px}
+  .photo figcaption{bottom:6px; font-size:12px}
   .stage-head{padding-top:4px}
   /* on phones the photos open straight into the lightbox; the strip would push the sticky stage down */
   .refbar{margin-top:8px}
@@ -360,6 +375,14 @@ footer.pagefoot{
     <div class="stagewrap">
       <div class="stage">
         <canvas id="scene" aria-label="Rendered preview of your custom birthstone ring"></canvas>
+        <figure class="photo" id="photoView">
+          <img id="photoImg" alt="">
+          <figcaption id="photoCap"></figcaption>
+        </figure>
+        <div class="viewseg" role="group" aria-label="How to show the ring">
+          <button type="button" data-view="photo" aria-pressed="true">Photo</button>
+          <button type="button" data-view="3d" aria-pressed="false">3D</button>
+        </div>
         <div class="stage-btns">
           <button class="btn sm" id="btnFront">Front view</button>
           <button class="btn sm" id="btnTurn">Turn it around</button>
@@ -1271,10 +1294,40 @@ function buildSpec(){
 }
 
 /* ============================ render root ============================ */
+/* ============================ studio photos ============================
+   Real-construction photographs: the wraps joined into one band at the back,
+   one per wrap count (1–5) and metal. The default design is exactly the
+   five-wrap photo; other designs show the matching wrap count. */
+const STUDIO = {y:'gold', r:'rose', w:'silver'};
+const STUDIO_READY = {y:[1,2,3,4,5], r:[], w:[]};   // which photos exist per metal
+let view = /3d|back|side/.test(location.hash) ? '3d' : 'photo';
+function photoFor(){
+  const n = Math.min(Math.max(wraps.length, 1), MAX_WRAPS);
+  const m = STUDIO_READY[metal].includes(n) ? metal : 'y';
+  return {n, m, src:'img/studio/' + STUDIO[m] + '-' + n + '.jpg'};
+}
+function renderPhoto(){
+  const stage = $('.stage');
+  stage.classList.toggle('is-photo', view === 'photo');
+  document.querySelectorAll('.viewseg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
+  if (view !== 'photo') return;
+  const {n, m, src} = photoFor();
+  const img = $('#photoImg');
+  if (img.getAttribute('src') !== src) img.src = src;
+  const what = n + ' wrap' + (n !== 1 ? 's' : '') + ' in ' + METALS[m].label.toLowerCase();
+  img.alt = 'Studio photograph of the ring with ' + what + ', wraps joined into one band at the back';
+  $('#photoCap').innerHTML = '';
+  $('#photoCap').append(n + ' wrap' + (n !== 1 ? 's' : '') + ', ' + METALS[m].label.toLowerCase() +
+    (m !== metal ? ' (photo coming in ' + METALS[metal].label.toLowerCase() + ')' : ''));
+  h('span', 'more', $('#photoCap'), ' · your stones sit in the same places');
+}
+document.querySelectorAll('.viewseg button').forEach(b => b.addEventListener('click', () => { view = b.dataset.view; renderPhoto(); }));
+
 function render(){
   renderEditor();
   renderScene();
   renderSummary();
+  renderPhoto();
 }
 
 /* ============================ wiring ============================ */
