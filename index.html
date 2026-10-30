@@ -1369,7 +1369,7 @@ function renderPhoto(){
   const topScale = STONE_CARATS[stoneCarat].scale / STONE_CARATS.c05.scale;
   P.wraps.forEach((s, i) => {
     const st = wraps[i] && wraps[i].stone;
-    if (!st) eraseStone(ctx, cv, s.x*k, s.y*k, s.r*1.85*k, s.r*1.45*k);
+    if (!st) eraseStone(ctx, cv, s.x*k, s.y*k, s.r*1.9*k, s.r*1.7*k);
   });
   P.wraps.forEach((s, i) => {
     const st = wraps[i] && wraps[i].stone;
