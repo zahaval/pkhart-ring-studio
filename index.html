@@ -4,7 +4,7 @@
 <title>PK HART — Birthstone Ring Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 
 <!--
   PK HART — BIRTHSTONE RING STUDIO (concept demo, v2 — photoreal)
@@ -28,19 +28,19 @@
    Discipline from the studio's house system: 8px grid, one hairline weight,
    no shadows, quick flat motion. The ring photos carry all the colour. */
 :root{
-  --ink:#111111; --ink-2:#5E5E5E; --ink-3:#9A9A9A;
+  --ink:#0A0A0A; --ink-2:#3A3A3A; --ink-3:#7A7A7A;
   --paper:#FFFFFF; --ivory:#FFFFFF; --mist:#F6F6F6; --line-c:#E4E4E4; --line-2:#CFCFCF;
   --sand:#F1F1F1; --sand-2:#E4E4E4;
   --gold:#111111; --gold-ink:#111111; --gold-lt:#F6F6F6; --gold-wash:#F6F6F6;
   --line:1px; --r:0px; --pill:0px;
-  --serif:'Cormorant Garamond', 'Cormorant', Georgia, 'Times New Roman', serif;
+  --serif:'Playfair Display', Georgia, 'Times New Roman', serif;
   --sans:'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --ease:cubic-bezier(.2,.7,.3,1); --fast:160ms;
   --rail:320px; --tray:340px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:14.5px; line-height:1.55; -webkit-font-smoothing:antialiased}
+body{background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.55; font-weight:400; text-rendering:optimizeLegibility}
 h1,h2{font-family:var(--serif); font-weight:500; letter-spacing:0; margin:0; font-variant-numeric:lining-nums}
 button,input,select{font-family:var(--sans)}
 button{cursor:pointer}
@@ -60,7 +60,7 @@ button{cursor:pointer}
 /* section opener: spaced caps label over a hairline */
 .datum{display:flex; align-items:baseline; gap:12px; margin:0 0 16px; padding-bottom:10px; border-bottom:1px solid var(--line-c)}
 .datum .num{font-size:11px; font-weight:500; letter-spacing:.12em; color:var(--ink-3); white-space:nowrap}
-.datum .ttl{font-size:12px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink); white-space:nowrap}
+.datum .ttl{font-size:12px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink); white-space:nowrap}
 .datum::after{content:none}
 .datum .aside{font-size:12.5px; color:var(--ink-2); white-space:nowrap; margin-left:auto}
 .datum .aside:empty{display:none}
@@ -71,10 +71,10 @@ button{cursor:pointer}
   display:flex; align-items:center; justify-content:space-between; gap:16px;
   padding:18px 40px; border-bottom:1px solid var(--line-c); background:var(--paper);
 }
-.wordmark{font-family:var(--serif); font-size:28px; font-weight:500; letter-spacing:.14em; line-height:1; color:var(--ink); text-decoration:none}
+.wordmark{font-family:var(--serif); font-size:24px; font-weight:500; letter-spacing:.16em; line-height:1; color:var(--ink); text-decoration:none}
 .wordmark small{display:block; font-family:var(--sans); font-size:9.5px; font-weight:500; letter-spacing:.32em; margin-top:6px; color:var(--ink-2)}
 .nav-links{display:flex; gap:28px}
-.nav-links a{font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink); text-decoration:none; border-bottom:1px solid transparent; padding-bottom:2px}
+.nav-links a{font-size:11.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink); text-decoration:none; border-bottom:1px solid transparent; padding-bottom:2px}
 .nav-links a:hover{border-bottom-color:var(--ink)}
 
 header.top{
@@ -83,7 +83,7 @@ header.top{
 }
 header.top .brand{flex:1 1 420px; min-width:0}
 header.top .house{font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-2)}
-header.top h1{font-size:54px; line-height:1.02; margin-top:12px; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+header.top h1{font-size:48px; line-height:1.05; margin-top:12px; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
 header.top .sub{font-size:16px; color:var(--ink-2); margin-top:14px; max-width:58ch; line-height:1.6}
 .top-actions{display:flex; gap:8px; align-items:center}
 
@@ -91,7 +91,7 @@ header.top .sub{font-size:16px; color:var(--ink-2); margin-top:14px; max-width:5
 .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   border:1px solid var(--ink); background:var(--paper); color:var(--ink); border-radius:0;
-  padding:12px 18px; font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; line-height:1.2; white-space:nowrap;
+  padding:12px 18px; font-size:11.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; line-height:1.2; white-space:nowrap;
   text-decoration:none;
   transition:background var(--fast) var(--ease), color var(--fast) var(--ease), border-color var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
@@ -128,7 +128,7 @@ header.top .sub{font-size:16px; color:var(--ink-2); margin-top:14px; max-width:5
 .band-card:hover{border-color:var(--line-2)}
 .band-card.sel{border-color:var(--ink)}
 .band-card .bc-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px}
-.band-card .bc-title{font-family:var(--serif); font-variant-numeric:lining-nums; font-size:21px; font-weight:500; line-height:1.1; min-width:0}
+.band-card .bc-title{font-family:var(--serif); font-variant-numeric:lining-nums; font-size:18px; font-weight:500; line-height:1.1; min-width:0}
 .band-card .bc-stone{font-family:var(--sans); font-size:12.5px; color:var(--ink-2); margin-left:10px; letter-spacing:0}
 .bc-remove{
   border:1px solid transparent; background:transparent; color:var(--ink-2); font-size:18px; line-height:1;
@@ -221,13 +221,13 @@ header.top .sub{font-size:16px; color:var(--ink-2); margin-top:14px; max-width:5
 .stage-btns .btn:hover{background:var(--ink)}
 /* Photo / 3D switch: studio photographs of the real construction, 1–5 wraps */
 .viewseg{position:absolute; left:0; top:0; z-index:3; display:flex; gap:20px; background:transparent}
-.viewseg button{border:0; border-bottom:1px solid transparent; background:transparent; padding:4px 0; font-size:11.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); transition:color var(--fast) var(--ease), border-color var(--fast) var(--ease)}
+.viewseg button{border:0; border-bottom:1px solid transparent; background:transparent; padding:4px 0; font-size:11.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); transition:color var(--fast) var(--ease), border-color var(--fast) var(--ease)}
 .viewseg button:hover{color:var(--ink)}
 .viewseg button[aria-pressed=true]{color:var(--ink); border-bottom-color:var(--ink)}
 .photo{position:absolute; inset:0; margin:0; background:#fff; display:none; z-index:2}
 .stage.is-photo .photo{display:flex; flex-direction:column; align-items:center; justify-content:center}
 .stage.is-photo .stage-btns{display:none}
-.photo canvas{display:block; flex:1 1 auto; min-height:0; max-width:100%; aspect-ratio:1/1; width:auto; height:100%; margin-top:36px; margin-bottom:36px}
+.photo canvas{display:block; width:300px; height:300px; margin:0}
 .photo figcaption{position:absolute; left:0; right:0; bottom:6px; font-size:12.5px; line-height:1.4; color:var(--ink-2); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
 /* ============================ RAIL ============================ */
@@ -314,7 +314,6 @@ footer.pagefoot{
   .stagewrap{flex:none}
   .stage{flex:1 1 auto; min-width:0; min-height:0; height:42vh}
   .photo .more{display:none}
-  .photo canvas{margin-top:28px; margin-bottom:24px}
   .photo figcaption{bottom:2px; font-size:12px}
   .stage-head{padding-top:4px}
   /* on phones the photos open straight into the lightbox; the strip would push the sticky stage down */
@@ -1520,6 +1519,7 @@ function renderPhoto(){
   stage.classList.toggle('is-photo', view === 'photo');
   document.querySelectorAll('.viewseg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
   if (view !== 'photo') return;
+  fitPhoto();
   const {n, src} = photoFor();
   const img = loadPhoto(src);
   const cv = $('#photoCanvas');
@@ -1544,6 +1544,17 @@ function renderPhoto(){
   h('span', 'more', cap, ' · your stones, at your carat');
 }
 document.querySelectorAll('.viewseg button').forEach(b => b.addEventListener('click', () => { view = b.dataset.view; renderPhoto(); }));
+// fit the photo to its frame (leaving room for the switch above and the caption below)
+function fitPhoto(){
+  const f = $('#photoView'), cv = $('#photoCanvas');
+  if (!f || !f.clientWidth) return;
+  const top = isPhoneW() ? 30 : 40, bottom = isPhoneW() ? 24 : 34;
+  const side = Math.max(120, Math.min(f.clientWidth, f.clientHeight - top - bottom));
+  cv.style.width = cv.style.height = side + 'px';
+  cv.style.marginTop = (top - bottom) + 'px';
+}
+const isPhoneW = () => matchMedia('(max-width:980px)').matches;
+new ResizeObserver(fitPhoto).observe($('.stage'));
 
 function render(){
   renderEditor();
