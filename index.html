@@ -125,7 +125,7 @@ button{cursor:pointer}
 .twin:disabled{opacity:.3; cursor:default}
 .wrap-row:last-child{border-bottom:0}
 .wrap-n{font-family:var(--serif); font-size:17px; font-variant-numeric:lining-nums}
-.stones{display:flex; flex-wrap:wrap; gap:6px}
+.stones{display:grid; grid-template-columns:repeat(7, 18px); gap:7px 8px}
 .stone{
   width:18px; height:18px; border-radius:50%; border:0; padding:0; position:relative;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.14); outline:1px solid transparent; outline-offset:3px;
@@ -1220,6 +1220,7 @@ const isMetalPx = (r, g, b) => {          // gold, or gold already tinted to ros
   const [hue, sat, mx] = hueSat(r, g, b);
   if (mx < 60) return false;
   if (metal === 'w') return sat < 0.12 && mx > 90 && mx < 250;
+  if (metal === 'r') return (hue <= 50 || hue >= 345) && sat >= 0.10 && sat <= 0.70;
   return (hue >= 10 && hue <= 58) && sat >= 0.14 && sat <= 0.74;
 };
 const notMetal = (r, g, b) => {
@@ -1323,14 +1324,36 @@ function paintRound(ctx, base, k, s, mi, scale, dest){
   const px = p.getContext('2d', {willReadFrequently:true});
   px.drawImage(base, s.x*k - half, s.y*k - half, pw, pw, 0, 0, pw, pw);
   const R0 = s.r*k;
-  if (mi !== s.m) recolor(px, pw, pw, (x, y, r, g, b) => {
-    const dd = Math.hypot(x - half, y - half);
-    const core = 1 - smooth(R0*0.84, R0*0.96, dd);
-    const rim = dd < R0*1.16 ? notMetal(r, g, b) * (1 - smooth(R0*1.06, R0*1.16, dd)) : 0;
-    return Math.max(core, rim);
-  }, mi);
+  if (mi !== s.m){
+    // the stone's own colour, read from its centre, decides which rim pixels belong to it
+    const id0 = px.getImageData(0, 0, pw, pw).data, hs = [], ss = [];
+    for (let y = 0; y < pw; y += 2) for (let x = 0; x < pw; x += 2){
+      if (Math.hypot(x - half, y - half) > R0*0.6) continue;
+      const o = (y*pw + x)*4, [hh, sat, mx] = hueSat(id0[o], id0[o+1], id0[o+2]);
+      if (sat > 0.2 && mx > 50){ hs.push(hh); ss.push(sat); }
+    }
+    hs.sort((a, b) => a - b); ss.sort((a, b) => a - b);
+    const h0 = hs.length ? hs[hs.length >> 1] : null, s0 = ss.length ? ss[ss.length >> 1] : 0;
+    const stoneLike = (r, g, b) => {
+      if (h0 == null) return 0;
+      const [hh, sat, mx] = hueSat(r, g, b);
+      const dh = Math.min(Math.abs(hh - h0), 360 - Math.abs(hh - h0));
+      return dh < 18 && sat > Math.max(0.35, s0*0.7) && mx > 60 ? 1 : 0;
+    };
+    recolor(px, pw, pw, (x, y, r, g, b) => {
+      const dd = Math.hypot(x - half, y - half);
+      const core = 1 - smooth(R0*0.84, R0*0.96, dd);
+      const rim = dd < R0*1.16 ? stoneLike(r, g, b) * (1 - smooth(R0*1.06, R0*1.16, dd)) : 0;
+      return Math.max(core, rim);
+    }, mi);
+  }
   clearBackdrop(px, pw, pw, (x, y) => Math.hypot(x - half, y - half) < R0);
-  featherInto(px, pw, pw, scale > 1 ? 0.80 : 0.86);
+  // keep only the stone and its prongs, so no stray wire travels with it
+  const id = px.getImageData(0, 0, pw, pw), d = id.data;
+  for (let y = 0; y < pw; y++) for (let x = 0; x < pw; x++){
+    d[(y*pw + x)*4 + 3] *= 1 - smooth(R0*1.20, R0*1.36, Math.hypot(x - half, y - half));
+  }
+  px.putImageData(id, 0, 0);
   const dx = dest ? dest.x : s.x*k, dy = dest ? dest.y : s.y*k;
   ctx.drawImage(p, dx - half*scale, dy - half*scale, pw*scale, pw*scale);
 }
