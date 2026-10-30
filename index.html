@@ -1337,6 +1337,7 @@ function paintRound(ctx, base, k, s, mi, scale, dest){
     const stoneLike = (r, g, b) => {
       if (h0 == null) return 0;
       const [hh, sat, mx] = hueSat(r, g, b);
+      if (metal === 'w' && sat > 0.2 && mx > 35) return 1;   // silver has no colour of its own: any tint here is the old stone
       const dh = Math.min(Math.abs(hh - h0), 360 - Math.abs(hh - h0));
       return dh < 24 && sat > Math.max(0.28, s0*0.45) && mx > 35 ? 1 : 0;
     };
