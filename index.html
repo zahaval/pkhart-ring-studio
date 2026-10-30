@@ -1344,7 +1344,8 @@ function paintRound(ctx, base, k, s, mi, scale, dest){
     recolor(px, pw, pw, (x, y, r, g, b) => {
       const dd = Math.hypot(x - half, y - half);
       const core = 1 - smooth(R0*0.84, R0*0.96, dd);
-      const rim = dd < R0*1.24 ? stoneLike(r, g, b) * (1 - smooth(R0*1.12, R0*1.24, dd)) : 0;
+      const edge = metal === 'w' ? 1.38 : 1.24;
+      const rim = dd < R0*edge ? stoneLike(r, g, b) * (1 - smooth(R0*(edge - 0.12), R0*edge, dd)) : 0;
       return Math.max(core, rim);
     }, mi);
   }
