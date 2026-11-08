@@ -349,18 +349,18 @@ function newBottomStone(partial){
   return Object.assign({id:++uid, shape:'oval', month:3, size:'c100', name:'', turn:false}, partial || {});
 }
 function defaultDesign(){
-  // Opens on Penina's own ring (see "Her ring, for reference"): ruby, garnet,
-  // amethyst, peridot, citrine, and an emerald-cut diamond on the bottom wrap.
+  // Opens on Penina's own ring, as photographed: garnet, garnet, ruby,
+  // peridot, citrine, and a pear diamond lying sideways on the bottom wrap.
   wraps = [
-    newWrap({stone:{month:6, name:'', twin:false}}),
     newWrap({stone:{month:0, name:'', twin:false}}),
-    newWrap({stone:{month:1, name:'', twin:false}}),
+    newWrap({stone:{month:0, name:'', twin:false}}),
+    newWrap({stone:{month:6, name:'', twin:false}}),
     newWrap({stone:{month:7, name:'', twin:false}}),
     newWrap({stone:{month:10, name:'', twin:false}}),
   ];
   metal = 'y';
   stoneCarat = 'c05';
-  feature = {on:true, stones:[newBottomStone({shape:'emerald', month:3, size:'c50', turn:true})]};
+  feature = {on:true, stones:[newBottomStone({shape:'pear', month:3, size:'c50', turn:true})]};
   selected = 0;
 }
 
@@ -1048,15 +1048,25 @@ function buildSpec(){
    metal for rose gold and silver. Stone positions are measured on the 900px
    photos in img/studio (re-measure if a photo is replaced). */
 const STUDIO = {y:'gold', r:'rose', w:'silver'};
-const STUDIO_READY = {y:[1,2,3,4,5], r:[1, 2, 3, 4, 5], w:[1, 2, 3, 4, 5]};   // real photos per metal; any gaps are tinted from gold
+const STUDIO_READY = {y:[3,4,5], r:[], w:[]};   // real photos per metal; any gaps are tinted from gold
 // x, y = stone centre; r = stone radius (round stones); w, h = emerald-cut body; m = the stone in the photo
 const PHOTO_STONES = {
   1:{wraps:[{x:612,y:442,r:47,m:10}], bottom:{x:461,y:550,w:128,h:104,m:3}},
   2:{wraps:[{x:291,y:354,r:51,m:7},{x:650,y:450,r:49,m:10}], bottom:{x:460,y:618,w:118,h:138,m:3}},
-  3:{wraps:[{x:588,y:258,r:46,m:1},{x:290,y:358,r:51,m:7},{x:651,y:495,r:50,m:10}], bottom:{x:459,y:662,w:114,h:136,m:3}},
-  4:{wraps:[{x:227,y:163,r:41,m:0},{x:587,y:290,r:45,m:1},{x:304,y:468,r:42,m:7},{x:707,y:557,r:41,m:10}], bottom:{x:472,y:714,w:140,h:102,m:3}},
-  5:{wraps:[{x:456,y:103,r:42,m:6},{x:229,y:222,r:40,m:0},{x:587,y:349,r:45,m:1},{x:306,y:527,r:42,m:7},{x:708,y:618,r:40,m:10}], bottom:{x:472,y:770,w:140,h:104,m:3}},
+  3:{wraps:[{x:456,y:192,r:78,m:7},{x:230,y:335,r:68,m:null},{x:443,y:462,r:66,m:10}], bottom:{x:420,y:665,w:330,h:190,m:3,shape:'pear',turn:true}},
+  4:{wraps:[{x:438,y:235,r:42,m:6},{x:538,y:345,r:38,m:7},{x:280,y:470,r:42,m:10},{x:655,y:520,r:40,m:10}], bottom:{x:420,y:665,w:330,h:190,m:3,shape:'pear',turn:true}},
+  5:{wraps:[{x:378,y:170,r:40,m:0},{x:190,y:298,r:40,m:0},{x:535,y:355,r:40,m:6},{x:283,y:470,r:41,m:7},{x:655,y:515,r:40,m:10}], bottom:{x:430,y:655,w:330,h:190,m:3,shape:'pear',turn:true}},
 };
+/* Plain rings (no stones) per wrap count; every stone is then a cut-out of her real
+   stones laid on the wire, so any wrap can be plain, twinned, recoloured or resized. */
+const PLAIN = {1:'img/studio/plain-1.jpg', 4:'img/studio/plain-4.jpg', 5:'img/studio/plain-5.jpg'};
+/* where her stones sit on each plain ring (mapped from her photo) */
+const PLAIN_STONES = {
+  1:{wraps:[{x:560,y:300,r:40,m:10}], bottom:{x:430,y:625,w:330,h:190,m:3,shape:'pear',turn:true}},
+  4:{wraps:[{x:437,y:247,r:42,m:6},{x:537,y:341,r:38,m:7},{x:279,y:447,r:42,m:10},{x:654,y:490,r:40,m:10}], bottom:{x:419,y:614,w:330,h:190,m:3,shape:'pear',turn:true}},
+  5:{wraps:[{x:378,y:175,r:40,m:0},{x:190,y:287,r:40,m:0},{x:535,y:337,r:40,m:6},{x:283,y:438,r:40,m:7},{x:655,y:477,r:40,m:10}], bottom:{x:430,y:600,w:330,h:190,m:3,shape:'pear',turn:true}},
+};   // n -> plain ring photo, once it exists
+const SRC = {src:'img/studio/gold-5.jpg', n:5, stone:{x:535, y:355, r:40, m:6}};   // her ruby, with its prongs
 let view = 'photo';
 const photoImgs = {};          // src -> HTMLImageElement
 const metalBase = {};          // src|metal -> canvas with the metal tinted
@@ -1110,8 +1120,9 @@ function tintedBase(src, img, m, n){
   if (m !== 'y' && !STUDIO_READY[m].includes(n)){
     const id = x.getImageData(0, 0, c.width, c.height), d = id.data;
     const P = PHOTO_STONES[n], k = c.width / 900;
-    const holes = P.wraps.map(s => [s.x*k, s.y*k, s.r*k*0.96]);
-    const bx = P.bottom.x*k, by = P.bottom.y*k, bw = P.bottom.w*k*0.42, bh = P.bottom.h*k*0.42;
+    const plain = Object.values(PLAIN).includes(src);          // a bare ring: tint everything
+    const holes = plain ? [] : P.wraps.map(s => [s.x*k, s.y*k, s.r*k*0.96]);
+    const bx = P.bottom.x*k, by = P.bottom.y*k, bw = plain ? 0 : P.bottom.w*k*0.42, bh = plain ? 0 : P.bottom.h*k*0.42;
     for (let y = 0; y < c.height; y++){
       for (let xx = 0; xx < c.width; xx++){
         let skip = false;
@@ -1279,40 +1290,61 @@ function eraseStone(ctx, out, cx, cy, hw, hh){
   const W = out.width, H = out.height;
   const x0 = Math.max(4, Math.round(cx - hw)), x1 = Math.min(W - 5, Math.round(cx + hw));
   const y0 = Math.max(0, Math.round(cy - hh)), y1 = Math.min(H - 1, Math.round(cy + hh));
-  const src = pixelsOf(out).data;
   const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
-  const patch = ctx.createImageData(bw, bh), d = patch.data;
-  // where the wire crosses each side, so the fill can follow its curve
+  const src = pixelsOf(out).data;
   const yL = wireYAt(out, x0 - 3, cy, hh*0.6), yR = wireYAt(out, x1 + 3, cy, hh*0.6);
-  const follow = yL != null && yR != null && Math.abs(yL - yR) < hh*0.45 && Math.abs((yL + yR)/2 - cy) < hh*0.45;
-  const col = (x, y) => { y = Math.max(0, Math.min(H - 1, Math.round(y))); const o = (y*W + x)*4; return [src[o], src[o+1], src[o+2]]; };
-  const avg3 = (xa, y, dir) => { const a = col(xa, y), b = col(xa + dir, y), c = col(xa + 2*dir, y); return [(a[0]+b[0]+c[0])/3, (a[1]+b[1]+c[1])/3, (a[2]+b[2]+c[2])/3]; };
-  const bgMin = metal === 'w' ? 236 : 188;   // bright silver wire is close to white, so be stricter
-  const isBg = c => Math.min(c[0], c[1], c[2]) > bgMin && Math.max(c[0], c[1], c[2]) - Math.min(c[0], c[1], c[2]) < 22;
-  for (let y = y0; y <= y1; y++){
-    for (let x = x0; x <= x1; x++){
-      const t = (x - x0) / (x1 - x0 || 1), s = t*t*(3 - 2*t);
-      const yc = follow ? yL + (yR - yL) * s : cy;
-      const L = avg3(x0 - 1, follow ? y + (yL - yc) : y, -1);
-      const R = avg3(x1 + 1, follow ? y + (yR - yc) : y, 1);
-      const bgL = isBg(L), bgR = isBg(R);
-      let A = L, Bc = R, f = s;
-      if (bgL !== bgR){                                   // the wire stops on one side: end it cleanly
-        const cut = bgL ? cx - hw*0.45 : cx + hw*0.45;
-        f = smooth(cut - 3, cut + 3, x);
-        if (bgL) A = [255,255,255]; else Bc = [255,255,255];
-      }
+  // where to borrow wire from: a clean stretch of the same wire toward the middle of the ring
+  const dir = cx < W/2 ? 1 : -1;
+  let sx0 = null, sy = [];
+  for (const off of []){   // (copying a stretch of wire showed seams; the blend below reads cleaner)
+    const sx = Math.round(cx + dir * hw * off);
+    if (sx - hw < 2 || sx + hw > W - 3) continue;
+    const ys = [];
+    let ok = true, yPrev = cy;
+    for (let x = sx - hw; x <= sx + hw; x++){
+      const y = wireYAt(out, x, yPrev, hh*0.7);
+      if (y == null){ ok = false; break; }
+      ys.push(y); yPrev = y;
+    }
+    if (ok){ sx0 = Math.round(sx - hw); sy = ys; break; }
+  }
+  const patch = ctx.createImageData(bw, bh), d = patch.data;
+  const col = (x, y) => { x = Math.max(0, Math.min(W - 1, Math.round(x))); y = Math.max(0, Math.min(H - 1, Math.round(y))); const o = (y*W + x)*4; return [src[o], src[o+1], src[o+2]]; };
+  for (let x = x0; x <= x1; x++){
+    const t = (x - x0) / (x1 - x0 || 1);
+    // the wire's centre under the stone: a straight line between the two sides
+    const yc = (yL != null && yR != null) ? yL + (yR - yL) * t : (yL != null ? yL : (yR != null ? yR : cy));
+    for (let y = y0; y <= y1; y++){
       const i = ((y - y0)*bw + (x - x0))*4;
-      d[i]   = A[0] + (Bc[0] - A[0]) * f;
-      d[i+1] = A[1] + (Bc[1] - A[1]) * f;
-      d[i+2] = A[2] + (Bc[2] - A[2]) * f;
+      let c;
+      if (sx0 != null){
+        const j = Math.min(sy.length - 1, x - x0);
+        c = col(sx0 + j, y + (sy[j] - yc));                // same wire, shifted to this column's centre
+      } else {
+        const L = col(x0 - 2, y + ((yL != null ? yL : cy) - yc)), R = col(x1 + 2, y + ((yR != null ? yR : cy) - yc));
+        const s = smooth(0.3, 0.7, t);
+        c = [L[0] + (R[0] - L[0]) * s, L[1] + (R[1] - L[1]) * s, L[2] + (R[2] - L[2]) * s];
+      }
+      d[i] = c[0]; d[i+1] = c[1]; d[i+2] = c[2];
       const e = Math.max(Math.abs(x - cx) / hw, Math.abs(y - cy) / hh);
-      d[i+3] = Math.round(255 * (1 - smooth(0.84, 1.0, e)));
+      d[i+3] = Math.round(255 * (1 - smooth(0.80, 1.0, e)));
     }
   }
   const p = document.createElement('canvas'); p.width = bw; p.height = bh;
   p.getContext('2d').putImageData(patch, 0, 0);
   ctx.drawImage(p, x0, y0);
+  out.__v = (out.__v || 0) + 1;
+}
+/* the bottom wire ends at her pear: taking the pear away just leaves the wire's open end */
+function eraseOpenEnd(ctx, out, B, k){
+  const cx = B.x*k, cy = B.y*k, rx = B.w*0.56*k, ry = B.h*0.62*k;
+  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 1);
+  ctx.save();
+  ctx.translate(cx, cy); ctx.scale(rx, ry);
+  const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.9, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gr; ctx.fillRect(-1.1, -1.1, 2.2, 2.2);
+  ctx.restore();
   out.__v = (out.__v || 0) + 1;
 }
 
@@ -1364,14 +1396,9 @@ function paintRound(ctx, base, k, s, mi, scale, dest){
    Each sprite is cut from a studio photo of this ring (the 5-wrap shot) with that
    cut on the bottom wire; bw/bh = the stone's body in sprite pixels. */
 const SPRITES = {
-  // bw/bh = the stone's body in sprite pixels; norm brings each cut to the same 0.5 ct footprint
-  'emerald-h':{src:'img/studio/bottom/emerald-h.png', bw:140, bh:104, norm:1},
-  'emerald-v':{src:'img/studio/bottom/emerald-v.png', bw:135, bh:160, norm:0.88},
-  'oval-v':   {src:'img/studio/bottom/oval-v.png',    bw:140, bh:192, norm:0.80},
-  'pear-v':   {src:'img/studio/bottom/pear-v.png',    bw:150, bh:200, norm:0.75},
-  'heart-v':  {src:'img/studio/bottom/heart-v.png',   bw:160, bh:165, norm:0.86},
-  'oval-h':   {src:'img/studio/bottom/oval-h.png',    bw:182, bh:142, norm:0.80},
-  'pear-h':   {src:'img/studio/bottom/pear-h.png',    bw:176, bh:142, norm:0.80},
+  // bw/bh = the stone's body in sprite pixels; norm brings each cut to the same 0.5 ct footprint (her pear = 1)
+  'pear-h':   {src:'img/studio/bottom/pear-h.png',    bw:316, bh:180, norm:1, pow:3},
+  'oval-h':   {src:'img/studio/bottom/oval-h.png',    bw:340, bh:230, norm:0.90, pow:3},
 };
 const spriteImgs = {};
 function spriteFor(shape, turn){
@@ -1406,7 +1433,9 @@ function paintSprite(ctx, sp, cx, cy, scale, mi){
   const inBody = (x, y) => ((x - pw/2) / (sp.bw*0.5))**2 + ((y - ph/2) / (sp.bh*0.5))**2 < 1;
   if (mi !== 3) recolor(px, pw, ph, (x, y, r, g, b) => {
     const e = ((x - pw/2) / (sp.bw*0.52))**2 + ((y - ph/2) / (sp.bh*0.52))**2;
-    return e < 1 ? Math.max(1 - smooth(0.55, 0.8, e), notMetal(r, g, b)) * (1 - smooth(0.85, 1, e)) : 0;
+    const [, sat, mx] = hueSat(r, g, b);
+    if (e >= 1 || (mx > 238 && sat < 0.05) || isMetalPx(r, g, b)) return 0;
+    return 1 - smooth(0.86, 1, e);
   }, mi);
   clearBackdrop(px, pw, ph, inBody);
   // keep only the stone and the prongs that hold it: a rounded-box mask just outside the body
@@ -1427,7 +1456,7 @@ function buildSwatches(){
   const src = 'img/studio/gold-5.jpg', img = loadPhoto(src);
   if (!img) return;
   const k = img.naturalWidth / 900;
-  const s = {x:587, y:349, r:45, m:1};                       // the amethyst on the 5-wrap photo
+  const s = {x:535, y:355, r:40, m:6};                       // the ruby on her 5-wrap photo
   const gold = tintedBase(src, img, 'y', 5);
   const R = s.r * k, side = Math.ceil(R*2);
   for (let mi = 0; mi < 12; mi++){
@@ -1450,14 +1479,17 @@ function buildSwatches(){
     const ox = o.getContext('2d');
     ox.beginPath(); ox.arc(32, 32, 32, 0, Math.PI*2); ox.clip();
     const w = 30*k;
-    ox.drawImage(base, 700*k - w, 352*k - w, w*2, w*2, 0, 0, 64, 64);
+    ox.drawImage(base, 720*k - w, 232*k - w, w*2, w*2, 0, 0, 64, 64);
     SWATCH.metals[m] = o.toDataURL('image/png');
   }
   SWATCH.ready = true;
   renderEditor();
 }
 function photoFor(){
-  const n = Math.min(Math.max(wraps.length, 1), MAX_WRAPS);
+  let n = Math.min(Math.max(wraps.length, 1), MAX_WRAPS);
+  if (PLAIN[n]) return {n, real:false, src:PLAIN[n]};
+  while (n < MAX_WRAPS && !STUDIO_READY.y.includes(n) && !PLAIN[n]) n++;      // nearest photographed size
+  if (PLAIN[n]) return {n, real:false, src:PLAIN[n]};
   const real = STUDIO_READY[metal].includes(n);
   return {n, real, src:'img/studio/' + STUDIO[real ? metal : 'y'] + '-' + n + '.jpg'};
 }
@@ -1479,26 +1511,34 @@ function renderPhoto(){
   ctx.drawImage(base, 0, 0);
   cv.__v = (cv.__v || 0) + 1;
   const k = cv.width / 900, P = PHOTO_STONES[n];
+  if (PLAIN[n]) return renderOnPlain(ctx, cv, k, n, PLAIN_STONES[n] || P);
   const avoid = P.wraps.map(s => [s.x*k, s.y*k, s.r*k*1.5]);
-  const B = P.bottom, bLong = Math.max(B.w, B.h), photoScale = bLong / 140;
+  const B = P.bottom, bLong = Math.max(B.w, B.h), photoScale = bLong / 330;   // her pear's body = the 0.5 ct baseline
   avoid.push([B.x*k, B.y*k, bLong*k*0.75]);
 
   // top wraps: plain wraps lose their stone, the rest take the chosen stone and carat
   const topScale = STONE_CARATS[stoneCarat].scale / STONE_CARATS.c05.scale;
   P.wraps.forEach((s, i) => {
     const st = wraps[i] && wraps[i].stone;
-    if (!st) eraseStone(ctx, cv, s.x*k, s.y*k, s.r*1.9*k, s.r*1.7*k);
+    if (!st && s.m != null) eraseStone(ctx, cv, s.x*k, s.y*k, s.r*1.6*k, s.r*1.6*k);
   });
   // bottom wire — take the photo's own stone out first, before anything new is painted nearby
-  const origSideways = B.w > B.h;
+  const origShape = B.shape || 'emerald', origSideways = B.turn != null ? Boolean(B.turn) : B.w > B.h;
   const stones = feature.on ? feature.stones : [];
-  const same = stones.length === 1 && stones[0].shape === 'emerald' && Boolean(stones[0].turn) === origSideways;
-  if (!same) eraseStone(ctx, cv, B.x*k, B.y*k, B.w*0.80*k, B.h*0.95*k);
+  const same = stones.length === 1 && stones[0].shape === origShape && Boolean(stones[0].turn) === origSideways;
+  if (!same){ if (B.open) eraseOpenEnd(ctx, cv, B, k); else eraseStone(ctx, cv, B.x*k, B.y*k, B.w*0.62*k, B.h*0.70*k); }
 
   // top stones
+  const srcImg = loadPhoto(SRC.src), srcBase = srcImg ? tintedBase(SRC.src, srcImg, metal, SRC.n) : null;
   P.wraps.forEach((s, i) => {
     const st = wraps[i] && wraps[i].stone;
     if (!st) return;
+    if (s.m == null){                               // a bare wire in this photo: lay her real stone on it
+      if (!srcBase) return;
+      const yw = wireYAt(cv, s.x*k, s.y*k, s.r*k*1.2);
+      paintRound(ctx, srcBase, k, SRC.stone, st.month, topScale * (s.r / SRC.stone.r), {x:s.x*k, y:yw != null ? yw : s.y*k});
+      return;
+    }
     paintRound(ctx, base, k, s, st.month, topScale);
     if (st.twin){
       // the twin sits beside it on the same wire, toward the middle of the ring
@@ -1534,13 +1574,13 @@ function renderPhoto(){
       const leftEnd = trace(-1), rightEnd = trace(1);
       let gap = 22 * k;
       let total = widths.reduce((a, b) => a + b, 0) + gap * (stones.length - 1);
-      const room = Math.max(widths[0], (rightEnd - leftEnd) - 20*k);
+      const room = Math.max(widths[0], B.open ? (rightEnd - x0) + widths[0]/2 - 10*k : (rightEnd - leftEnd) - 20*k);
       if (total > room){                       // smaller stones when several share the wire
         const f = room / total;
         scales = scales.map(s => s * f); widths = widths.map(w => w * f); gap *= f; total = room;
       }
       let left = Math.max(leftEnd + 10*k, Math.min(x0 - total/2, rightEnd - 10*k - total));
-      if (stones.length === 1) left = x0 - widths[0]/2;
+      if (stones.length === 1 || B.open) left = x0 - widths[0]/2;   // the first stone sits where hers does
       let x = left, yPrev = y0;
       const yAtX0 = wireYAt(cv, x0, y0, 30*k);
       stones.forEach((bs, i) => {
@@ -1556,15 +1596,67 @@ function renderPhoto(){
   const what = n + ' wrap' + (n !== 1 ? 's' : '') + ' in ' + METALS[metal].label.toLowerCase();
   cv.setAttribute('aria-label', 'Photograph of your ring, ' + what);
 }
+/* the paste-everything path: plain ring + her real stones laid on it */
+function renderOnPlain(ctx, cv, k, n, P){
+  const srcImg = loadPhoto(SRC.src);
+  if (!srcImg) return;
+  const srcBase = tintedBase(SRC.src, srcImg, metal, SRC.n);
+  const topScale = STONE_CARATS[stoneCarat].scale / STONE_CARATS.c05.scale;
+  P.wraps.forEach((s, i) => {
+    const st = wraps[i] && wraps[i].stone;
+    if (!st) return;
+    const yw = wireYAt(cv, s.x*k, s.y*k, s.r*k*1.2);
+    const dest = {x:s.x*k, y:yw != null ? yw : s.y*k};
+    const sc = topScale * (s.r / SRC.stone.r);
+    paintRound(ctx, srcBase, k, SRC.stone, st.month, sc, dest);
+    if (st.twin){
+      const dir = s.x < 450 ? 1 : -1, gapX = SRC.stone.r * 2.7 * Math.max(1, topScale*0.92);
+      const tx = (s.x + dir*gapX) * k;
+      const ty2 = wireYAt(cv, tx, dest.y, s.r*k*1.2);
+      paintRound(ctx, srcBase, k, SRC.stone, twinMonth(st), sc, {x:tx, y:ty2 != null ? ty2 : dest.y});
+    }
+  });
+  const B = P.bottom, stones = feature.on ? feature.stones : [];
+  const sprites = stones.map(bs => spriteFor(bs.shape, bs.turn));
+  if (!stones.length || !sprites.every(Boolean)) return;
+  const bLong = Math.max(B.w, B.h), photoScale = bLong / 330;
+  let scales = stones.map(bs => photoScale * k * FEATURE_CARATS[bs.size].scale / FEATURE_CARATS.c50.scale);
+  let widths = sprites.map((sp, i) => sp.bw * sp.norm * scales[i]);
+  const x0 = B.x*k, y0 = B.y*k;
+  let gap = 22 * k, total = widths.reduce((a, b) => a + b, 0) + gap * (stones.length - 1);
+  const room = Math.max(widths[0], B.w*k*1.35);
+  if (total > room){ const f = room / total; scales = scales.map(s => s*f); widths = widths.map(w => w*f); gap *= f; total = room; }
+  let x = x0 - total/2, yPrev = y0;
+  const yAtX0 = wireYAt(cv, x0, y0, 40*k);
+  stones.forEach((bs, i) => {
+    const cx = x + widths[i]/2;
+    const yw = wireYAt(cv, cx, yPrev, 40*k);
+    const cy = (yw != null && yAtX0 != null) ? y0 + (yw - yAtX0) : y0;
+    if (yw != null) yPrev = yw;
+    paintSprite(ctx, sprites[i], cx, cy, scales[i], bs.month);
+    x += widths[i] + gap;
+  });
+}
 function paintEmeraldInPlace(ctx, base, k, s, mi, scale){
   if (mi === s.m && scale === 1) return;
-  const hw = s.w*0.78*k, hh = s.h*0.78*k, pw = Math.ceil(hw*2), ph = Math.ceil(hh*2);
+  const hw = s.w*0.72*k, hh = s.h*0.80*k, pw = Math.ceil(hw*2), ph = Math.ceil(hh*2);
   const p = document.createElement('canvas'); p.width = pw; p.height = ph;
   const px = p.getContext('2d', {willReadFrequently:true});
   px.drawImage(base, s.x*k - hw, s.y*k - hh, pw, ph, 0, 0, pw, ph);
-  if (mi !== s.m) recolor(px, pw, ph, (x, y) => (1 - smooth(s.w*k*0.40, s.w*k*0.49, Math.abs(x - hw))) * (1 - smooth(s.h*k*0.40, s.h*k*0.49, Math.abs(y - hh))), mi);
-  clearBackdrop(px, pw, ph, (x, y) => Math.abs(x - hw) < s.w*k*0.5 && Math.abs(y - hh) < s.h*k*0.5);
-  featherInto(px, pw, ph, scale > 1 ? 0.80 : 0.86);
+  const isBackdrop = (r, g, b) => { const [, sat, mx] = hueSat(r, g, b); return mx > 238 && sat < 0.05; };
+  if (mi !== s.m) recolor(px, pw, ph, (x, y, r, g, b) => {
+    const e = ((x - hw) / (s.w*0.52*k))**2 + ((y - hh) / (s.h*0.52*k))**2;
+    if (e > 1 || isBackdrop(r, g, b) || isMetalPx(r, g, b)) return 0;
+    return 1 - smooth(0.86, 1, e);
+  }, mi);
+  clearBackdrop(px, pw, ph, (x, y) => ((x - hw) / (s.w*0.5*k))**2 + ((y - hh) / (s.h*0.5*k))**2 < 1);
+  // keep the stone and its prongs only
+  const id = px.getImageData(0, 0, pw, ph), d = id.data;
+  for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
+    const v = Math.pow(Math.abs(x - hw) / (s.w*0.66*k), 4) + Math.pow(Math.abs(y - hh) / (s.h*0.70*k), 4);
+    d[(y*pw + x)*4 + 3] *= 1 - smooth(0.80, 1.0, v);
+  }
+  px.putImageData(id, 0, 0);
   ctx.drawImage(p, s.x*k - hw*scale, s.y*k - hh*scale, pw*scale, ph*scale);
 }
 document.querySelectorAll('.viewseg button').forEach(b => b.addEventListener('click', () => { view = b.dataset.view; renderPhoto(); }));
