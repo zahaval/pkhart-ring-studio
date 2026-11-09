@@ -1059,9 +1059,10 @@ const PHOTO_STONES = {
 };
 /* Plain rings (no stones) per wrap count; every stone is then a cut-out of her real
    stones laid on the wire, so any wrap can be plain, twinned, recoloured or resized. */
-const PLAIN = {1:'img/studio/plain-1.jpg', 4:'img/studio/plain-4.jpg', 5:'img/studio/plain-5.jpg'};
+const PLAIN = {1:'img/studio/plain-1.jpg', 2:'img/studio/plain-2.jpg', 4:'img/studio/plain-4.jpg', 5:'img/studio/plain-5.jpg'};
 /* where her stones sit on each plain ring (mapped from her photo) */
 const PLAIN_STONES = {
+  2:{wraps:[{x:300,y:255,r:40,m:7},{x:600,y:410,r:40,m:10}], bottom:{x:430,y:610,w:330,h:190,m:3,shape:'pear',turn:true}},
   1:{wraps:[{x:560,y:300,r:40,m:10}], bottom:{x:430,y:625,w:330,h:190,m:3,shape:'pear',turn:true}},
   4:{wraps:[{x:437,y:247,r:42,m:6},{x:537,y:341,r:38,m:7},{x:279,y:447,r:42,m:10},{x:654,y:490,r:40,m:10}], bottom:{x:419,y:614,w:330,h:190,m:3,shape:'pear',turn:true}},
   5:{wraps:[{x:378,y:175,r:40,m:0},{x:190,y:287,r:40,m:0},{x:535,y:337,r:40,m:6},{x:283,y:438,r:40,m:7},{x:655,y:477,r:40,m:10}], bottom:{x:430,y:600,w:330,h:190,m:3,shape:'pear',turn:true}},
@@ -1488,8 +1489,8 @@ function buildSwatches(){
 function photoFor(){
   let n = Math.min(Math.max(wraps.length, 1), MAX_WRAPS);
   if (PLAIN[n]) return {n, real:false, src:PLAIN[n]};
-  while (n < MAX_WRAPS && !STUDIO_READY.y.includes(n) && !PLAIN[n]) n++;      // nearest photographed size
-  if (PLAIN[n]) return {n, real:false, src:PLAIN[n]};
+  for (let m = n + 1; m <= MAX_WRAPS; m++) if (PLAIN[m]) return {n:m, real:false, src:PLAIN[m]};   // nearest plain ring above
+  while (n < MAX_WRAPS && !STUDIO_READY.y.includes(n)) n++;
   const real = STUDIO_READY[metal].includes(n);
   return {n, real, src:'img/studio/' + STUDIO[real ? metal : 'y'] + '-' + n + '.jpg'};
 }
