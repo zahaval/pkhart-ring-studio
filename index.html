@@ -1287,6 +1287,11 @@ function dilate(m, w, h, r){
   }
   return b;
 }
+function erode(m, w, h, r){
+  const inv = new Uint8Array(w*h); for (let j = 0; j < w*h; j++) inv[j] = m[j] ? 0 : 1;
+  const d = dilate(inv, w, h, r); for (let j = 0; j < w*h; j++) d[j] = d[j] ? 0 : 1;
+  return d;
+}
 
 /* ---------- pixels ---------- */
 function hueSat(r, g, b){
@@ -1524,10 +1529,12 @@ function paintSprite(ctx, sp, cx, cy, scale, mi){
       const i = (y*pw + x)*4, j = y*pw + x;
       const v = Math.pow(Math.abs(x - pw/2) / ax, P) + Math.pow(Math.abs(y - ph/2) / ay, P);
       if (v >= 1) continue;
-      const g = isGoldPx(d[i], d[i+1], d[i+2]);
-      if (v < 0.62){ if (g) gold[j] = 1; else stone[j] = 1; continue; }   // the stone's own body, sparkle included
-      if (g) gold[j] = 1;                                                     // outside it only metal (prongs) can stay
+      if (isGoldPx(d[i], d[i+1], d[i+2])) gold[j] = 1;
+      else if (!isBackdrop(d[i], d[i+1], d[i+2])) stone[j] = 1;
     }
+    // the stone's real outline: close its white sparkle holes, then trim the thin shadow fringe
+    const closed = erode(dilate(stone, pw, ph, 5), pw, ph, 5), trimmed = erode(closed, pw, ph, 3);
+    for (let j = 0; j < pw*ph; j++){ if (trimmed[j]) { stone[j] = 1; gold[j] = 0; } else stone[j] = 0; }
   }
   const near = dilate(stone, pw, ph, 12);           // metal this close to the stone is a prong
   if (mi !== 3) recolor(px, pw, ph, (x, y, r, g, b) => {
