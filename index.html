@@ -117,18 +117,25 @@ button{cursor:pointer}
 .wrap-row{display:grid; grid-template-columns:26px minmax(0,1fr) auto 20px; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line-c)}
 .strips{display:flex; flex-direction:column; gap:8px}
 .twin-strip{padding-left:27px; position:relative}
+.twin-strip .month{display:none}
 .twin-strip::before{content:"+"; position:absolute; left:6px; top:50%; transform:translateY(-52%); font-size:13px; color:var(--ink-3)}
-.twin-strip .stone{width:16px; height:16px}
+.twin-strip .stone{width:18px; height:18px}
 .twin{border:1px solid var(--line-2); background:#fff; padding:5px 8px; font-size:10px; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2)}
 .twin:hover{border-color:var(--ink); color:var(--ink)}
 .twin[aria-pressed=true]{background:var(--ink); border-color:var(--ink); color:#fff}
 .twin:disabled{opacity:.3; cursor:default}
 .wrap-row:last-child{border-bottom:0}
 .wrap-n{font-family:var(--serif); font-size:17px; font-variant-numeric:lining-nums}
-.stones{display:grid; grid-template-columns:repeat(7, 18px); gap:7px 8px}
+.stones{display:grid; grid-template-columns:repeat(7, 22px); gap:6px 8px; align-items:center}
+.stones .month{grid-column:1 / -1; font-size:11px; letter-spacing:.06em; color:var(--ink-2); min-height:14px; margin-top:-2px}
+.legend{display:grid; grid-template-columns:1fr 1fr; gap:6px 18px; margin:10px 0 14px; font-size:12.5px}
+.legend .lg{display:flex; align-items:center; gap:8px}
+.legend .lg .stone{width:16px; height:16px; display:inline-block}
+.legend .lg b{font-weight:500; margin-left:auto; color:var(--ink-2)}
+#legendTog{margin:-6px 0 10px; display:block}
 .stone{
-  width:18px; height:18px; border-radius:50%; border:0; padding:0; position:relative;
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.14); outline:1px solid transparent; outline-offset:3px;
+  width:22px; height:22px; border-radius:50%; border:0; padding:0; position:relative;
+  box-shadow:0 1px 2px rgba(0,0,0,.18); outline:1px solid transparent; outline-offset:3px;
   transition:outline-color var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
 .stone:hover{transform:scale(1.12)}
@@ -225,6 +232,8 @@ footer.pagefoot{border-top:1px solid var(--line-c); padding:22px 48px; font-size
 
     <div class="opt">
       <div class="opt-h"><span>Wraps</span><span class="val" id="bandCount"></span></div>
+      <button class="link" id="legendTog" type="button" aria-expanded="false">Birthstones by month</button>
+      <div class="legend" id="legend" hidden></div>
       <div class="bands" id="bands"></div>
       <button class="link add" id="btnAdd">+ Add a wrap</button>
     </div>
@@ -419,12 +428,32 @@ function stoneStrip(current, onPick, withNone){
     b.setAttribute('aria-pressed', String(current === mi));
     b.style.background = SWATCH.stones[mi] ? 'center / cover no-repeat url(' + SWATCH.stones[mi] + ')' : swatchBg(mi);
     b.addEventListener('click', () => onPick(mi));
+    b.addEventListener('mouseenter', () => showMonth(sw, mi));
+    b.addEventListener('mouseleave', () => showMonth(sw, current));
   });
+  const lbl = h('div', 'month', sw);
+  lbl.textContent = current == null ? 'No stone' : MONTHS[current].m + ' · ' + MONTHS[current].s;
   return sw;
+}
+function showMonth(sw, mi){
+  const lbl = sw.querySelector('.month');
+  if (lbl) lbl.textContent = mi == null ? 'No stone' : MONTHS[mi].m + ' · ' + MONTHS[mi].s;
 }
 const ROTATE_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="5.5" y="2" width="5" height="12" rx=".5" opacity=".35"/><rect x="2" y="5.5" width="12" height="5" rx=".5"/></svg>';
 
+function renderLegend(){
+  const box = $('#legend');
+  if (!box || box.childElementCount) return;
+  MONTHS.forEach((mo, mi) => {
+    const row = h('div', 'lg', box);
+    const d = h('span', 'stone', row);
+    d.style.background = SWATCH.stones[mi] ? 'center / cover no-repeat url(' + SWATCH.stones[mi] + ')' : swatchBg(mi);
+    h('span', '', row, mo.m.slice(0, 3));
+    h('b', '', row, mo.s);
+  });
+}
 function renderEditor(){
+  renderLegend();
   const gm = $('#globalMetal');
   gm.innerHTML = '';
   gm.appendChild(metalPicker(metal, key => { metal = key; render(); }));
@@ -1059,15 +1088,39 @@ const PHOTO_STONES = {
 };
 /* Plain rings (no stones) per wrap count; every stone is then a cut-out of her real
    stones laid on the wire, so any wrap can be plain, twinned, recoloured or resized. */
-const PLAIN = {1:'img/studio/plain-1.jpg', 2:'img/studio/plain-2.jpg', 4:'img/studio/plain-4.jpg', 5:'img/studio/plain-5.jpg'};
+const PLAIN = {1:'img/studio/plain-1.jpg', 2:'img/studio/plain-2.jpg', 3:'img/studio/plain-3.jpg', 4:'img/studio/plain-4.jpg', 5:'img/studio/plain-5.jpg'};
 /* where her stones sit on each plain ring (mapped from her photo) */
 const PLAIN_STONES = {
-  2:{wraps:[{x:300,y:255,r:40,m:7},{x:600,y:410,r:40,m:10}], bottom:{x:430,y:610,w:330,h:190,m:3,shape:'pear',turn:true}},
-  1:{wraps:[{x:560,y:300,r:40,m:10}], bottom:{x:430,y:625,w:330,h:190,m:3,shape:'pear',turn:true}},
-  4:{wraps:[{x:437,y:247,r:42,m:6},{x:537,y:341,r:38,m:7},{x:279,y:447,r:42,m:10},{x:654,y:490,r:40,m:10}], bottom:{x:419,y:614,w:330,h:190,m:3,shape:'pear',turn:true}},
-  5:{wraps:[{x:378,y:175,r:40,m:0},{x:190,y:287,r:40,m:0},{x:535,y:337,r:40,m:6},{x:283,y:438,r:40,m:7},{x:655,y:477,r:40,m:10}], bottom:{x:430,y:600,w:330,h:190,m:3,shape:'pear',turn:true}},
+  1:{wraps:[{x:470,y:300,r:40,m:10}], bottom:{x:430,y:625,w:330,h:190,m:3,shape:'pear',turn:true}},
+  2:{wraps:[{x:378,y:150,r:40,m:0},{x:190,y:240,r:40,m:0}], bottom:{x:430,y:342,w:330,h:190,m:3,shape:'pear',turn:true}},
+  3:{wraps:[{x:378,y:150,r:40,m:0},{x:190,y:240,r:40,m:0},{x:535,y:317,r:40,m:6}], bottom:{x:430,y:439,w:330,h:190,m:3,shape:'pear',turn:true}},
+  4:{wraps:[{x:378,y:150,r:40,m:0},{x:190,y:240,r:40,m:0},{x:535,y:320,r:40,m:6},{x:283,y:391,r:40,m:7}], bottom:{x:430,y:513,w:330,h:190,m:3,shape:'pear',turn:true}},
+  5:{wraps:[{x:378,y:150,r:40,m:0},{x:190,y:240,r:40,m:0},{x:535,y:320,r:40,m:6},{x:283,y:397,r:40,m:7},{x:655,y:468,r:40,m:10}], bottom:{x:430,y:590,w:330,h:190,m:3,shape:'pear',turn:true}},
 };   // n -> plain ring photo, once it exists
 const SRC = {src:'img/studio/gold-5.jpg', n:5, stone:{x:535, y:355, r:40, m:6}};   // her ruby, with its prongs
+// her other real stones on the same photo; a dark birthstone is cut from a dark stone, a light one from a light stone
+const SRC_STONES = {
+  0:{x:378, y:170, r:40, m:0},   // garnet
+  6:{x:535, y:355, r:40, m:6},   // ruby
+  7:{x:283, y:470, r:41, m:7},   // peridot
+  10:{x:655, y:515, r:40, m:10}, // citrine
+};
+function srcFor(mi){
+  if (SRC_STONES[mi]) return SRC_STONES[mi];
+  const l = STONE_LOOK[mi].l;
+  if (l < 0.45) return SRC_STONES[6];           // sapphire, emerald, amethyst from the ruby
+  if (STONE_LOOK[mi].h > 150 && STONE_LOOK[mi].h < 260) return SRC_STONES[7];   // blues from the peridot
+  return l > 0.75 ? SRC_STONES[7] : SRC_STONES[10];
+}
+/* a soft seat under a pasted stone, so it reads as set into the wire rather than laid on top */
+function seatShadow(ctx, cx, cy, rx, ry){
+  ctx.save();
+  ctx.translate(cx, cy + ry*0.25); ctx.scale(rx, ry);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+  g.addColorStop(0, 'rgba(60,30,0,0.28)'); g.addColorStop(0.6, 'rgba(60,30,0,0.12)'); g.addColorStop(1, 'rgba(60,30,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(-1, -1, 2, 2);
+  ctx.restore();
+}
 let view = 'photo';
 const photoImgs = {};          // src -> HTMLImageElement
 const metalBase = {};          // src|metal -> canvas with the metal tinted
@@ -1090,9 +1143,11 @@ function tintGoldPixel(d, i, m){
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
   if (sat < 0.06 || r < b) return;
   const amt = Math.min(1, (sat - 0.06) / 0.18);
-  const L = 0.30*r + 0.59*g + 0.11*b;
-  const t = m === 'w' ? [L*0.97 + 6, L*0.985 + 6, L*1.02 + 8]                 // cool polished silver
-                      : [Math.min(255, L*1.06 + 16), L*0.84 + 6, L*0.76 + 4];  // warm pink rose gold
+  let L = 0.30*r + 0.59*g + 0.11*b;
+  L = Math.max(0, Math.min(255, 128 + (L - 128) * 1.22));                      // crisper highlights and shadows
+  if (L > 200) L = Math.min(255, L + (L - 200) * 0.6);                          // polished sheen
+  const t = m === 'w' ? [L*0.97 + 8, L*0.985 + 8, L*1.02 + 12]                // cool polished silver
+                      : [Math.min(255, L*1.05 + 20), L*0.85 + 6, L*0.78 + 6];  // warm pink rose gold
   d[i]   = r + (t[0] - r) * amt;
   d[i+1] = g + (t[1] - g) * amt;
   d[i+2] = b + (t[2] - b) * amt;
@@ -1234,6 +1289,10 @@ const isMetalPx = (r, g, b) => {          // gold, or gold already tinted to ros
   if (metal === 'w') return sat < 0.12 && mx > 90 && mx < 250;
   if (metal === 'r') return (hue <= 50 || hue >= 345) && sat >= 0.10 && sat <= 0.70;
   return (hue >= 10 && hue <= 58) && sat >= 0.14 && sat <= 0.74;
+};
+const isGoldPx = (r, g, b) => {        // the photos the stones are cut from are always the gold ring
+  const [hue, sat, mx] = hueSat(r, g, b);
+  return mx >= 60 && hue >= 10 && hue <= 58 && sat >= 0.14 && sat <= 0.74;
 };
 const notMetal = (r, g, b) => {
   const [, sat, mx] = hueSat(r, g, b);
@@ -1429,59 +1488,72 @@ function paintSprite(ctx, sp, cx, cy, scale, mi){
   const px = p.getContext('2d', {willReadFrequently:true});
   if (sp.rot){ px.translate(pw, 0); px.rotate(Math.PI/2); px.drawImage(sp.img, 0, 0); px.setTransform(1, 0, 0, 1, 0, 0); }
   else px.drawImage(sp.img, 0, 0);
-  if (metal !== 'y'){
-    const id0 = px.getImageData(0, 0, pw, ph), d0 = id0.data;
-    for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
-      if (((x - pw/2) / (sp.bw*0.47))**2 + ((y - ph/2) / (sp.bh*0.47))**2 < 1) continue;   // leave the stone itself
-      tintGoldPixel(d0, (y*pw + x)*4, metal);
-    }
-    px.putImageData(id0, 0, 0);
-  }
   const inBody = (x, y) => ((x - pw/2) / (sp.bw*0.5))**2 + ((y - ph/2) / (sp.bh*0.5))**2 < 1;
+  const isBackdrop = (r, g, b) => { const [, sat, mx] = hueSat(r, g, b); return mx > 232 && sat < 0.06; };
   if (mi !== 3) recolor(px, pw, ph, (x, y, r, g, b) => {
-    const e = ((x - pw/2) / (sp.bw*0.52))**2 + ((y - ph/2) / (sp.bh*0.52))**2;
-    const [, sat, mx] = hueSat(r, g, b);
-    if (e >= 1 || (mx > 238 && sat < 0.05) || isMetalPx(r, g, b)) return 0;
-    return 1 - smooth(0.86, 1, e);
+    // the stone itself: every pixel inside its outline that is neither metal nor backdrop
+    const e = ((x - pw/2) / (sp.bw*0.56))**2 + ((y - ph/2) / (sp.bh*0.56))**2;
+    if (e >= 1.1 || isBackdrop(r, g, b) || isGoldPx(r, g, b)) return 0;
+    return 1 - smooth(0.9, 1.1, e);
   }, mi);
-  clearBackdrop(px, pw, ph, inBody);
-  // keep only the stone and the prongs that hold it: a rounded-box mask just outside the body
+  // keep the stone and the prongs holding it; backdrop and anything far outside the stone goes
   const id = px.getImageData(0, 0, pw, ph), d = id.data;
-  const P = sp.pow || 4, ax = sp.bw*0.64, ay = sp.bh*0.64;
+  const P = sp.pow || 3, ax = sp.bw*0.60, ay = sp.bh*0.62;
   for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
+    const i = (y*pw + x)*4;
     const v = Math.pow(Math.abs(x - pw/2) / ax, P) + Math.pow(Math.abs(y - ph/2) / ay, P);
-    d[(y*pw + x)*4 + 3] *= 1 - smooth(0.80, 1.0, v);
+    let a = 1 - smooth(0.85, 1.0, v);
+    if (!inBody(x, y) && isBackdrop(d[i], d[i+1], d[i+2])) a *= 1 - smooth(226, 246, Math.min(d[i], d[i+1], d[i+2]));
+    d[i+3] *= a;
   }
   px.putImageData(id, 0, 0);
+  if (metal !== 'y'){                                   // prongs and any wire in the patch take the metal
+    const id0 = px.getImageData(0, 0, pw, ph), d0 = id0.data;
+    for (let i = 0; i < d0.length; i += 4) if (d0[i+3] > 0 && isGoldPx(d0[i], d0[i+1], d0[i+2])) tintGoldPixel(d0, i, metal);
+    px.putImageData(id0, 0, 0);
+  }
   const s = scale * sp.norm;
+  seatShadow(ctx, cx, cy, sp.bw*s*0.55, sp.bh*s*0.5);
   ctx.drawImage(p, cx - pw*s/2, cy - ph*s/2, pw*s, ph*s);
 }
 /* ---------- swatches cut from the photo itself, so the pickers look like the real thing ---------- */
 const SWATCH = {ready:false, stones:{}, metals:{}};
+function gemSwatch(mi){
+  const look = STONE_LOOK[mi], S = 64, o = document.createElement('canvas'); o.width = o.height = S;
+  const x = o.getContext('2d'), c = S/2, R = S/2 - 1;
+  const rgb = (l, s) => { const [r, g, b] = hslToRgb(look.h, Math.min(1, s), Math.max(0, Math.min(1, l))); return `rgb(${r|0},${g|0},${b|0})`; };
+  const light = look.l > 0.75;
+  // body: lit from the upper left, deeper toward the rim
+  const body = x.createRadialGradient(c - R*0.35, c - R*0.4, R*0.1, c, c, R);
+  body.addColorStop(0, rgb(light ? look.l + 0.08 : look.l + 0.22, look.s * 0.9));
+  body.addColorStop(0.55, rgb(look.l, look.s));
+  body.addColorStop(1, rgb(light ? look.l - 0.18 : look.l - 0.2, Math.min(1, look.s * 1.1)));
+  x.beginPath(); x.arc(c, c, R, 0, Math.PI*2); x.fillStyle = body; x.fill();
+  // table facet: a lighter inner disc with a crisp edge, like a cut stone's top
+  x.beginPath(); x.arc(c, c, R*0.58, 0, Math.PI*2);
+  x.fillStyle = rgb(look.l + (light ? 0.05 : 0.12), look.s * 0.85); x.globalAlpha = 0.55; x.fill(); x.globalAlpha = 1;
+  // crown facets: faint spokes
+  x.save(); x.translate(c, c); x.globalAlpha = 0.16; x.strokeStyle = '#fff'; x.lineWidth = 1;
+  for (let i = 0; i < 8; i++){ x.rotate(Math.PI/4); x.beginPath(); x.moveTo(R*0.58, 0); x.lineTo(R*0.98, 0); x.stroke(); }
+  x.restore();
+  // window highlight and a sharp sparkle
+  const hl = x.createRadialGradient(c - R*0.42, c - R*0.45, 0, c - R*0.42, c - R*0.45, R*0.6);
+  hl.addColorStop(0, 'rgba(255,255,255,0.75)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = hl; x.fillRect(0, 0, S, S);
+  x.fillStyle = 'rgba(255,255,255,0.95)'; x.beginPath(); x.arc(c - R*0.45, c - R*0.5, R*0.13, 0, Math.PI*2); x.fill();
+  // rim: a thin bright edge where the girdle catches light
+  x.beginPath(); x.arc(c, c, R - 0.5, 0, Math.PI*2); x.strokeStyle = 'rgba(255,255,255,0.35)'; x.lineWidth = 1; x.stroke();
+  x.beginPath(); x.arc(c, c, R, 0, Math.PI*2); x.strokeStyle = 'rgba(0,0,0,0.22)'; x.lineWidth = 1; x.stroke();
+  return o.toDataURL('image/png');
+}
 function buildSwatches(){
   if (SWATCH.ready) return;
   const src = 'img/studio/gold-5.jpg', img = loadPhoto(src);
   if (!img) return;
   const k = img.naturalWidth / 900;
-  const s = {x:535, y:355, r:40, m:6};                       // the ruby on her 5-wrap photo
-  const gold = tintedBase(src, img, 'y', 5);
-  const R = s.r * k, side = Math.ceil(R*2);
-  for (let mi = 0; mi < 12; mi++){
-    const c = document.createElement('canvas'); c.width = c.height = side;
-    const cx = c.getContext('2d', {willReadFrequently:true});
-    cx.drawImage(gold, s.x*k - R, s.y*k - R, side, side, 0, 0, side, side);
-    if (mi !== s.m) recolor(cx, side, side, (x, y) => 1 - smooth(R*0.80, R*0.95, Math.hypot(x - R, y - R)), mi);
-    const o = document.createElement('canvas'); o.width = o.height = 56;
-    const ox = o.getContext('2d');
-    ox.beginPath(); ox.arc(28, 28, 28, 0, Math.PI*2); ox.clip();
-    ox.drawImage(c, R - R*0.80, R - R*0.80, R*1.6, R*1.6, 0, 0, 56, 56);
-    SWATCH.stones[mi] = o.toDataURL('image/png');
-  }
+  for (let mi = 0; mi < 12; mi++) SWATCH.stones[mi] = gemSwatch(mi);
   for (const m of ['y','r','w']){
-    const real = m !== 'y' && STUDIO_READY[m].includes(5);
-    const msrc = real ? 'img/studio/' + STUDIO[m] + '-5.jpg' : src, mimg = real ? loadPhoto(msrc) : img;
-    if (!mimg) return;                                       // try again once that photo has loaded
-    const base = tintedBase(msrc, mimg, m, 5);
+    const base = tintedBase(src, img, m, 5);
     const o = document.createElement('canvas'); o.width = o.height = 64;
     const ox = o.getContext('2d');
     ox.beginPath(); ox.arc(32, 32, 32, 0, Math.PI*2); ox.clip();
@@ -1614,13 +1686,16 @@ function renderOnPlain(ctx, cv, k, n, P){
     if (!st) return;
     const yw = wireYAt(cv, s.x*k, s.y*k, s.r*k*1.2);
     const dest = {x:s.x*k, y:yw != null ? yw : s.y*k};
-    const sc = topScale * (s.r / SRC.stone.r);
-    paintRound(ctx, srcBase, k, SRC.stone, st.month, sc, dest);
+    const src1 = srcFor(st.month), sc = topScale * (s.r / src1.r);
+    seatShadow(ctx, dest.x, dest.y, src1.r*k*sc*1.2, src1.r*k*sc*0.9);
+    paintRound(ctx, srcBase, k, src1, st.month, sc, dest);
     if (st.twin){
-      const dir = s.x < 450 ? 1 : -1, gapX = SRC.stone.r * 2.7 * Math.max(1, topScale*0.92);
+      const dir = s.x < 450 ? 1 : -1, gapX = src1.r * 2.7 * Math.max(1, topScale*0.92);
       const tx = (s.x + dir*gapX) * k;
       const ty2 = wireYAt(cv, tx, dest.y, s.r*k*1.2);
-      paintRound(ctx, srcBase, k, SRC.stone, twinMonth(st), sc, {x:tx, y:ty2 != null ? ty2 : dest.y});
+      const src2 = srcFor(twinMonth(st)), ty = ty2 != null ? ty2 : dest.y;
+      seatShadow(ctx, tx, ty, src2.r*k*sc*1.2, src2.r*k*sc*0.9);
+      paintRound(ctx, srcBase, k, src2, twinMonth(st), sc, {x:tx, y:ty});
     }
   });
   const B = P.bottom, stones = feature.on ? feature.stones : [];
@@ -1653,7 +1728,7 @@ function paintEmeraldInPlace(ctx, base, k, s, mi, scale){
   const isBackdrop = (r, g, b) => { const [, sat, mx] = hueSat(r, g, b); return mx > 238 && sat < 0.05; };
   if (mi !== s.m) recolor(px, pw, ph, (x, y, r, g, b) => {
     const e = ((x - hw) / (s.w*0.52*k))**2 + ((y - hh) / (s.h*0.52*k))**2;
-    if (e > 1 || isBackdrop(r, g, b) || isMetalPx(r, g, b)) return 0;
+    if (e > 1 || isBackdrop(r, g, b) || isGoldPx(r, g, b)) return 0;
     return 1 - smooth(0.86, 1, e);
   }, mi);
   clearBackdrop(px, pw, ph, (x, y) => ((x - hw) / (s.w*0.5*k))**2 + ((y - hh) / (s.h*0.5*k))**2 < 1);
@@ -1698,6 +1773,10 @@ $('#btnAdd').addEventListener('click', () => {
 
 
 $('#btnReset').addEventListener('click', () => { defaultDesign(); render(); });
+$('#legendTog').addEventListener('click', () => {
+  const lg = $('#legend'), open = lg.hidden;
+  lg.hidden = !open; $('#legendTog').setAttribute('aria-expanded', String(open));
+});
 
 $('#btnTurn').addEventListener('click', () => { azimTarget += Math.PI; });
 $('#btnFront').addEventListener('click', () => {
