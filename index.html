@@ -1122,6 +1122,12 @@ function seatShadow(ctx, cx, cy, rx, ry){
   ctx.fillStyle = g; ctx.fillRect(-1, -1, 2, 2);
   ctx.restore();
 }
+function seatRing(ctx, cx, cy, R){
+  const c = metal === 'w' ? '24,26,32' : '55,28,0';
+  const g = ctx.createRadialGradient(cx, cy + R*0.08, R*0.9, cx, cy + R*0.08, R*1.3);
+  g.addColorStop(0, `rgba(${c},0.42)`); g.addColorStop(0.35, `rgba(${c},0.26)`); g.addColorStop(1, `rgba(${c},0)`);
+  ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy + R*0.08, R*1.3, 0, Math.PI*2); ctx.fill(); ctx.restore();
+}
 let view = 'photo';
 const photoImgs = {};          // src -> HTMLImageElement
 const metalBase = {};          // src|metal -> canvas with the metal tinted
@@ -1507,6 +1513,9 @@ function paintRound(ctx, base, k, s, mi, scale, dest){
     if (metal !== 'y' && d[i+3] > 0 && dd > R0*0.88 && isWarmPx(d[i], d[i+1], d[i+2])) tintGoldPixel(d, i, metal);
   }
   px.putImageData(id, 0, 0);
+  // seat it: a contact shadow below and a dark rim where the stone sinks into the wire
+  seatShadow(ctx, dx, dy, R0*scale*1.35, R0*scale*1.05);
+  seatRing(ctx, dx, dy, R0*scale);
   ctx.drawImage(p, dx - half*scale, dy - half*scale, pw*scale, pw*scale);
 }
 
