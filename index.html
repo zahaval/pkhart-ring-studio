@@ -1287,6 +1287,12 @@ function dilate(m, w, h, r){
   }
   return b;
 }
+const lumOf = (r, g, b) => 0.30*r + 0.59*g + 0.11*b;
+function lumAt(id, X, Y){
+  const x = Math.max(0, Math.min(id.width - 1, Math.round(X))), y = Math.max(0, Math.min(id.height - 1, Math.round(Y)));
+  const i = (y*id.width + x)*4;
+  return lumOf(id.data[i], id.data[i+1], id.data[i+2]);
+}
 function blur3(A, w, h){
   const B = new Float32Array(w*h);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
@@ -1486,15 +1492,21 @@ function paintRound(ctx, base, k, s, mi, scale, dest){
   clearBackdrop(px, pw, pw, (x, y) => Math.hypot(x - half, y - half) < R0);
   // keep only the stone and its prongs, so no stray wire travels with it; prongs take the chosen metal
   const id = px.getImageData(0, 0, pw, pw), d = id.data;
+  const dx = dest ? dest.x : s.x*k, dy = dest ? dest.y : s.y*k;
+  const DST = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
   for (let y = 0; y < pw; y++) for (let x = 0; x < pw; x++){
     const i = (y*pw + x)*4;
     const dd = Math.hypot(x - half, y - half);
     d[i+3] *= 1 - smooth(R0*1.20, R0*1.36, dd);
+    if (dd > R0*0.98 && d[i+3] > 0){
+      // outside the stone only the prong beads stay: the pixels that are brighter than the wire they land on
+      const Ld = lumAt(DST, dx - half*scale + x*scale, dy - half*scale + y*scale);
+      d[i+3] *= smooth(6, 30, lumOf(d[i], d[i+1], d[i+2]) - Ld);
+    }
     // only the prongs outside the stone take the metal; warm facets inside it (citrine, garnet) are stone
     if (metal !== 'y' && d[i+3] > 0 && dd > R0*0.88 && isWarmPx(d[i], d[i+1], d[i+2])) tintGoldPixel(d, i, metal);
   }
   px.putImageData(id, 0, 0);
-  const dx = dest ? dest.x : s.x*k, dy = dest ? dest.y : s.y*k;
   ctx.drawImage(p, dx - half*scale, dy - half*scale, pw*scale, pw*scale);
 }
 
@@ -1561,12 +1573,15 @@ function paintSprite(ctx, sp, cx, cy, scale, mi){
   }, mi);
   // keep the stone and the prongs holding it; backdrop, and any wire that was under it in the photo, goes
   const id = px.getImageData(0, 0, pw, ph), d = id.data;
+  const s = scale * sp.norm, DST = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
   let A = new Float32Array(pw*ph);
   for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
-    const j = y*pw + x;
+    const j = y*pw + x, i = j*4;
     const v = Math.pow(Math.abs(x - pw/2) / ax, P) + Math.pow(Math.abs(y - ph/2) / ay, P);
     let a = 1 - smooth(0.85, 1.0, v);
     if (gold[j] ? !near[j] : !stone[j]) a = 0;      // no wire, no photo shadow, no backdrop travels with the stone
+    // of the metal round the stone only the prong beads stay: pixels brighter than the wire they land on
+    if (a > 0 && gold[j]) a *= smooth(6, 30, lumOf(d[i], d[i+1], d[i+2]) - lumAt(DST, cx - pw*s/2 + x*s, cy - ph*s/2 + y*s));
     A[j] = a;
   }
   A = blur3(blur3(A, pw, ph), pw, ph);             // a soft edge, like a photographed stone
@@ -1574,10 +1589,9 @@ function paintSprite(ctx, sp, cx, cy, scale, mi){
   px.putImageData(id, 0, 0);
   if (metal !== 'y'){                                   // prongs and any wire in the patch take the metal
     const id0 = px.getImageData(0, 0, pw, ph), d0 = id0.data;
-    for (let j = 0; j < pw*ph; j++){ const i = j*4; if (d0[i+3] > 0 && (!stone[j] || wasGold[j]) && isWarmPx(d0[i], d0[i+1], d0[i+2])) tintGoldPixel(d0, i, metal); }
+    for (let j = 0; j < pw*ph; j++){ const i = j*4; if (d0[i+3] > 0 && (wasGold[j] || (!stone[j] && isWarmPx(d0[i], d0[i+1], d0[i+2])))) tintGoldPixel(d0, i, metal); }
     px.putImageData(id0, 0, 0);
   }
-  const s = scale * sp.norm;
   seatShadow(ctx, cx, cy, sp.bw*s*0.55, sp.bh*s*0.5);
   ctx.drawImage(p, cx - pw*s/2, cy - ph*s/2, pw*s, ph*s);
 }
