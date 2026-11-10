@@ -1095,7 +1095,7 @@ const PLAIN_STONES = {
   2:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:288,r:40,m:0}], bottom:{x:412,y:364,w:330,h:190,m:3,shape:'pear',turn:true}},
   3:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:290,r:40,m:0},{x:535,y:330,r:40,m:6}], bottom:{x:412,y:467,w:330,h:190,m:3,shape:'pear',turn:true}},
   4:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:290,r:40,m:0},{x:535,y:323,r:40,m:6},{x:283,y:431,r:40,m:7}], bottom:{x:412,y:540,w:330,h:190,m:3,shape:'pear',turn:true}},
-  5:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:290,r:40,m:0},{x:535,y:325,r:40,m:6},{x:283,y:415,r:40,m:7},{x:655,y:445,r:40,m:10}], bottom:{x:412,y:600,w:330,h:190,m:3,shape:'pear',turn:true}},
+  5:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:290,r:40,m:0},{x:535,y:322,r:40,m:6},{x:283,y:408,r:40,m:7},{x:700,y:440,r:40,m:10}], bottom:{x:412,y:569,w:330,h:190,m:3,shape:'pear',turn:true}},
 };   // n -> plain ring photo, once it exists
 const SRC = {src:'img/studio/gold-5.jpg', n:5, stone:{x:535, y:355, r:40, m:6}};   // her ruby, with its prongs
 // her other real stones on the same photo; a dark birthstone is cut from a dark stone, a light one from a light stone
@@ -1523,8 +1523,10 @@ function paintSprite(ctx, sp, cx, cy, scale, mi){
     for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
       const i = (y*pw + x)*4, j = y*pw + x;
       const v = Math.pow(Math.abs(x - pw/2) / ax, P) + Math.pow(Math.abs(y - ph/2) / ay, P);
-      if (v >= 1 || isBackdrop(d[i], d[i+1], d[i+2])) continue;
-      if (isGoldPx(d[i], d[i+1], d[i+2])) gold[j] = 1; else stone[j] = 1;
+      if (v >= 1) continue;
+      const g = isGoldPx(d[i], d[i+1], d[i+2]);
+      if (v < 0.62){ if (g) gold[j] = 1; else stone[j] = 1; continue; }   // the stone's own body, sparkle included
+      if (g) gold[j] = 1;                                                     // outside it only metal (prongs) can stay
     }
   }
   const near = dilate(stone, pw, ph, 12);           // metal this close to the stone is a prong
@@ -1540,8 +1542,7 @@ function paintSprite(ctx, sp, cx, cy, scale, mi){
     const i = (y*pw + x)*4, j = y*pw + x;
     const v = Math.pow(Math.abs(x - pw/2) / ax, P) + Math.pow(Math.abs(y - ph/2) / ay, P);
     let a = 1 - smooth(0.85, 1.0, v);
-    if (gold[j] && !near[j]) a = 0;
-    else if (!stone[j] && !gold[j]) a *= 1 - smooth(226, 246, Math.min(d[i], d[i+1], d[i+2]));
+    if (gold[j] ? !near[j] : !stone[j]) a = 0;      // no wire, no photo shadow, no backdrop travels with the stone
     d[i+3] *= a;
   }
   px.putImageData(id, 0, 0);
