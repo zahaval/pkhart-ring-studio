@@ -1084,18 +1084,18 @@ const PHOTO_STONES = {
   2:{wraps:[{x:291,y:354,r:51,m:7},{x:650,y:450,r:49,m:10}], bottom:{x:460,y:618,w:118,h:138,m:3}},
   3:{wraps:[{x:456,y:192,r:78,m:7},{x:230,y:335,r:68,m:null},{x:443,y:462,r:66,m:10}], bottom:{x:420,y:665,w:330,h:190,m:3,shape:'pear',turn:true}},
   4:{wraps:[{x:438,y:235,r:42,m:6},{x:538,y:345,r:38,m:7},{x:280,y:470,r:42,m:10},{x:655,y:520,r:40,m:10}], bottom:{x:420,y:665,w:330,h:190,m:3,shape:'pear',turn:true}},
-  5:{wraps:[{x:378,y:170,r:40,m:0},{x:190,y:298,r:40,m:0},{x:535,y:355,r:40,m:6},{x:283,y:470,r:41,m:7},{x:655,y:515,r:40,m:10}], bottom:{x:430,y:655,w:330,h:190,m:3,shape:'pear',turn:true}},
+  5:{wraps:[{x:378,y:170,r:40,m:0},{x:190,y:298,r:40,m:0},{x:535,y:355,r:40,m:6},{x:283,y:470,r:41,m:7},{x:655,y:515,r:40,m:10}], bottom:{x:412,y:655,w:330,h:190,m:3,shape:'pear',turn:true}},
 };
 /* Plain rings (no stones) per wrap count; every stone is then a cut-out of her real
    stones laid on the wire, so any wrap can be plain, twinned, recoloured or resized. */
 const PLAIN = {1:'img/studio/plain-1.jpg', 2:'img/studio/plain-2.jpg', 3:'img/studio/plain-3.jpg', 4:'img/studio/plain-4.jpg', 5:'img/studio/plain-5.jpg'};
 /* where her stones sit on each plain ring (mapped from her photo) */
 const PLAIN_STONES = {
-  1:{wraps:[{x:560,y:386,r:40,m:10}], bottom:{x:430,y:658,w:330,h:190,m:3,shape:'pear',turn:true}},
-  2:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:288,r:40,m:0}], bottom:{x:430,y:364,w:330,h:190,m:3,shape:'pear',turn:true}},
-  3:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:290,r:40,m:0},{x:535,y:330,r:40,m:6}], bottom:{x:430,y:467,w:330,h:190,m:3,shape:'pear',turn:true}},
-  4:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:290,r:40,m:0},{x:535,y:323,r:40,m:6},{x:283,y:431,r:40,m:7}], bottom:{x:430,y:540,w:330,h:190,m:3,shape:'pear',turn:true}},
-  5:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:290,r:40,m:0},{x:535,y:325,r:40,m:6},{x:283,y:415,r:40,m:7},{x:655,y:445,r:40,m:10}], bottom:{x:430,y:600,w:330,h:190,m:3,shape:'pear',turn:true}},
+  1:{wraps:[{x:560,y:450,r:40,m:10}], bottom:{x:412,y:574,w:330,h:190,m:3,shape:'pear',turn:true}},
+  2:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:288,r:40,m:0}], bottom:{x:412,y:364,w:330,h:190,m:3,shape:'pear',turn:true}},
+  3:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:290,r:40,m:0},{x:535,y:330,r:40,m:6}], bottom:{x:412,y:467,w:330,h:190,m:3,shape:'pear',turn:true}},
+  4:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:290,r:40,m:0},{x:535,y:323,r:40,m:6},{x:283,y:431,r:40,m:7}], bottom:{x:412,y:540,w:330,h:190,m:3,shape:'pear',turn:true}},
+  5:{wraps:[{x:378,y:161,r:40,m:0},{x:190,y:290,r:40,m:0},{x:535,y:325,r:40,m:6},{x:283,y:415,r:40,m:7},{x:655,y:445,r:40,m:10}], bottom:{x:412,y:600,w:330,h:190,m:3,shape:'pear',turn:true}},
 };   // n -> plain ring photo, once it exists
 const SRC = {src:'img/studio/gold-5.jpg', n:5, stone:{x:535, y:355, r:40, m:6}};   // her ruby, with its prongs
 // her other real stones on the same photo; a dark birthstone is cut from a dark stone, a light one from a light stone
@@ -1117,7 +1117,8 @@ function seatShadow(ctx, cx, cy, rx, ry){
   ctx.save();
   ctx.translate(cx, cy + ry*0.25); ctx.scale(rx, ry);
   const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-  g.addColorStop(0, 'rgba(60,30,0,0.28)'); g.addColorStop(0.6, 'rgba(60,30,0,0.12)'); g.addColorStop(1, 'rgba(60,30,0,0)');
+  const c = metal === 'w' ? '28,30,36' : '60,30,0';   // a warm shadow on gold, a neutral one on silver
+  g.addColorStop(0, `rgba(${c},0.22)`); g.addColorStop(0.6, `rgba(${c},0.09)`); g.addColorStop(1, `rgba(${c},0)`);
   ctx.fillStyle = g; ctx.fillRect(-1, -1, 2, 2);
   ctx.restore();
 }
@@ -1273,6 +1274,19 @@ function recolor(ctx, w, h, insideAt, mi){
   ctx.putImageData(id, 0, 0);
 }
 const smooth = (e0, e1, v) => { const t = Math.max(0, Math.min(1, (v - e0) / (e1 - e0))); return t*t*(3 - 2*t); };
+/* grow a 0/1 mask by r pixels (square), two separable passes */
+function dilate(m, w, h, r){
+  const a = new Uint8Array(w*h), b = new Uint8Array(w*h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    let v = 0; for (let k = Math.max(0, x - r); k <= Math.min(w - 1, x + r) && !v; k++) v = m[y*w + k];
+    a[y*w + x] = v;
+  }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    let v = 0; for (let k = Math.max(0, y - r); k <= Math.min(h - 1, y + r) && !v; k++) v = a[k*w + x];
+    b[y*w + x] = v;
+  }
+  return b;
+}
 
 /* ---------- pixels ---------- */
 function hueSat(r, g, b){
@@ -1296,6 +1310,10 @@ const isMetalPx = (r, g, b) => {          // gold, or gold already tinted to ros
 const isGoldPx = (r, g, b) => {        // the photos the stones are cut from are always the gold ring
   const [hue, sat, mx] = hueSat(r, g, b);
   return mx >= 60 && hue >= 10 && hue <= 58 && sat >= 0.14 && sat <= 0.74;
+};
+const isWarmPx = (r, g, b) => {        // looser: prong tips and their dark, saturated shadows
+  const [hue, sat, mx] = hueSat(r, g, b);
+  return mx >= 45 && sat >= 0.12 && (hue <= 62 || (hue >= 350 && sat < 0.5));   // deep reds are garnet/ruby, not metal
 };
 const notMetal = (r, g, b) => {
   const [, sat, mx] = hueSat(r, g, b);
@@ -1449,8 +1467,10 @@ function paintRound(ctx, base, k, s, mi, scale, dest){
   const id = px.getImageData(0, 0, pw, pw), d = id.data;
   for (let y = 0; y < pw; y++) for (let x = 0; x < pw; x++){
     const i = (y*pw + x)*4;
-    d[i+3] *= 1 - smooth(R0*1.20, R0*1.36, Math.hypot(x - half, y - half));
-    if (metal !== 'y' && d[i+3] > 0 && isGoldPx(d[i], d[i+1], d[i+2])) tintGoldPixel(d, i, metal);
+    const dd = Math.hypot(x - half, y - half);
+    d[i+3] *= 1 - smooth(R0*1.20, R0*1.36, dd);
+    // only the prongs outside the stone take the metal; warm facets inside it (citrine, garnet) are stone
+    if (metal !== 'y' && d[i+3] > 0 && dd > R0*0.88 && isWarmPx(d[i], d[i+1], d[i+2])) tintGoldPixel(d, i, metal);
   }
   px.putImageData(id, 0, 0);
   const dx = dest ? dest.x : s.x*k, dy = dest ? dest.y : s.y*k;
@@ -1495,26 +1515,39 @@ function paintSprite(ctx, sp, cx, cy, scale, mi){
   else px.drawImage(sp.img, 0, 0);
   const inBody = (x, y) => ((x - pw/2) / (sp.bw*0.5))**2 + ((y - ph/2) / (sp.bh*0.5))**2 < 1;
   const isBackdrop = (r, g, b) => { const [, sat, mx] = hueSat(r, g, b); return mx > 232 && sat < 0.06; };
+  // read the photo first: which pixels are stone and which are metal, before any recolouring
+  const P = sp.pow || 3, ax = sp.bw*0.60, ay = sp.bh*0.62;
+  const stone = new Uint8Array(pw*ph), gold = new Uint8Array(pw*ph);
+  {
+    const d = px.getImageData(0, 0, pw, ph).data;
+    for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
+      const i = (y*pw + x)*4, j = y*pw + x;
+      const v = Math.pow(Math.abs(x - pw/2) / ax, P) + Math.pow(Math.abs(y - ph/2) / ay, P);
+      if (v >= 1 || isBackdrop(d[i], d[i+1], d[i+2])) continue;
+      if (isGoldPx(d[i], d[i+1], d[i+2])) gold[j] = 1; else stone[j] = 1;
+    }
+  }
+  const near = dilate(stone, pw, ph, 12);           // metal this close to the stone is a prong
   if (mi !== 3) recolor(px, pw, ph, (x, y, r, g, b) => {
     // the stone itself: every pixel inside its outline that is neither metal nor backdrop
     const e = ((x - pw/2) / (sp.bw*0.56))**2 + ((y - ph/2) / (sp.bh*0.56))**2;
-    if (e >= 1.1 || isBackdrop(r, g, b) || isGoldPx(r, g, b)) return 0;
+    if (e >= 1.1 || !stone[y*pw + x]) return 0;
     return 1 - smooth(0.9, 1.1, e);
   }, mi);
-  // keep the stone and the prongs holding it; backdrop and anything far outside the stone goes
+  // keep the stone and the prongs holding it; backdrop, and any wire that was under it in the photo, goes
   const id = px.getImageData(0, 0, pw, ph), d = id.data;
-  const P = sp.pow || 3, ax = sp.bw*0.60, ay = sp.bh*0.62;
   for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
-    const i = (y*pw + x)*4;
+    const i = (y*pw + x)*4, j = y*pw + x;
     const v = Math.pow(Math.abs(x - pw/2) / ax, P) + Math.pow(Math.abs(y - ph/2) / ay, P);
     let a = 1 - smooth(0.85, 1.0, v);
-    if (!inBody(x, y) && isBackdrop(d[i], d[i+1], d[i+2])) a *= 1 - smooth(226, 246, Math.min(d[i], d[i+1], d[i+2]));
+    if (gold[j] && !near[j]) a = 0;
+    else if (!stone[j] && !gold[j]) a *= 1 - smooth(226, 246, Math.min(d[i], d[i+1], d[i+2]));
     d[i+3] *= a;
   }
   px.putImageData(id, 0, 0);
   if (metal !== 'y'){                                   // prongs and any wire in the patch take the metal
     const id0 = px.getImageData(0, 0, pw, ph), d0 = id0.data;
-    for (let i = 0; i < d0.length; i += 4) if (d0[i+3] > 0 && isGoldPx(d0[i], d0[i+1], d0[i+2])) tintGoldPixel(d0, i, metal);
+    for (let j = 0; j < pw*ph; j++){ const i = j*4; if (d0[i+3] > 0 && !stone[j] && isWarmPx(d0[i], d0[i+1], d0[i+2])) tintGoldPixel(d0, i, metal); }
     px.putImageData(id0, 0, 0);
   }
   const s = scale * sp.norm;
