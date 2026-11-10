@@ -1091,11 +1091,11 @@ const PHOTO_STONES = {
 const PLAIN = {1:'img/studio/plain-1.jpg', 2:'img/studio/plain-2.jpg', 3:'img/studio/plain-3.jpg', 4:'img/studio/plain-4.jpg', 5:'img/studio/plain-5.jpg'};
 /* where her stones sit on each plain ring (mapped from her photo) */
 const PLAIN_STONES = {
-  1:{wraps:[{x:560,y:386,r:40,m:10}], bottom:{x:412,y:647,w:330,h:190,m:3,shape:'pear',turn:true}},
-  2:{wraps:[{x:378,y:415,r:40,m:0},{x:190,y:504,r:40,m:0}], bottom:{x:412,y:648,w:330,h:190,m:3,shape:'pear',turn:true}},
-  3:{wraps:[{x:378,y:325,r:40,m:0},{x:190,y:471,r:40,m:0},{x:625,y:465,r:40,m:6}], bottom:{x:412,y:649,w:330,h:190,m:3,shape:'pear',turn:true}},
-  4:{wraps:[{x:378,y:231,r:40,m:0},{x:190,y:370,r:40,m:0},{x:535,y:467,r:40,m:6},{x:283,y:592,r:40,m:7}], bottom:{x:412,y:762,w:330,h:190,m:3,shape:'pear',turn:true}},
-  5:{wraps:[{x:378,y:262,r:40,m:0},{x:190,y:365,r:40,m:0},{x:535,y:402,r:40,m:6},{x:283,y:488,r:40,m:7},{x:655,y:527,r:40,m:10}], bottom:{x:412,y:724,w:330,h:190,m:3,shape:'pear',turn:true}},
+  1:{wraps:[{x:560,y:391,r:40,m:10}], bottom:{x:412,y:646,w:330,h:190,m:3,shape:'pear',turn:true}},
+  2:{wraps:[{x:378,y:394,r:40,m:0},{x:190,y:499,r:40,m:0}], bottom:{x:412,y:645,w:330,h:190,m:3,shape:'pear',turn:true}},
+  3:{wraps:[{x:378,y:395,r:40,m:0},{x:190,y:448,r:40,m:0},{x:625,y:528,r:40,m:6}], bottom:{x:412,y:645,w:330,h:190,m:3,shape:'pear',turn:true}},
+  4:{wraps:[{x:378,y:233,r:40,m:0},{x:190,y:305,r:40,m:0},{x:535,y:446,r:40,m:6},{x:283,y:626,r:40,m:7}], bottom:{x:412,y:760,w:330,h:190,m:3,shape:'pear',turn:true}},
+  5:{wraps:[{x:378,y:255,r:40,m:0},{x:190,y:325,r:40,m:0},{x:535,y:395,r:40,m:6},{x:283,y:478,r:40,m:7},{x:655,y:528,r:40,m:10}], bottom:{x:412,y:725,w:330,h:190,m:3,shape:'pear',turn:true}},
 };   // n -> plain ring photo, once it exists
 const SRC = {src:'img/studio/gold-5.jpg', n:5, stone:{x:535, y:355, r:40, m:6}};   // her ruby, with its prongs
 // her other real stones on the same photo; a dark birthstone is cut from a dark stone, a light one from a light stone
@@ -1287,6 +1287,18 @@ function dilate(m, w, h, r){
   }
   return b;
 }
+function blur3(A, w, h){
+  const B = new Float32Array(w*h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    let s = 0, n = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
+      const yy = y + dy, xx = x + dx; if (yy < 0 || yy >= h || xx < 0 || xx >= w) continue;
+      s += A[yy*w + xx]; n++;
+    }
+    B[y*w + x] = s / n;
+  }
+  return B;
+}
 function erode(m, w, h, r){
   const inv = new Uint8Array(w*h); for (let j = 0; j < w*h; j++) inv[j] = m[j] ? 0 : 1;
   const d = dilate(inv, w, h, r); for (let j = 0; j < w*h; j++) d[j] = d[j] ? 0 : 1;
@@ -1343,7 +1355,11 @@ function wireYAt(c, x, yGuess, range){
     if (y <= y1){ const i = (y*W + x)*4; gold = isMetalPx(d[i], d[i+1], d[i+2]); }
     if (gold){ if (!run) start = y; run++; }
     else if (run){
-      if (run >= 8){ const cy = start + run/2; if (best == null || Math.abs(cy - yGuess) < Math.abs(best - yGuess)) best = cy; }
+      if (run >= 8){
+        // a wire is ~60px; if this run is the wire merged with the band behind it, take the wire nearest the guess
+        const T = Math.min(run, 56), cy = Math.max(start + T/2, Math.min(start + run - T/2, yGuess));
+        if (best == null || Math.abs(cy - yGuess) < Math.abs(best - yGuess)) best = cy;
+      }
       run = 0;
     }
   }
@@ -1522,7 +1538,7 @@ function paintSprite(ctx, sp, cx, cy, scale, mi){
   const isBackdrop = (r, g, b) => { const [, sat, mx] = hueSat(r, g, b); return mx > 232 && sat < 0.06; };
   // read the photo first: which pixels are stone and which are metal, before any recolouring
   const P = sp.pow || 3, ax = sp.bw*0.60, ay = sp.bh*0.62;
-  const stone = new Uint8Array(pw*ph), gold = new Uint8Array(pw*ph);
+  const stone = new Uint8Array(pw*ph), gold = new Uint8Array(pw*ph), wasGold = new Uint8Array(pw*ph);
   {
     const d = px.getImageData(0, 0, pw, ph).data;
     for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
@@ -1530,11 +1546,11 @@ function paintSprite(ctx, sp, cx, cy, scale, mi){
       const v = Math.pow(Math.abs(x - pw/2) / ax, P) + Math.pow(Math.abs(y - ph/2) / ay, P);
       if (v >= 1) continue;
       if (isGoldPx(d[i], d[i+1], d[i+2])) gold[j] = 1;
-      else if (!isBackdrop(d[i], d[i+1], d[i+2])) stone[j] = 1;
+      else if (inBody(x, y) || !isBackdrop(d[i], d[i+1], d[i+2])) stone[j] = 1;   // the body is all stone, sparkle included
     }
     // the stone's real outline: close its white sparkle holes, then trim the thin shadow fringe
     const closed = erode(dilate(stone, pw, ph, 5), pw, ph, 5), trimmed = erode(closed, pw, ph, 3);
-    for (let j = 0; j < pw*ph; j++){ if (trimmed[j]) { stone[j] = 1; gold[j] = 0; } else stone[j] = 0; }
+    for (let j = 0; j < pw*ph; j++){ if (trimmed[j]) { stone[j] = 1; if (gold[j]) wasGold[j] = 1; gold[j] = 0; } else stone[j] = 0; }
   }
   const near = dilate(stone, pw, ph, 12);           // metal this close to the stone is a prong
   if (mi !== 3) recolor(px, pw, ph, (x, y, r, g, b) => {
@@ -1545,17 +1561,20 @@ function paintSprite(ctx, sp, cx, cy, scale, mi){
   }, mi);
   // keep the stone and the prongs holding it; backdrop, and any wire that was under it in the photo, goes
   const id = px.getImageData(0, 0, pw, ph), d = id.data;
+  let A = new Float32Array(pw*ph);
   for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++){
-    const i = (y*pw + x)*4, j = y*pw + x;
+    const j = y*pw + x;
     const v = Math.pow(Math.abs(x - pw/2) / ax, P) + Math.pow(Math.abs(y - ph/2) / ay, P);
     let a = 1 - smooth(0.85, 1.0, v);
     if (gold[j] ? !near[j] : !stone[j]) a = 0;      // no wire, no photo shadow, no backdrop travels with the stone
-    d[i+3] *= a;
+    A[j] = a;
   }
+  A = blur3(blur3(A, pw, ph), pw, ph);             // a soft edge, like a photographed stone
+  for (let j = 0; j < pw*ph; j++) d[j*4+3] *= A[j];
   px.putImageData(id, 0, 0);
   if (metal !== 'y'){                                   // prongs and any wire in the patch take the metal
     const id0 = px.getImageData(0, 0, pw, ph), d0 = id0.data;
-    for (let j = 0; j < pw*ph; j++){ const i = j*4; if (d0[i+3] > 0 && !stone[j] && isWarmPx(d0[i], d0[i+1], d0[i+2])) tintGoldPixel(d0, i, metal); }
+    for (let j = 0; j < pw*ph; j++){ const i = j*4; if (d0[i+3] > 0 && (!stone[j] || wasGold[j]) && isWarmPx(d0[i], d0[i+1], d0[i+2])) tintGoldPixel(d0, i, metal); }
     px.putImageData(id0, 0, 0);
   }
   const s = scale * sp.norm;
