@@ -331,9 +331,9 @@ const STONE_CARATS = {
 };
 const FEATURE_CARATS = {
   c50:{label:'0.50 ct', scale:0.20},
-  c100:{label:'1 ct', scale:0.26},
-  c150:{label:'1.5 ct', scale:0.30},
-  c200:{label:'2 ct', scale:0.34},
+  c100:{label:'1 ct', scale:0.245},
+  c150:{label:'1.5 ct', scale:0.28},
+  c200:{label:'2 ct', scale:0.31},
 };
 
 /* ============================ 2. STATE ============================ */
@@ -1528,11 +1528,11 @@ function paintRound(ctx, base, k, s, mi, scale, dest){
    cut on the bottom wire; bw/bh = the stone's body in sprite pixels. */
 const SPRITES = {
   // bw/bh = the stone's body in sprite pixels; norm brings each cut to the same 0.5 ct footprint (her pear = 1)
-  'pear-h':   {src:'img/studio/bottom/pear-h.png',    bw:316, bh:195, norm:0.88, pow:3, masked:true, rdx:-60, rdy:25},   // rdx/rdy: when turned upright   // alpha = the stone's real outline
-  'oval-h':   {src:'img/studio/bottom/oval-h.png',    bw:300, bh:224, norm:0.93, pow:3, masked:true, rdx:-45, rdy:25},
+  'pear-h':   {src:'img/studio/bottom/pear-h.png',    bw:316, bh:195, norm:0.72, pow:3, masked:true, dx:-22, rdx:-80, rdy:25},   // rdx/rdy: when turned upright   // alpha = the stone's real outline
+  'oval-h':   {src:'img/studio/bottom/oval-h.png',    bw:300, bh:224, norm:0.75, pow:3, masked:true, dx:-45, rdx:-70, rdy:25},
   // cuts not yet photographed on her ring: earlier studio cut-outs, scaled up to her pear's footprint
-  'emerald-v':{src:'img/studio/bottom/emerald-v.png', bw:341, bh:404, norm:0.45, masked:true, dx:-56, dy:25},   // dy: upright cuts hang a little lower off the wire
-  'heart-v':  {src:'img/studio/bottom/heart-v.png',   bw:385, bh:370, norm:0.46, masked:true, dx:-45, dy:25},   // up and left: it caps the wire's end
+  'emerald-v':{src:'img/studio/bottom/emerald-v.png', bw:341, bh:404, norm:0.50, masked:true, dx:-56, dy:25, rdx:-45},   // dy: upright cuts hang a little lower off the wire
+  'heart-v':  {src:'img/studio/bottom/heart-v.png',   bw:385, bh:370, norm:0.52, masked:true, dx:-45, dy:25, rdx:-45},   // up and left: it caps the wire's end
 };
 const spriteImgs = {};
 function spriteFor(shape, turn){
@@ -1786,7 +1786,8 @@ function renderPhoto(){
         if (yw != null) yPrev = yw;
         { const sp = sprites[i], single = stones.length === 1;   // a lone stone caps the wire's end; a pair hangs flush, level, side by side
       const ox = single ? (sp.rot ? (sp.rdx || 0) : (sp.dx || 0)) : 0, oy = single ? (sp.rot ? (sp.rdy || 0) : (sp.dy || 0)) : 25;
-      paintSprite(ctx, sp, cx + ox*k, cy + oy*k, scales[i], bs.month); }
+      const ih = (sp.rot ? sp.img.naturalWidth : sp.img.naturalHeight) * scales[i] * sp.norm;   // keep big carats inside the frame
+      paintSprite(ctx, sp, cx + ox*k, Math.min(cy + oy*k, cv.height - 6*k - ih/2), scales[i], bs.month); }
         x += widths[i] + gap;
       });
     }
@@ -1836,7 +1837,8 @@ function renderOnPlain(ctx, cv, k, n, P, ref){
     if (yw != null) yPrev = yw;
     { const sp = sprites[i], single = stones.length === 1;   // a lone stone caps the wire's end; a pair hangs flush, level, side by side
       const ox = single ? (sp.rot ? (sp.rdx || 0) : (sp.dx || 0)) : 0, oy = single ? (sp.rot ? (sp.rdy || 0) : (sp.dy || 0)) : 25;
-      paintSprite(ctx, sp, cx + ox*k, cy + oy*k, scales[i], bs.month); }
+      const ih = (sp.rot ? sp.img.naturalWidth : sp.img.naturalHeight) * scales[i] * sp.norm;   // keep big carats inside the frame
+      paintSprite(ctx, sp, cx + ox*k, Math.min(cy + oy*k, cv.height - 6*k - ih/2), scales[i], bs.month); }
     x += widths[i] + gap;
   });
 }
