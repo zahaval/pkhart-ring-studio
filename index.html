@@ -1528,12 +1528,10 @@ function paintRound(ctx, base, k, s, mi, scale, dest){
    cut on the bottom wire; bw/bh = the stone's body in sprite pixels. */
 const SPRITES = {
   // bw/bh = the stone's body in sprite pixels; norm brings each cut to the same 0.5 ct footprint (her pear = 1)
-  'pear-h':   {src:'img/studio/bottom/pear-h.png',    bw:316, bh:195, norm:0.88, pow:3, masked:true},   // alpha = the stone's real outline
-  'oval-h':   {src:'img/studio/bottom/oval-h.png',    bw:300, bh:224, norm:0.93, pow:3, masked:true},
+  'pear-h':   {src:'img/studio/bottom/pear-h.png',    bw:316, bh:195, norm:0.88, pow:3, masked:true, rdx:-60, rdy:25},   // rdx/rdy: when turned upright   // alpha = the stone's real outline
+  'oval-h':   {src:'img/studio/bottom/oval-h.png',    bw:300, bh:224, norm:0.93, pow:3, masked:true, rdx:-45, rdy:25},
   // cuts not yet photographed on her ring: earlier studio cut-outs, scaled up to her pear's footprint
   'emerald-v':{src:'img/studio/bottom/emerald-v.png', bw:341, bh:404, norm:0.45, masked:true, dx:-56, dy:25},   // dy: upright cuts hang a little lower off the wire
-  'oval-v':   {src:'img/studio/bottom/oval-v.png',    bw:140, bh:192, norm:1.4},
-  'pear-v':   {src:'img/studio/bottom/pear-v.png',    bw:150, bh:200, norm:1.32},
   'heart-v':  {src:'img/studio/bottom/heart-v.png',   bw:385, bh:370, norm:0.46, masked:true, dx:-45, dy:25},   // up and left: it caps the wire's end
 };
 const spriteImgs = {};
@@ -1786,7 +1784,9 @@ function renderPhoto(){
         const yw = wireYAt(cv, cx, yPrev, 40*k);
         const cy = (yw != null && yAtX0 != null) ? y0 + (yw - yAtX0) : y0;
         if (yw != null) yPrev = yw;
-        paintSprite(ctx, sprites[i], cx + (sprites[i].rot ? 0 : (sprites[i].dx || 0)) * k, cy + (sprites[i].rot ? 0 : (sprites[i].dy || 0)) * k, scales[i], bs.month);
+        { const sp = sprites[i], single = stones.length === 1;   // a lone stone caps the wire's end; a pair hangs flush, level, side by side
+      const ox = single ? (sp.rot ? (sp.rdx || 0) : (sp.dx || 0)) : 0, oy = single ? (sp.rot ? (sp.rdy || 0) : (sp.dy || 0)) : 25;
+      paintSprite(ctx, sp, cx + ox*k, cy + oy*k, scales[i], bs.month); }
         x += widths[i] + gap;
       });
     }
@@ -1824,7 +1824,7 @@ function renderOnPlain(ctx, cv, k, n, P, ref){
   let scales = stones.map(bs => photoScale * k * FEATURE_CARATS[bs.size].scale / FEATURE_CARATS.c50.scale);
   let widths = sprites.map((sp, i) => sp.bw * sp.norm * scales[i]);
   const x0 = B.x*k, y0 = B.y*k;
-  let gap = 22 * k, total = widths.reduce((a, b) => a + b, 0) + gap * (stones.length - 1);
+  let gap = 4 * k, total = widths.reduce((a, b) => a + b, 0) + gap * (stones.length - 1);
   const room = Math.max(widths[0], B.w*k*1.35);
   if (total > room){ const f = room / total; scales = scales.map(s => s*f); widths = widths.map(w => w*f); gap *= f; total = room; }
   let x = x0 - total/2, yPrev = y0;
@@ -1832,9 +1832,11 @@ function renderOnPlain(ctx, cv, k, n, P, ref){
   stones.forEach((bs, i) => {
     const cx = x + widths[i]/2;
     const yw = wireYAt(ref, cx, yPrev, 40*k);
-    const cy = (yw != null && yAtX0 != null) ? y0 + (yw - yAtX0) : y0;
+    const cy = y0;   // twins sit flush on one line
     if (yw != null) yPrev = yw;
-    paintSprite(ctx, sprites[i], cx + (sprites[i].rot ? 0 : (sprites[i].dx || 0)) * k, cy + (sprites[i].rot ? 0 : (sprites[i].dy || 0)) * k, scales[i], bs.month);
+    { const sp = sprites[i], single = stones.length === 1;   // a lone stone caps the wire's end; a pair hangs flush, level, side by side
+      const ox = single ? (sp.rot ? (sp.rdx || 0) : (sp.dx || 0)) : 0, oy = single ? (sp.rot ? (sp.rdy || 0) : (sp.dy || 0)) : 25;
+      paintSprite(ctx, sp, cx + ox*k, cy + oy*k, scales[i], bs.month); }
     x += widths[i] + gap;
   });
 }
