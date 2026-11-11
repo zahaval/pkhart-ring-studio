@@ -1094,7 +1094,7 @@ const PLAIN_STONES = {
   1:{wraps:[{x:560,y:395,r:40,m:10}], bottom:{x:412,y:700,w:330,h:190,m:3,shape:'pear',turn:true}},
   2:{wraps:[{x:378,y:402,r:40,m:0},{x:190,y:505,r:40,m:0}], bottom:{x:412,y:700,w:330,h:190,m:3,shape:'pear',turn:true}},
   3:{wraps:[{x:378,y:405,r:40,m:0},{x:190,y:452,r:40,m:0},{x:625,y:535,r:40,m:6}], bottom:{x:412,y:700,w:330,h:190,m:3,shape:'pear',turn:true}},
-  4:{wraps:[{x:378,y:205,r:40,m:0},{x:190,y:245,r:40,m:0},{x:535,y:385,r:40,m:6},{x:283,y:565,r:40,m:7}], bottom:{x:412,y:742,w:330,h:190,m:3,shape:'pear',turn:true}},
+  4:{wraps:[{x:378,y:180,r:40,m:0},{x:190,y:220,r:40,m:0},{x:535,y:360,r:40,m:6},{x:283,y:540,r:40,m:7}], bottom:{x:412,y:717,w:330,h:190,m:3,shape:'pear',turn:true}},
   5:{wraps:[{x:440,y:315,r:40,m:0},{x:190,y:400,r:40,m:0},{x:535,y:488,r:40,m:6},{x:283,y:565,r:40,m:7},{x:655,y:605,r:40,m:10}], bottom:{x:380,y:726,w:330,h:190,m:3,shape:'pear',turn:true}},
 };   // n -> plain ring photo, once it exists
 const SRC = {src:'img/studio/gold-5.jpg', n:5, stone:{x:535, y:355, r:40, m:6}};   // her ruby, with its prongs
@@ -1531,11 +1531,10 @@ const SPRITES = {
   'pear-h':   {src:'img/studio/bottom/pear-h.png',    bw:316, bh:195, norm:0.88, pow:3, masked:true},   // alpha = the stone's real outline
   'oval-h':   {src:'img/studio/bottom/oval-h.png',    bw:300, bh:224, norm:0.93, pow:3, masked:true},
   // cuts not yet photographed on her ring: earlier studio cut-outs, scaled up to her pear's footprint
-  'emerald-h':{src:'img/studio/bottom/emerald-h.png', bw:140, bh:104, norm:1.9},
-  'emerald-v':{src:'img/studio/bottom/emerald-v.png', bw:135, bh:160, norm:1.55},
+  'emerald-v':{src:'img/studio/bottom/emerald-v.png', bw:330, bh:395, norm:0.45, masked:true, dy:78},   // dy: upright cuts hang a little lower off the wire
   'oval-v':   {src:'img/studio/bottom/oval-v.png',    bw:140, bh:192, norm:1.4},
   'pear-v':   {src:'img/studio/bottom/pear-v.png',    bw:150, bh:200, norm:1.32},
-  'heart-v':  {src:'img/studio/bottom/heart-v.png',   bw:160, bh:165, norm:1.42},
+  'heart-v':  {src:'img/studio/bottom/heart-v.png',   bw:385, bh:370, norm:0.46, masked:true, dy:67},
 };
 const spriteImgs = {};
 function spriteFor(shape, turn){
@@ -1787,7 +1786,7 @@ function renderPhoto(){
         const yw = wireYAt(cv, cx, yPrev, 40*k);
         const cy = (yw != null && yAtX0 != null) ? y0 + (yw - yAtX0) : y0;
         if (yw != null) yPrev = yw;
-        paintSprite(ctx, sprites[i], cx, cy, scales[i], bs.month);
+        paintSprite(ctx, sprites[i], cx, cy + (sprites[i].rot ? 0 : (sprites[i].dy || 0)) * k, scales[i], bs.month);
         x += widths[i] + gap;
       });
     }
@@ -1835,7 +1834,7 @@ function renderOnPlain(ctx, cv, k, n, P, ref){
     const yw = wireYAt(ref, cx, yPrev, 40*k);
     const cy = (yw != null && yAtX0 != null) ? y0 + (yw - yAtX0) : y0;
     if (yw != null) yPrev = yw;
-    paintSprite(ctx, sprites[i], cx, cy, scales[i], bs.month);
+    paintSprite(ctx, sprites[i], cx, cy + (sprites[i].rot ? 0 : (sprites[i].dy || 0)) * k, scales[i], bs.month);
     x += widths[i] + gap;
   });
 }
