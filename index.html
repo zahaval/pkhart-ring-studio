@@ -292,11 +292,11 @@ const MONTHS = [
   {m:'March',     s:'Aquamarine', c:'#9BD8E0', d:'#5FA8B5', hex:0x9fe2ec},
   {m:'April',     s:'Diamond',    c:'#F2F5F9', d:'#B9C2CF', hex:0xffffff},
   {m:'May',       s:'Emerald',    c:'#2E9C6B', d:'#15573A', hex:0x1cc076},
-  {m:'June',      s:'Pearl',      c:'#F6F1E7', d:'#CFC2A8', hex:0xf8f2e8},
+  {m:'June',      s:'Alexandrite', c:'#3F9C8F', d:'#5A3B7A', hex:0x3fa596},
   {m:'July',      s:'Ruby',       c:'#C3123F', d:'#7A0A26', hex:0xe0164a},
   {m:'August',    s:'Peridot',    c:'#AFCB54', d:'#779230', hex:0xbbdc50},
   {m:'September', s:'Sapphire',   c:'#2B4C9B', d:'#17295C', hex:0x2f5fd0},
-  {m:'October',   s:'Opal',       c:'#EADCEE', d:'#C3A9CF', hex:0xf0e2f4},
+  {m:'October',   s:'Pink Tourmaline', c:'#E4609A', d:'#A12F66', hex:0xec5f9c},
   {m:'November',  s:'Citrine',    c:'#E8A83D', d:'#A66F1D', hex:0xf5b23a},
   {m:'December',  s:'Blue Topaz', c:'#58AEDC', d:'#2D6E99', hex:0x5cc0f0},
 ];
@@ -1208,7 +1208,7 @@ function tintedBase(src, img, m, n){
    pattern, map it onto the birthstone's own dark → mid → light ramp. */
 function stoneRamp(mi){
   const mo = MONTHS[mi], c = hexRgb(mo.c), d = hexRgb(mo.d);
-  const light = (c[0] + c[1] + c[2]) / 3 > 215;      // diamond, pearl, opal
+  const light = (c[0] + c[1] + c[2]) / 3 > 215;      // diamond
   return light
     ? [[0, [112,118,128]], [0.40, d], [0.78, c], [1, [255,255,255]]]
     : [[0, d.map(v => v*(0.42 + 0.33*Math.max(0, Math.min(1, ((c[0]+c[1]+c[2])/3 - 120) / 90))))], [0.38, d], [0.72, c], [1, mix(c, [255,255,255], 0.62)]];
@@ -1229,11 +1229,11 @@ const STONE_LOOK = {
   2:{h:188, s:.45, l:.74, range:.38},  // aquamarine — pale sea blue
   3:{h:215, s:.06, l:.80, range:.62},  // diamond
   4:{h:150, s:.70, l:.36, range:.44},  // emerald
-  5:{h:38,  s:.25, l:.90, range:.18},  // pearl
+  5:{h:172, s:.58, l:.44, range:.46, h2:285},  // alexandrite — teal that turns purple in its deep facets
   6:{h:345, s:.85, l:.40, range:.46},  // ruby
   7:{h:78,  s:.62, l:.55, range:.44},  // peridot
   8:{h:224, s:.75, l:.32, range:.46},  // sapphire
-  9:{h:290, s:.18, l:.86, range:.30},  // opal
+  9:{h:330, s:.70, l:.58, range:.44},  // pink tourmaline
   10:{h:38, s:.86, l:.52, range:.46},  // citrine
   11:{h:200, s:.70, l:.58, range:.46}, // blue topaz
 };
@@ -1272,7 +1272,8 @@ function recolor(ctx, w, h, insideAt, mi){
     const spark = smooth(0.86, 1.0, l);
     lightness = lightness + (0.97 - lightness) * spark * 0.9;
     const sat = tgt.s * (1 - spark * 0.75) * (0.85 + 0.3 * (1 - Math.abs(l - 0.45)));
-    const col = hslToRgb(tgt.h, Math.min(1, sat), Math.max(0.02, Math.min(0.99, lightness)));
+    const hue = tgt.h2 == null ? tgt.h : tgt.h2 + (tgt.h - tgt.h2) * (0.25 + 0.75 * smooth(0.0, 0.26, l));   // a colour-change stone: deep facets take the second hue
+    const col = hslToRgb(hue, Math.min(1, sat), Math.max(0.02, Math.min(0.99, lightness)));
     d[i]   = d[i]   + (col[0] - d[i])   * a;
     d[i+1] = d[i+1] + (col[1] - d[i+1]) * a;
     d[i+2] = d[i+2] + (col[2] - d[i+2]) * a;
@@ -1615,13 +1616,13 @@ const SWATCH = {ready:false, stones:{}, metals:{}};
 function gemSwatch(mi){
   const look = STONE_LOOK[mi], S = 64, o = document.createElement('canvas'); o.width = o.height = S;
   const x = o.getContext('2d'), c = S/2, R = S/2 - 1;
-  const rgb = (l, s) => { const [r, g, b] = hslToRgb(look.h, Math.min(1, s), Math.max(0, Math.min(1, l))); return `rgb(${r|0},${g|0},${b|0})`; };
+  const rgb = (l, s, hue = look.h) => { const [r, g, b] = hslToRgb(hue, Math.min(1, s), Math.max(0, Math.min(1, l))); return `rgb(${r|0},${g|0},${b|0})`; };
   const light = look.l > 0.75;
   // body: lit from the upper left, deeper toward the rim
   const body = x.createRadialGradient(c - R*0.35, c - R*0.4, R*0.1, c, c, R);
   body.addColorStop(0, rgb(light ? look.l + 0.08 : look.l + 0.22, look.s * 0.9));
   body.addColorStop(0.55, rgb(look.l, look.s));
-  body.addColorStop(1, rgb(light ? look.l - 0.18 : look.l - 0.2, Math.min(1, look.s * 1.1)));
+  body.addColorStop(1, rgb(light ? look.l - 0.18 : look.l - 0.2, Math.min(1, look.s * 1.1), look.h2 == null ? look.h : look.h2));
   x.beginPath(); x.arc(c, c, R, 0, Math.PI*2); x.fillStyle = body; x.fill();
   // table facet: a lighter inner disc with a crisp edge, like a cut stone's top
   x.beginPath(); x.arc(c, c, R*0.58, 0, Math.PI*2);
