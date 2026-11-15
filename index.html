@@ -1085,6 +1085,14 @@ const PHOTO_STONES = {
 /* Plain rings (no stones) per wrap count; every stone is then a cut-out of her real
    stones laid on the wire, so any wrap can be plain, twinned, recoloured or resized. */
 const PLAIN = {1:'img/studio/plain-1.jpg', 2:'img/studio/plain-2.jpg', 3:'img/studio/plain-3.jpg', 4:'img/studio/plain-4.jpg', 5:'img/studio/plain-5.jpg'};
+const RING3D = new URLSearchParams(location.search).get('ring') === '3d';   // preview switch: add ?ring=3d to see the 3D-rendered ring; default = the photo-cut rings (PLAIN)
+const R3D_STONES = {   // from ring3d.py: the band's outer face at each stone's angle
+  1:{wraps:[{x:539,y:511,r:40,m:0}], bottom:{x:363,y:595,w:330,h:190,m:3,shape:'pear',turn:true,tip:{x:233,y:595}}},
+  2:{wraps:[{x:412,y:471,r:40,m:0},{x:649,y:540,r:40,m:0}], bottom:{x:364,y:639,w:330,h:190,m:3,shape:'pear',turn:true,tip:{x:234,y:639}}},
+  3:{wraps:[{x:450,y:424,r:40,m:0},{x:171,y:496,r:40,m:0},{x:648,y:585,r:40,m:6}], bottom:{x:364,y:682,w:330,h:190,m:3,shape:'pear',turn:true,tip:{x:234,y:682}}},
+  4:{wraps:[{x:450,y:376,r:40,m:0},{x:170,y:452,r:40,m:0},{x:390,y:564,r:40,m:6},{x:683,y:619,r:40,m:7}], bottom:{x:365,y:725,w:330,h:190,m:3,shape:'pear',turn:true,tip:{x:235,y:725}}},
+  5:{wraps:[{x:450,y:329,r:40,m:0},{x:169,y:409,r:40,m:0},{x:561,y:509,r:40,m:6},{x:271,y:602,r:40,m:7},{x:688,y:660,r:40,m:10}], bottom:{x:366,y:768,w:330,h:190,m:3,shape:'pear',turn:true,tip:{x:236,y:768}}},
+};
 /* where her stones sit on each plain ring (mapped from her photo) */
 const PLAIN_STONES = {   // every size is the same ring (the 5-wrap) with wires lifted out, so stones keep their spots
   1:{wraps:[{x:540,y:462,r:40,m:0}], bottom:{x:380,y:572,w:330,h:190,m:3,shape:'pear',turn:true,tip:{x:253,y:566}}},
@@ -1186,7 +1194,7 @@ function tintedBase(src, img, m, n){
   if (m !== 'y' && !STUDIO_READY[m].includes(n)){
     const id = x.getImageData(0, 0, c.width, c.height), d = id.data;
     const P = PHOTO_STONES[n], k = c.width / 900;
-    const plain = Object.values(PLAIN).includes(src);          // a bare ring: tint everything
+    const plain = Object.values(PLAIN).includes(src) || src.startsWith('img/r3d/');   // a bare ring: tint everything
     const holes = plain ? [] : P.wraps.map(s => [s.x*k, s.y*k, s.r*k*0.96]);
     const bx = P.bottom.x*k, by = P.bottom.y*k, bw = plain ? 0 : P.bottom.w*k*0.42, bh = plain ? 0 : P.bottom.h*k*0.42;
     for (let y = 0; y < c.height; y++){
@@ -1680,6 +1688,7 @@ function buildSwatches(){
 }
 function photoFor(){
   let n = Math.min(Math.max(wraps.length, 1), MAX_WRAPS);
+  if (RING3D) return {n, real:false, src:'img/r3d/y-' + n + '.jpg'};   // the 3D-rendered ring: one model for every size; rose and silver are tinted from it
   if (PLAIN[n]) return {n, real:false, src:PLAIN[n]};
   for (let m = n + 1; m <= MAX_WRAPS; m++) if (PLAIN[m]) return {n:m, real:false, src:PLAIN[m]};   // nearest plain ring above
   while (n < MAX_WRAPS && !STUDIO_READY.y.includes(n)) n++;
@@ -1704,6 +1713,9 @@ function renderPhoto(){
   ctx.drawImage(base, 0, 0);
   cv.__v = (cv.__v || 0) + 1;
   const k = cv.width / 900, P = PHOTO_STONES[n];
+  if (RING3D){
+    return renderOnPlain(ctx, cv, k, n, R3D_STONES[n], metal === 'y' ? cv : tintedBase(src, img, 'y', n));
+  }
   if (PLAIN[n]) return renderOnPlain(ctx, cv, k, n, PLAIN_STONES[n] || P, metal === 'y' ? cv : tintedBase(src, img, 'y', n));   // wires are found on the gold ring, whatever the metal
   const avoid = P.wraps.map(s => [s.x*k, s.y*k, s.r*k*1.5]);
   const B = P.bottom, bLong = Math.max(B.w, B.h), photoScale = bLong / 330;   // her pear's body = the 0.5 ct baseline
