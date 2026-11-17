@@ -354,14 +354,14 @@ function newBottomStone(partial){
   return Object.assign({id:++uid, shape:'oval', month:3, size:'c100', name:'', turn:false}, partial || {});
 }
 function defaultDesign(){
-  // Opens on Penina's own ring, as photographed: garnet, garnet, ruby,
-  // peridot, citrine, and a pear diamond lying sideways on the bottom wrap.
+  // Opens on the ring as pictured: ruby, emerald, amethyst, diamond, diamond,
+  // and a pear diamond lying sideways on the bottom wrap.
   wraps = [
-    newWrap({stone:{month:0, name:'', twin:false}}),
-    newWrap({stone:{month:0, name:'', twin:false}}),
     newWrap({stone:{month:6, name:'', twin:false}}),
-    newWrap({stone:{month:7, name:'', twin:false}}),
-    newWrap({stone:{month:10, name:'', twin:false}}),
+    newWrap({stone:{month:4, name:'', twin:false}}),
+    newWrap({stone:{month:1, name:'', twin:false}}),
+    newWrap({stone:{month:3, name:'', twin:false}}),
+    newWrap({stone:{month:3, name:'', twin:false}}),
   ];
   metal = 'y';
   stoneCarat = 'c05';
@@ -1085,6 +1085,17 @@ const PHOTO_STONES = {
 /* Plain rings (no stones) per wrap count; every stone is then a cut-out of her real
    stones laid on the wire, so any wrap can be plain, twinned, recoloured or resized. */
 const PLAIN = {1:'img/studio/plain-1.jpg', 2:'img/studio/plain-2.jpg', 3:'img/studio/plain-3.jpg', 4:'img/studio/plain-4.jpg', 5:'img/studio/plain-5.jpg'};
+/* The ring photos: one finished image per wrap count, stones included (supplied 2026-11-17).
+   For now they are shown as they are; BAKED_STONES records where each stone sits (used to keep
+   stones their own colour when the metal is tinted, and ready for recolouring them in place). */
+const BAKED = {1:'img/studio/ring-1.jpg', 2:'img/studio/ring-2.jpg', 3:'img/studio/ring-3.jpg', 4:'img/studio/ring-4.jpg', 5:'img/studio/ring-5.jpg'};
+const BAKED_STONES = {
+  1:{wraps:[{x:442,y:358,r:51,m:6}], bottom:{x:469,y:578,w:326,h:252,m:3,shape:'pear',turn:true}},
+  2:{wraps:[{x:428,y:313,r:44,m:6},{x:287,y:453,r:43,m:4}], bottom:{x:465,y:637,w:320,h:239,m:3,shape:'pear',turn:true}},
+  3:{wraps:[{x:419,y:236,r:40,m:6},{x:275,y:373,r:42,m:4},{x:539,y:456,r:43,m:1}], bottom:{x:448,y:623,w:317,h:237,m:3,shape:'pear',turn:true}},
+  4:{wraps:[{x:417,y:249,r:44,m:6},{x:262,y:363,r:42,m:4},{x:537,y:444,r:42,m:1},{x:325,y:550,r:37,m:3}], bottom:{x:449,y:668,w:319,h:233,m:3,shape:'pear',turn:true}},
+  5:{wraps:[{x:431,y:208,r:45,m:6},{x:264,y:318,r:42,m:4},{x:539,y:402,r:44,m:1},{x:331,y:505,r:36,m:3},{x:640,y:582,r:34,m:3}], bottom:{x:447,y:704,w:292,h:227,m:3,shape:'pear',turn:true}},
+};
 const RING3D = new URLSearchParams(location.search).get('ring') === '3d';   // preview switch: add ?ring=3d to see the 3D-rendered ring; default = the photo-cut rings (PLAIN)
 const R3D_STONES = {   // from ring3d.py: the band's outer face at each stone's angle
   1:{wraps:[{x:539,y:511,r:40,m:0}], bottom:{x:363,y:595,w:330,h:190,m:3,shape:'pear',turn:true,tip:{x:233,y:595}}},
@@ -1193,10 +1204,11 @@ function tintedBase(src, img, m, n){
   }
   if (m !== 'y' && !STUDIO_READY[m].includes(n)){
     const id = x.getImageData(0, 0, c.width, c.height), d = id.data;
-    const P = PHOTO_STONES[n], k = c.width / 900;
+    const P = (src === BAKED[n] ? BAKED_STONES : PHOTO_STONES)[n], k = c.width / 900;
     const plain = Object.values(PLAIN).includes(src) || src.startsWith('img/r3d/');   // a bare ring: tint everything
-    const holes = plain ? [] : P.wraps.map(s => [s.x*k, s.y*k, s.r*k*0.96]);
-    const bx = P.bottom.x*k, by = P.bottom.y*k, bw = plain ? 0 : P.bottom.w*k*0.42, bh = plain ? 0 : P.bottom.h*k*0.42;
+    const baked = src === BAKED[n];                             // diamonds need no shield: their gold reflections should turn with the metal
+    const holes = plain ? [] : P.wraps.filter(s => !(baked && s.m === 3)).map(s => [s.x*k, s.y*k, s.r*k*0.96]);
+    const bx = P.bottom.x*k, by = P.bottom.y*k, bw = plain || baked ? 0 : P.bottom.w*k*0.42, bh = plain || baked ? 0 : P.bottom.h*k*0.42;
     for (let y = 0; y < c.height; y++){
       for (let xx = 0; xx < c.width; xx++){
         let skip = false;
@@ -1688,7 +1700,8 @@ function buildSwatches(){
 }
 function photoFor(){
   let n = Math.min(Math.max(wraps.length, 1), MAX_WRAPS);
-  if (RING3D) return {n, real:false, src:'img/r3d/y-' + n + '.jpg'};   // the 3D-rendered ring: one model for every size; rose and silver are tinted from it
+  if (RING3D) return {n, real:false, src:'img/r3d/y-' + n + '.jpg'};
+  if (BAKED[n]) return {n, real:false, src:BAKED[n]};   // the 3D-rendered ring: one model for every size; rose and silver are tinted from it
   if (PLAIN[n]) return {n, real:false, src:PLAIN[n]};
   for (let m = n + 1; m <= MAX_WRAPS; m++) if (PLAIN[m]) return {n:m, real:false, src:PLAIN[m]};   // nearest plain ring above
   while (n < MAX_WRAPS && !STUDIO_READY.y.includes(n)) n++;
@@ -1713,6 +1726,7 @@ function renderPhoto(){
   ctx.drawImage(base, 0, 0);
   cv.__v = (cv.__v || 0) + 1;
   const k = cv.width / 900, P = PHOTO_STONES[n];
+  if (src === BAKED[n]) return;                       // finished photo: nothing is painted over it yet
   if (RING3D){
     return renderOnPlain(ctx, cv, k, n, R3D_STONES[n], metal === 'y' ? cv : tintedBase(src, img, 'y', n));
   }
