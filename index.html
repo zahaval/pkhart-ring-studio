@@ -307,7 +307,6 @@ const BOTTOM_BANK = {
   'oval-100':{w:108.0, h:148.0, bw:104.0, bh:143.7},
   'pear-100':{w:113.3, h:182.7, bw:106.0, bh:152.3},
 };
-const BOTTOM_SCALE = 1.5;              // photo pixels per sheet unit: a 1.00 ct pear lies about as long as the one in her ring photos
 const METALS = {
   y:{label:'Gold',      dir:'gold'},
   r:{label:'Rose gold', dir:'rose'},
@@ -316,13 +315,16 @@ const METALS = {
 const MAX_WRAPS = 5;
 /* Where things sit on each ring photo, measured on the 900px photo:
    stones = [x, y, twinX, twinY] per wrap, top wrap first (the twin sits beside the first stone, on the same wire);
-   size = a small stone's radius; tip = the free end of the bottom wire, where the bottom stone is set. */
+   size = a small stone's radius.
+   The bottom stone goes where the photo's own pear sat: bottom = photo pixels per sheet unit (a 1.00 ct pear lies as long
+   as that pear did); seat = [the pear's right edge, the wire's centre there]; top = the pear's top edge;
+   drop = how far below the wire the pear's centre hung, as a share of its height. */
 const RINGS = {
-  1:{size:51.2, tip:[548,555], stones:[[442,358,557,348]]},
-  2:{size:43.3, tip:[541,610], stones:[[428,313,525,304],[287,453,384,446]]},
-  3:{size:41.8, tip:[523,589], stones:[[419,236,513,229],[275,373,369,351],[539,456,445,464]]},
-  4:{size:42.5, tip:[525,667], stones:[[417,249,513,246],[262,363,358,360],[537,444,441,447],[325,550,421,543]]},
-  5:{size:44.2, tip:[511,705], stones:[[431,208,530,206],[264,318,363,306],[539,402,440,407],[331,505,430,494],[640,582,541,582]]},
+  1:{size:43.2, bottom:1.32, seat:[558,509], top:462, drop:0.22, stones:[[436,317,533,307]]},
+  2:{size:33.6, bottom:1.25, seat:[554,599], top:544, drop:0.18, stones:[[422,309,498,301],[294,454,370,440]]},
+  3:{size:32.5, bottom:1.18, seat:[542,624], top:601, drop:0.34, stones:[[423,263,496,255],[290,405,363,389],[557,496,484,503]]},
+  4:{size:34.5, bottom:1.18, seat:[537,670], top:611, drop:0.11, stones:[[416,238,494,235],[263,359,341,348],[540,446,462,449],[327,557,405,551]]},
+  5:{size:30.5, bottom:1.01, seat:[518,707], top:651, drop:0.08, stones:[[440,181,509,179],[273,306,342,295],[558,394,489,395],[322,499,391,492],[640,582,571,578]]},
 };
 const PHOTO = 900, STONE_BOX = 3;      // a stone image is 3x its stone's radius wide (300px file, 100px radius)
 
@@ -428,12 +430,12 @@ function renderBottomStone(){
   const b = state.bottom, g = bgem;
   g.b.classList.toggle('empty', !b.on);
   if (!b.on){ g.shown = null; return; }
-  const B = BOTTOM_BANK[b.cut + '-' + b.size], side = lies(b), F = BOTTOM_SCALE;
+  const B = BOTTOM_BANK[b.cut + '-' + b.size], side = lies(b), R = RINGS[state.count], F = R.bottom;
   const vw = side ? B.h : B.w, vh = side ? B.w : B.h;                 // the image's footprint as it lies
   const bodyW = (side ? B.bh : B.bw) * F, bodyH = (side ? B.bw : B.bh) * F;
-  const tip = RINGS[state.count].tip;
-  const cx = tip[0] + 40 - bodyW / 2;                                  // its right edge covers the wire's tip
-  const cy = Math.min(tip[1] + Math.max(0, bodyH / 2 - 88), PHOTO - 14 - vh * F / 2);   // tall stones hang a little lower; nothing leaves the frame
+  const cx = R.seat[0] - bodyW / 2;                                    // its right edge is where the pear's was, over the wire's end
+  const cy = Math.min(Math.max(R.seat[1] + R.drop * bodyH, R.top + bodyH / 2),          // hangs off the wire as the pear did, never higher than it
+                      PHOTO - 14 - vh * F / 2);                                         // and nothing leaves the frame
   g.b.style.left = (cx / PHOTO * 100) + '%';
   g.b.style.top = (cy / PHOTO * 100) + '%';
   g.b.style.width = (vw * F / PHOTO * 100) + '%';

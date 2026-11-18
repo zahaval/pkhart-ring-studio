@@ -37,6 +37,10 @@ for n in range(1,6):
     for s in st:
         sl=slope_at(std,s['x'],s['y'],s['r']); dx=(1 if s['x']<450 else -1)*2.25*size
         stones.append([s['x'],s['y'],round(s['x']+dx),round(s['y']+sl*dx)])
-    table[n]=dict(size=round(size,1),stones=stones,tip=bare[str(n)]['tip'])
+    B=bare[str(n)]; x0,y0,x1,y1=B['body']; h=y1-y0; w=x1-x0
+    # the bottom stone: where the photo's own pear sat. seat = [its right edge, the wire's centre there]; top = its top edge;
+    # drop = how far below the wire its centre hung, as a share of its height; bottom = photo px per sheet unit (pear 1.00 ct = 152.3 long)
+    table[n]=dict(size=round(size,1),stones=stones,seat=[B['right'],round(B['wire_at_right'])],top=y0,drop=round((y0+h/2-B['wire_at_right'])/h,2),bottom=round(w/152.3,2))
 json.dump(table,open('rings-table.json','w'))
-for n in range(1,6): print(f"  {n}:{{size:{table[n]['size']}, tip:{table[n]['tip']}, stones:{json.dumps(table[n]['stones']).replace(' ','')}}},")
+for n in range(1,6):
+    t=table[n]; print(f"  {n}:{{size:{t['size']}, bottom:{t['bottom']}, seat:{t['seat']}, top:{t['top']}, drop:{t['drop']}, stones:{json.dumps(t['stones']).replace(' ','')}}},")
