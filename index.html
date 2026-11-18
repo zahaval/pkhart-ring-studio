@@ -13,11 +13,12 @@
 
   How the preview works (no canvas, no colour filters on stones):
     - The ring is a photograph per wrap count and metal:   img/rings/<metal>/ring-<n>.jpg
-      (the small stones are not in these photos; the pear diamond is part of the photo).
+      (no stones are in these photos).
     - Every small stone is its own image from the Stone Bank: img/stones/<metal>/<nn>-<name>.png
       (twelve stones, identical dimensions; the metal folder only changes the four prongs).
-    - Each wrap has one placement on the ring (RINGS below). The page puts the chosen
-      stone's image at that placement. Changing a stone swaps the image file.
+    - The bottom stone is its own image too: img/bottom/<metal>/<cut>-<size>.png (five cuts, three sizes).
+    - Each wrap has a placement on the ring, and a second one for a twin (RINGS below). The page puts
+      the chosen stone's image there. Changing a stone swaps the image file.
 
   Nothing is sent anywhere: "Request this ring" opens the visitor's own mail app.
 -->
@@ -87,6 +88,14 @@ img{display:block}
 @keyframes set{ from{transform:scale(.82); opacity:.2} to{transform:scale(1); opacity:1} }
 .gem:focus-visible{outline:2px solid var(--ink); outline-offset:-14%}
 .gem.empty{display:none}
+.bgem{position:absolute; transform:translate(-50%,-50%); padding:0; border:0; background:none; -webkit-tap-highlight-color:transparent}
+.bgem img{position:absolute; user-select:none; -webkit-user-drag:none; pointer-events:none}
+.bgem .bshadow{left:-10%; width:120%; top:42%; height:78%}
+.bgem .stone-img{left:50%; top:50%; height:auto}
+.bgem.swap .stone-img{animation:fade 320ms var(--ease)}
+@keyframes fade{ from{opacity:.15} to{opacity:1} }
+.bgem:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+.bgem.empty{display:none}
 .hint{margin:6px 0 0; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
 
 /* ---------- panel ---------- */
@@ -128,6 +137,10 @@ img{display:block}
 .wrap-head .thumb{width:44px; height:44px; position:relative}
 .wrap-head .thumb img{width:100%; height:100%}
 .wrap-head .thumb.none{border:1px dashed var(--line-2); border-radius:50%}
+.wrap-head .thumb.two img{position:absolute; width:70%; height:70%}
+.wrap-head .thumb.two img:first-child{left:0; top:0}
+.wrap-head .thumb.two img:last-child{right:0; bottom:0}
+.wrap-head .thumb.cut img{object-fit:contain}
 .wrap-head .lbl{display:flex; flex-direction:column; line-height:1.3}
 .wrap-head .lbl small{font-size:10.5px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3)}
 .wrap-head .lbl span{font-family:var(--serif); font-size:19px}
@@ -149,12 +162,15 @@ img{display:block}
 .tile[aria-pressed=true] small{color:var(--ink)}
 .bank-foot{display:flex; justify-content:space-between; align-items:center; margin-top:10px; min-height:18px}
 .bank-foot .now{font-size:13px; color:var(--ink-2)}
-
-.fixed{display:grid; grid-template-columns:44px minmax(0,1fr); align-items:center; gap:14px; padding:12px 0 0}
-.fixed .pear{width:44px; height:44px; background-size:330% auto; background-repeat:no-repeat; border-radius:50%}
-.fixed .lbl{display:flex; flex-direction:column; line-height:1.3}
-.fixed .lbl small{font-size:10.5px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3)}
-.fixed .lbl span{font-family:var(--serif); font-size:19px}
+.bank-foot .links{display:flex; gap:18px; flex-wrap:wrap; justify-content:flex-end}
+.tabs{display:flex; gap:22px; margin:0 0 10px}
+.tabs button{border:0; border-bottom:1px solid transparent; background:none; padding:2px 0 4px; font-size:10.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3)}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-pressed=true]{color:var(--ink); border-bottom-color:var(--ink)}
+.cuts{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px}
+.cuts .tile img{max-width:none; width:100%; height:62px; aspect-ratio:auto; object-fit:contain}
+.sub{margin:14px 0 8px; font-size:10.5px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3)}
+.seg.text button{width:auto; padding:0 14px; font-family:var(--sans); font-size:12.5px; letter-spacing:.03em}
 
 .buy{display:flex; flex-direction:column; gap:14px}
 .sizebox{display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:500; letter-spacing:.18em; text-transform:uppercase}
@@ -200,7 +216,7 @@ footer.pagefoot{border-top:1px solid var(--line-c); padding:22px 48px; font-size
 
   <section class="panel">
     <h1>Birthstone Ring</h1>
-    <p class="lede">Made to order in 14k. One birthstone for each wrap.</p>
+    <p class="lede">Made to order in 14k. A birthstone for each wrap, and a diamond to finish.</p>
 
     <div class="opt">
       <div class="opt-h"><span>Metal</span><span class="val" id="metalLabel"></span></div>
@@ -215,10 +231,11 @@ footer.pagefoot{border-top:1px solid var(--line-c); padding:22px 48px; font-size
     <div class="opt">
       <div class="opt-h"><span>Birthstones</span><span class="val">Choose one for each wrap</span></div>
       <div class="wraps" id="wraps"></div>
-      <div class="fixed">
-        <div class="pear" id="pearThumb" role="img" aria-label="Pear diamond"></div>
-        <div class="lbl"><small>Bottom wrap</small><span>Pear diamond</span></div>
-      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-h"><span>Bottom stone</span><span class="val">The diamond on the last wrap</span></div>
+      <div class="wraps" id="bottom"></div>
     </div>
 
     <div class="opt buy">
@@ -261,85 +278,172 @@ const STONE_BANK = [
   {month:'November',  short:'Nov', name:'Citrine',         file:'11-citrine.png'},
   {month:'December',  short:'Dec', name:'Turquoise',       file:'12-turquoise.png'},
 ];
+/* ============================ THE BOTTOM STONE BANK ============================
+   Five cuts in three sizes, each its own image: img/bottom/<metal>/<cut>-<size>.png.
+   All fifteen files share one scale, so their sizes are true to each other.
+   w, h = the image; bw, bh = the stone itself, without its prongs (in sheet units). */
+const CUTS = [
+  {id:'round',   name:'Round',   turns:false},
+  {id:'emerald', name:'Emerald', turns:true},
+  {id:'heart',   name:'Heart',   turns:false},
+  {id:'oval',    name:'Oval',    turns:true},
+  {id:'pear',    name:'Pear',    turns:true},
+];
+const CARATS = [{id:'030', label:'0.30 ct'}, {id:'070', label:'0.70 ct'}, {id:'100', label:'1.00 ct'}];
+const BOTTOM_BANK = {
+  'round-030':{w:77.3, h:81.3, bw:72.3, bh:75.7},
+  'emerald-030':{w:86.0, h:94.7, bw:72.3, bh:87.3},
+  'heart-030':{w:105.3, h:105.3, bw:95.7, bh:77.3},
+  'oval-030':{w:81.3, h:111.3, bw:77.0, bh:107.0},
+  'pear-030':{w:87.3, h:141.3, bw:79.0, bh:111.3},
+  'round-070':{w:99.3, h:103.3, bw:95.3, bh:99.3},
+  'emerald-070':{w:98.7, h:116.0, bw:82.3, bh:109.0},
+  'heart-070':{w:126.7, h:130.0, bw:114.3, bh:96.7},
+  'oval-070':{w:95.3, h:132.0, bw:91.3, bh:127.7},
+  'pear-070':{w:98.0, h:165.3, bw:92.0, bh:132.0},
+  'round-100':{w:122.7, h:126.7, bw:118.7, bh:122.3},
+  'emerald-100':{w:117.3, h:136.7, bw:101.3, bh:130.0},
+  'heart-100':{w:138.0, h:144.7, bw:127.0, bh:110.0},
+  'oval-100':{w:108.0, h:148.0, bw:104.0, bh:143.7},
+  'pear-100':{w:113.3, h:182.7, bw:106.0, bh:152.3},
+};
+const BOTTOM_SCALE = 1.5;              // photo pixels per sheet unit: a 1.00 ct pear lies about as long as the one in her ring photos
 const METALS = {
   y:{label:'Gold',      dir:'gold'},
   r:{label:'Rose gold', dir:'rose'},
   w:{label:'Silver',    dir:'silver'},
 };
 const MAX_WRAPS = 5;
-/* Where each wrap's stone sits on each ring photo, measured on the 900px photo:
-   stones = [x, y] of the centre, top wrap first; size = the stone's radius in the photo. */
+/* Where things sit on each ring photo, measured on the 900px photo:
+   stones = [x, y, twinX, twinY] per wrap, top wrap first (the twin sits beside the first stone, on the same wire);
+   size = a small stone's radius; tip = the free end of the bottom wire, where the bottom stone is set. */
 const RINGS = {
-  1:{size:51.2, stones:[[442,358]]},
-  2:{size:43.3, stones:[[428,313],[287,453]]},
-  3:{size:41.8, stones:[[419,236],[275,373],[539,456]]},
-  4:{size:42.5, stones:[[417,249],[262,363],[537,444],[325,550]]},
-  5:{size:44.2, stones:[[431,208],[264,318],[539,402],[331,505],[640,582]]},
+  1:{size:51.2, tip:[548,555], stones:[[442,358,557,348]]},
+  2:{size:43.3, tip:[541,610], stones:[[428,313,525,304],[287,453,384,446]]},
+  3:{size:41.8, tip:[523,589], stones:[[419,236,513,229],[275,373,369,351],[539,456,445,464]]},
+  4:{size:42.5, tip:[525,667], stones:[[417,249,513,246],[262,363,358,360],[537,444,441,447],[325,550,421,543]]},
+  5:{size:44.2, tip:[511,705], stones:[[431,208,530,206],[264,318,363,306],[539,402,440,407],[331,505,430,494],[640,582,541,582]]},
 };
-const PEAR = {1:[469,578], 2:[465,637], 3:[448,623], 4:[449,668], 5:[447,704]};   // for the small pear picture in the panel
 const PHOTO = 900, STONE_BOX = 3;      // a stone image is 3x its stone's radius wide (300px file, 100px radius)
 
-const stoneSrc = (i, metal) => 'img/stones/' + METALS[metal].dir + '/' + STONE_BANK[i].file;
-const seatSrc  = metal => 'img/stones/' + METALS[metal].dir + '/seat.png';
-const ringSrc  = (n, metal) => 'img/rings/' + METALS[metal].dir + '/ring-' + n + '.jpg';
+const stoneSrc  = (i, metal) => 'img/stones/' + METALS[metal].dir + '/' + STONE_BANK[i].file;
+const seatSrc   = metal => 'img/stones/' + METALS[metal].dir + '/seat.png';
+const ringSrc   = (n, metal) => 'img/rings/' + METALS[metal].dir + '/ring-' + n + '.jpg';
+const bottomSrc = (cut, size, metal) => 'img/bottom/' + METALS[metal].dir + '/' + cut + '-' + size + '.png';
 
 /* ============================ STATE ============================
-   picks keeps a choice for all five wraps, so removing a wrap and adding it back
-   brings its stone back. null = that wrap is left without a stone. */
+   picks and twins keep a choice for all five wraps, so removing a wrap and adding it back
+   brings its stones back. picks: null = no stone on that wrap. twins: null = one stone only. */
 const STORE = 'pkhart-ring-v3';
-const DEFAULTS = {metal:'y', count:5, picks:[6, 4, 1, 3, 3], open:0, size:'6.5'};
+const DEFAULTS = {metal:'y', count:5, picks:[6, 4, 1, 3, 3], twins:[null, null, null, null, null],
+                  bottom:{on:true, cut:'pear', size:'100', side:true}, open:0, size:'6.5'};
+const okPick = p => p === null || (Number.isInteger(p) && p >= 0 && p < STONE_BANK.length);
 let state = load();
+let slot = 0;                          // which of a wrap's two stones the open picker is changing
 function load(){
+  const d = JSON.parse(JSON.stringify(DEFAULTS));
   try {
     const s = JSON.parse(localStorage.getItem(STORE) || 'null');
-    if (s && METALS[s.metal] && s.count >= 1 && s.count <= MAX_WRAPS && Array.isArray(s.picks) && s.picks.length === MAX_WRAPS &&
-        s.picks.every(p => p === null || (Number.isInteger(p) && p >= 0 && p < STONE_BANK.length)))
-      return Object.assign({}, DEFAULTS, s);
+    if (!s) return d;
+    if (METALS[s.metal]) d.metal = s.metal;
+    if (Number.isInteger(s.count) && s.count >= 1 && s.count <= MAX_WRAPS) d.count = s.count;
+    if (Array.isArray(s.picks) && s.picks.length === MAX_WRAPS && s.picks.every(okPick)) d.picks = s.picks;
+    if (Array.isArray(s.twins) && s.twins.length === MAX_WRAPS && s.twins.every(okPick)) d.twins = s.twins;
+    if (s.bottom && CUTS.some(c => c.id === s.bottom.cut) && CARATS.some(c => c.id === s.bottom.size))
+      d.bottom = {on: s.bottom.on !== false, cut: s.bottom.cut, size: s.bottom.size, side: s.bottom.side !== false};
+    if (s.open === 'b' || (Number.isInteger(s.open) && s.open >= -1 && s.open < d.count)) d.open = s.open;
+    if (s.size) d.size = String(s.size);
   } catch (e) {}
-  return JSON.parse(JSON.stringify(DEFAULTS));
+  return d;
 }
 function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
 
 const $ = s => document.querySelector(s);
 const el = (tag, cls, parent, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; if (parent) parent.appendChild(n); return n; };
 const stoneLabel = i => i == null ? 'No stone' : STONE_BANK[i].month + ' · ' + STONE_BANK[i].name;
+const wrapLabel = i => state.picks[i] == null ? 'No stone'
+  : state.twins[i] == null ? stoneLabel(state.picks[i])
+  : state.twins[i] === state.picks[i] ? 'Two · ' + STONE_BANK[state.picks[i]].name
+  : STONE_BANK[state.picks[i]].name + ' + ' + STONE_BANK[state.twins[i]].name;
+const cutOf = id => CUTS.find(c => c.id === id);
+const caratOf = id => CARATS.find(c => c.id === id);
+const bottomLabel = () => !state.bottom.on ? 'No bottom stone'
+  : cutOf(state.bottom.cut).name + ' diamond · ' + caratOf(state.bottom.size).label;
 
 /* ============================ THE RING PREVIEW ============================ */
-const gems = [];                       // one button per wrap, reused; each holds the seat and the stone image
+const gems = [];                       // per wrap: [first stone, twin]; each a button holding the seat and the stone image
+let bgem;                              // the bottom stone
 (function buildGems(){
   const ring = $('#ring');
+  const openAt = (i, k) => { state.open = i; slot = k; save(); renderWraps(); renderBottom(); setTimeout(() => focusRow(i), 30); };   // scroll after the click has finished
   for (let i = 0; i < MAX_WRAPS; i++){
-    const b = el('button', 'gem', ring); b.type = 'button';
-    const seat = el('img', 'seat', b); seat.alt = '';
-    const img = el('img', 'stone-img', b); img.alt = '';
-    b.addEventListener('click', () => { state.open = i; save(); renderWraps(); setTimeout(() => focusWrap(i), 30); });   // scroll after the click has finished
-    gems.push({b, seat, img, shown:null});
+    gems.push([0, 1].map(k => {
+      const b = el('button', 'gem empty', ring); b.type = 'button';
+      const seat = el('img', 'seat', b); seat.alt = '';
+      const img = el('img', 'stone-img', b); img.alt = '';
+      b.addEventListener('click', () => openAt(i, k));
+      return {b, seat, img, shown:null};
+    }));
   }
+  const b = el('button', 'bgem empty', ring); b.type = 'button';
+  const sh = el('img', 'bshadow', b); sh.alt = ''; sh.src = 'img/bottom/shadow.png';
+  const img = el('img', 'stone-img', b); img.alt = '';
+  b.addEventListener('click', () => openAt('b', 0));
+  bgem = {b, img, shown:null};
 })();
+function place(g, pick, x, y, radius, label){
+  const on = pick != null;
+  g.b.classList.toggle('empty', !on);
+  if (!on){ g.shown = null; return; }
+  g.b.style.left = (x / PHOTO * 100) + '%';
+  g.b.style.top = (y / PHOTO * 100) + '%';
+  g.b.style.width = (radius * STONE_BOX / PHOTO * 100) + '%';
+  const src = stoneSrc(pick, state.metal);
+  if (g.shown !== src){
+    const swapped = g.shown !== null && g.shown.split('/').pop() !== src.split('/').pop();
+    g.img.src = src; g.seat.src = seatSrc(state.metal); g.shown = src;
+    if (swapped){ g.b.classList.remove('swap'); void g.b.offsetWidth; g.b.classList.add('swap'); }
+  }
+  g.b.setAttribute('aria-label', label);
+}
 function renderRing(){
   const n = state.count, R = RINGS[n];
-  const ringImg = $('#ringImg');
-  const src = ringSrc(n, state.metal);
+  const ringImg = $('#ringImg'), src = ringSrc(n, state.metal);
   if (ringImg.getAttribute('src') !== src) ringImg.src = src;
   ringImg.alt = METALS[state.metal].label + ' wrap ring with ' + n + (n === 1 ? ' wrap' : ' wraps');
-  gems.forEach((g, i) => {
-    const pick = state.picks[i], on = i < n && pick != null;
-    g.b.classList.toggle('empty', !on);
-    if (i < n){
-      const [x, y] = R.stones[i];
-      g.b.style.left = (x / PHOTO * 100) + '%';
-      g.b.style.top = (y / PHOTO * 100) + '%';
-      g.b.style.width = (R.size * STONE_BOX / PHOTO * 100) + '%';
-    }
-    if (!on){ g.shown = null; return; }
-    const s = stoneSrc(pick, state.metal), key = s;
-    if (g.shown !== key){
-      const hadStone = g.shown !== null && g.shown.split('/').pop() !== s.split('/').pop();
-      g.img.src = s; g.seat.src = seatSrc(state.metal); g.shown = key;
-      if (hadStone){ g.b.classList.remove('swap'); void g.b.offsetWidth; g.b.classList.add('swap'); }
-    }
-    g.b.setAttribute('aria-label', 'Wrap ' + (i + 1) + ': ' + stoneLabel(pick) + '. Change stone');
+  gems.forEach((pair, i) => {
+    const used = i < n, first = used ? state.picks[i] : null, twin = first != null ? state.twins[i] : null;
+    const P = R.stones[i] || [0, 0, 0, 0];
+    place(pair[0], first, P[0], P[1], R.size, 'Wrap ' + (i + 1) + ': ' + stoneLabel(first) + '. Change stone');
+    place(pair[1], twin,  P[2], P[3], R.size, 'Wrap ' + (i + 1) + ', second stone: ' + stoneLabel(twin) + '. Change stone');
   });
+  renderBottomStone();
+}
+/* The bottom stone sits on the free end of the bottom wire: the wire runs in behind it from the right. */
+function renderBottomStone(){
+  const b = state.bottom, g = bgem;
+  g.b.classList.toggle('empty', !b.on);
+  if (!b.on){ g.shown = null; return; }
+  const B = BOTTOM_BANK[b.cut + '-' + b.size], side = b.side && cutOf(b.cut).turns, F = BOTTOM_SCALE;
+  const vw = side ? B.h : B.w, vh = side ? B.w : B.h;                 // the image's footprint as it lies
+  const bodyW = (side ? B.bh : B.bw) * F, bodyH = (side ? B.bw : B.bh) * F;
+  const tip = RINGS[state.count].tip;
+  const cx = tip[0] + 40 - bodyW / 2;                                  // its right edge covers the wire's tip
+  const cy = Math.min(tip[1] + Math.max(0, bodyH / 2 - 88), PHOTO - 14 - vh * F / 2);   // tall stones hang a little lower; nothing leaves the frame
+  g.b.style.left = (cx / PHOTO * 100) + '%';
+  g.b.style.top = (cy / PHOTO * 100) + '%';
+  g.b.style.width = (vw * F / PHOTO * 100) + '%';
+  g.b.style.aspectRatio = vw + ' / ' + vh;
+  g.img.style.width = (B.w / vw * 100) + '%';
+  g.img.style.transform = 'translate(-50%,-50%)' + (side ? ' rotate(-90deg)' : '');
+  const src = bottomSrc(b.cut, b.size, state.metal), key = src + (side ? '|side' : '');
+  if (g.shown !== key){
+    const swapped = g.shown !== null;
+    if (g.img.getAttribute('src') !== src) g.img.src = src;
+    g.shown = key;
+    if (swapped){ g.b.classList.remove('swap'); void g.b.offsetWidth; g.b.classList.add('swap'); }
+  }
+  g.b.setAttribute('aria-label', 'Bottom stone: ' + bottomLabel() + '. Change');
 }
 
 /* ============================ CONTROLS ============================ */
@@ -361,70 +465,121 @@ function renderCounts(){
     b.setAttribute('aria-label', n + (n === 1 ? ' wrap' : ' wraps'));
     b.addEventListener('click', () => {
       state.count = n;
-      if (state.open >= n) state.open = n - 1;
+      if (Number.isInteger(state.open) && state.open >= n) state.open = n - 1;
       save(); render();
     });
   }
   $('#countLabel').textContent = state.count + (state.count === 1 ? ' wrap' : ' wraps');
 }
-function choose(wrap, pick){
-  state.picks[wrap] = pick; save();
-  renderRing(); renderWraps();
+function update(){ save(); renderRing(); renderWraps(); renderBottom(); }
+function choose(wrap, k, pick){
+  if (k === 1) state.twins[wrap] = pick;
+  else { state.picks[wrap] = pick; if (pick == null){ state.twins[wrap] = null; slot = 0; } }
+  update();
 }
+function head(row, open, thumb, small, label){
+  const h = el('button', 'wrap-head', row); h.type = 'button';
+  h.setAttribute('aria-expanded', String(open));
+  h.appendChild(thumb);
+  const lbl = el('span', 'lbl', h);
+  el('small', '', lbl, small); el('span', '', lbl, label);
+  el('span', 'chev', h, open ? 'Close' : 'Change');
+  return h;
+}
+function linkBtn(parent, text, fn){ const b = el('button', 'link', parent, text); b.type = 'button'; b.addEventListener('click', fn); return b; }
 function renderWraps(){
   const box = $('#wraps'); box.textContent = '';
   for (let i = 0; i < state.count; i++){
-    const pick = state.picks[i], open = state.open === i;
+    const pick = state.picks[i], twin = pick != null ? state.twins[i] : null, open = state.open === i;
+    const k = open && twin != null ? slot : 0;                 // the stone the tiles below are changing
     const row = el('div', 'wrap' + (open ? ' open' : ''), box); row.id = 'wrap-' + i;
-    const head = el('button', 'wrap-head', row); head.type = 'button';
-    head.setAttribute('aria-expanded', String(open));
-    const th = el('span', 'thumb' + (pick == null ? ' none' : ''), head);
-    if (pick != null){ const im = el('img', '', th); im.src = stoneSrc(pick, state.metal); im.alt = ''; }
-    const lbl = el('span', 'lbl', head);
-    el('small', '', lbl, 'Wrap ' + (i + 1));
-    el('span', '', lbl, stoneLabel(pick));
-    el('span', 'chev', head, open ? 'Close' : 'Change');
-    head.addEventListener('click', () => { state.open = open ? -1 : i; save(); renderWraps(); });
+    const th = el('span', 'thumb' + (pick == null ? ' none' : twin != null ? ' two' : ''));
+    [pick, twin].forEach(p => { if (p != null){ const im = el('img', '', th); im.src = stoneSrc(p, state.metal); im.alt = ''; } });
+    head(row, open, th, 'Wrap ' + (i + 1), wrapLabel(i))
+      .addEventListener('click', () => { state.open = open ? -1 : i; slot = 0; save(); renderWraps(); renderBottom(); });
 
     const bank = el('div', 'bank', row);
+    if (twin != null){
+      const tabs = el('div', 'tabs', bank);
+      ['First stone', 'Second stone'].forEach((t, j) => {
+        const b = el('button', '', tabs, t); b.type = 'button'; b.setAttribute('aria-pressed', String(k === j));
+        b.addEventListener('click', () => { slot = j; renderWraps(); });
+      });
+    }
+    const current = k === 1 ? twin : pick;
     const tiles = el('div', 'tiles', bank);
-    STONE_BANK.forEach((st, k) => {
+    STONE_BANK.forEach((st, m) => {
       const t = el('button', 'tile', tiles); t.type = 'button';
-      t.setAttribute('aria-pressed', String(pick === k));
+      t.setAttribute('aria-pressed', String(current === m));
       t.setAttribute('aria-label', st.month + ' ' + st.name); t.title = st.month + ' · ' + st.name;
-      const im = el('img', '', t); im.src = stoneSrc(k, state.metal); im.alt = ''; im.loading = 'lazy';
+      const im = el('img', '', t); im.src = stoneSrc(m, state.metal); im.alt = ''; im.loading = 'lazy';
       el('small', '', t, st.short);
-      t.addEventListener('click', () => choose(i, k));
+      t.addEventListener('click', () => choose(i, k, m));
     });
     const foot = el('div', 'bank-foot', bank);
-    el('span', 'now', foot, stoneLabel(pick));
-    if (pick != null){
-      const none = el('button', 'link', foot, 'Leave this wrap plain'); none.type = 'button';
-      none.addEventListener('click', () => choose(i, null));
-    }
+    el('span', 'now', foot, stoneLabel(current));
+    const links = el('span', 'links', foot);
+    if (pick != null && twin == null) linkBtn(links, 'Add a second stone', () => { state.twins[i] = pick; slot = 1; update(); });
+    if (twin != null) linkBtn(links, 'Remove second stone', () => { state.twins[i] = null; slot = 0; update(); });
+    if (pick != null) linkBtn(links, 'No stone', () => choose(i, 0, null));
   }
 }
-function focusWrap(i){
+function renderBottom(){
+  const box = $('#bottom'); box.textContent = '';
+  const b = state.bottom, open = state.open === 'b';
+  const row = el('div', 'wrap' + (open ? ' open' : ''), box); row.id = 'wrap-b';
+  const th = el('span', 'thumb cut' + (b.on ? '' : ' none'));
+  if (b.on){ const im = el('img', '', th); im.src = bottomSrc(b.cut, b.size, state.metal); im.alt = ''; }
+  head(row, open, th, 'Bottom stone', bottomLabel())
+    .addEventListener('click', () => { state.open = open ? -1 : 'b'; save(); renderWraps(); renderBottom(); });
+
+  const bank = el('div', 'bank', row);
+  const cuts = el('div', 'tiles cuts', bank);
+  CUTS.forEach(c => {
+    const t = el('button', 'tile', cuts); t.type = 'button';
+    t.setAttribute('aria-pressed', String(b.on && b.cut === c.id));
+    t.setAttribute('aria-label', c.name + ' cut'); t.title = c.name;
+    const im = el('img', '', t); im.src = bottomSrc(c.id, b.size, state.metal); im.alt = '';
+    el('small', '', t, c.name);
+    t.addEventListener('click', () => { b.cut = c.id; b.on = true; update(); });
+  });
+  el('div', 'sub', bank, 'Size');
+  const sizes = el('div', 'seg text', bank);
+  CARATS.forEach(c => {
+    const t = el('button', '', sizes, c.label); t.type = 'button';
+    t.setAttribute('aria-pressed', String(b.on && b.size === c.id));
+    t.addEventListener('click', () => { b.size = c.id; b.on = true; update(); });
+  });
+  if (cutOf(b.cut).turns){
+    el('div', 'sub', bank, 'Setting');
+    const turn = el('div', 'seg text', bank);
+    [['Sideways', true], ['Upright', false]].forEach(([label, v]) => {
+      const t = el('button', '', turn, label); t.type = 'button';
+      t.setAttribute('aria-pressed', String(b.on && b.side === v));
+      t.addEventListener('click', () => { b.side = v; b.on = true; update(); });
+    });
+  }
+  const foot = el('div', 'bank-foot', bank);
+  el('span', 'now', foot, bottomLabel());
+  const links = el('span', 'links', foot);
+  if (b.on) linkBtn(links, 'No bottom stone', () => { b.on = false; update(); });
+}
+function focusRow(i){
   const row = document.getElementById('wrap-' + i);
   if (!row) return;
   const phone = !matchMedia('(min-width:981px)').matches;
   row.style.scrollMarginTop = phone ? ($('.stage-col').offsetHeight + 8) + 'px' : '16px';   // on phones the ring stays pinned on top
   row.scrollIntoView({block: phone ? 'start' : 'nearest', behavior:'smooth'});
 }
-function renderPear(){
-  const p = $('#pearThumb'), [x, y] = PEAR[state.count];
-  p.style.backgroundImage = 'url(' + ringSrc(state.count, state.metal) + ')';
-  p.style.backgroundPosition = (x / PHOTO * 100) + '% ' + (y / PHOTO * 100) + '%';
-}
-function render(){ renderMetals(); renderCounts(); renderRing(); renderWraps(); renderPear(); preload(); }
+function render(){ renderMetals(); renderCounts(); renderRing(); renderWraps(); renderBottom(); preload(); }
 
 /* fetch the other photos and stones in the background so every change is instant */
 const warmed = new Set();
 function preload(){
-  const list = [];
+  const list = [seatSrc(state.metal)];
   for (let n = 1; n <= MAX_WRAPS; n++) list.push(ringSrc(n, state.metal));
   STONE_BANK.forEach((_, i) => list.push(stoneSrc(i, state.metal)));
-  list.push(seatSrc(state.metal));
+  CUTS.forEach(c => CARATS.forEach(k => list.push(bottomSrc(c.id, k.id, state.metal))));
   list.forEach(src => { if (!warmed.has(src)){ warmed.add(src); const im = new Image(); im.src = src; } });
 }
 
@@ -433,9 +588,14 @@ function buildSpec(){
   const lines = ['CUSTOM BIRTHSTONE RING — design request', ''];
   lines.push('Metal: ' + METALS[state.metal].label);
   lines.push('Wraps: ' + state.count);
-  for (let i = 0; i < state.count; i++)
-    lines.push('Wrap ' + (i + 1) + ': ' + (state.picks[i] == null ? 'plain, no stone' : STONE_BANK[state.picks[i]].month + ' — ' + STONE_BANK[state.picks[i]].name));
-  lines.push('Bottom wrap: pear diamond');
+  const full = p => STONE_BANK[p].month + ' — ' + STONE_BANK[p].name;
+  for (let i = 0; i < state.count; i++){
+    const p = state.picks[i], t = p != null ? state.twins[i] : null;
+    lines.push('Wrap ' + (i + 1) + ': ' + (p == null ? 'plain, no stone' : t == null ? full(p) : 'two stones: ' + full(p) + ' and ' + full(t)));
+  }
+  const b = state.bottom;
+  lines.push('Bottom stone: ' + (!b.on ? 'none' : cutOf(b.cut).name + '-cut diamond, ' + caratOf(b.size).label +
+    (cutOf(b.cut).turns ? (b.side ? ', set sideways' : ', set upright') : '')));
   lines.push('Ring size: ' + $('#ringSize').value);
   lines.push('', 'Designed in the PK HART Birthstone Ring Studio.');
   return lines.join('\n');

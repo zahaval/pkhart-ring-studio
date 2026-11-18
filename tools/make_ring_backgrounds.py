@@ -1,9 +1,10 @@
-"""Ring backgrounds for the configurator: each wrap count without its small stones (the pear stays),
-in gold, rose and silver. Also the placement table: where each wrap's stone sits and how big."""
-import json, os
+"""Ring backgrounds for the configurator (no small stones, no bottom stone) in gold, rose and silver,
+plus the placement table: each wrap's stone, its twin spot, and the bottom wire's tip."""
+import json, os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from PIL import Image
-NEW='../new/'; OUT='/Users/zahavalowy/Projects/pkhart-ring-studio/img/rings/'
+OUT='/Users/zahavalowy/Projects/pkhart-ring-studio/img/rings/'
 RAMP={'rose':[[0,[52,22,14]],[0.30,[146,74,58]],[0.55,[201,129,108]],[0.80,[236,190,172]],[1,[255,241,234]]],
       'silver':[[0,[34,36,42]],[0.30,[104,109,118]],[0.55,[168,173,182]],[0.80,[226,230,236]],[1,[255,255,255]]]}
 def tint(rgb,metal):
@@ -15,28 +16,27 @@ def tint(rgb,metal):
 def clean_backdrop(rgb):
     mn=rgb.min(-1); mx=rgb.max(-1); t=np.clip((mn-222)/24,0,1)*((mn>222)&(mx-mn<14))
     return rgb+(255-rgb)*t[...,None]
-rounds=json.load(open(NEW+'rounds.json')); table={}
+def slope_at(a,cx,cy,r):
+    xL=int(round(cx-1.8*r)); xR=int(round(cx+1.8*r))
+    def local(x0,x1):
+        A=a[:,x0-1:x0+2].mean(1); B=a[:,x1-1:x1+2].mean(1); u0=int(cy-r); u1=int(cy+r); best=None
+        for dd in range(-12,13):
+            e=np.abs(A[u0:u1]-B[u0+dd:u1+dd]).mean()
+            if best is None or e<best[0]: best=(e,dd)
+        return best[1]/float(x1-x0)
+    return (local(xL-28,xL)+local(xR,xR+28))/2.0
+rounds=json.load(open('rounds.json')); bare=json.load(open('bare.json')); table={}
 for n in range(1,6):
-    a=np.asarray(Image.open(NEW+f'nostone-{n}.png').convert('RGB')).astype(float)
+    a=np.asarray(Image.open(f'bare-{n}.png').convert('RGB')).astype(float)
+    std=np.asarray(Image.open(f'std-{n}.png').convert('RGB')).astype(float)
     for metal in ('gold','rose','silver'):
-        px=a if metal=='gold' else tint(a,metal)
-        px=clean_backdrop(px); os.makedirs(OUT+metal,exist_ok=True)
+        px=clean_backdrop(a if metal=='gold' else tint(a,metal)); os.makedirs(OUT+metal,exist_ok=True)
         Image.fromarray(np.clip(px,0,255).astype(np.uint8)).save(OUT+metal+f'/ring-{n}.jpg',quality=92)
     st=rounds[str(n)]; size=float(np.median([s['r'] for s in st if s['kind']!='white']))
-    table[n]=dict(size=round(size,1),stones=[[s['x'],s['y']] for s in st])
-json.dump(table,open('placements.json','w')); print(json.dumps(table))
-# test composite: stones from the bank on the 5-wrap, default order and a shuffled one
-N=['garnet','amethyst','aquamarine','diamond','emerald','alexandrite','ruby','peridot','sapphire','pink-tourmaline','citrine','turquoise']
-def compose(n,metal,picks):
-    base=Image.open(OUT+metal+f'/ring-{n}.jpg').convert('RGB'); t=table[n]
-    for (x,y),m in zip(t['stones'],picks):
-        if m is None: continue
-        d=int(round(3*t['size'])); im=Image.open(f'/Users/zahavalowy/Projects/pkhart-ring-studio/img/stones/{metal}/{m+1:02d}-{N[m]}.png').resize((d,d),Image.LANCZOS)
-        base.paste(im,(int(round(x-d/2)),int(round(y-d/2))),im)
-    return base
-sheet=Image.new('RGB',(3*600,600),(255,255,255))
-sheet.paste(compose(5,'gold',[6,4,1,3,3]).resize((600,600),Image.LANCZOS),(0,0))
-sheet.paste(compose(5,'silver',[0,8,9,10,11]).resize((600,600),Image.LANCZOS),(600,0))
-sheet.paste(compose(3,'rose',[2,5,7]).resize((600,600),Image.LANCZOS),(1200,0))
-sheet.save('compose-test.jpg',quality=92)
-Image.open(NEW+'std-5.png').convert('RGB').crop((150,120,750,720)).save('orig5-crop.png'); compose(5,'gold',[6,4,1,3,3]).crop((150,120,750,720)).save('new5-crop.png')
+    stones=[]
+    for s in st:
+        sl=slope_at(std,s['x'],s['y'],s['r']); dx=(1 if s['x']<450 else -1)*2.25*size
+        stones.append([s['x'],s['y'],round(s['x']+dx),round(s['y']+sl*dx)])
+    table[n]=dict(size=round(size,1),stones=stones,tip=bare[str(n)]['tip'])
+json.dump(table,open('rings-table.json','w'))
+for n in range(1,6): print(f"  {n}:{{size:{table[n]['size']}, tip:{table[n]['tip']}, stones:{json.dumps(table[n]['stones']).replace(' ','')}}},")
