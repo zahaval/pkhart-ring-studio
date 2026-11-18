@@ -285,7 +285,7 @@ const STONE_BANK = [
 const CUTS = [
   {id:'round',   name:'Round',   turns:false},
   {id:'emerald', name:'Emerald', turns:true},
-  {id:'heart',   name:'Heart',   turns:false},
+  {id:'heart',   name:'Heart',   turns:true, own:true, spin:90},   // the heart keeps its own setting and starts upright; sideways, its point leads away from the wire like the pear's
   {id:'oval',    name:'Oval',    turns:true},
   {id:'pear',    name:'Pear',    turns:true},
 ];
@@ -336,8 +336,11 @@ const bottomSrc = (cut, size, metal) => 'img/bottom/' + METALS[metal].dir + '/' 
    brings its stones back. picks: null = no stone on that wrap. twins: null = one stone only. */
 const STORE = 'pkhart-ring-v3';
 const DEFAULTS = {metal:'y', count:5, picks:[6, 4, 1, 3, 3], twins:[null, null, null, null, null],
-                  bottom:{on:true, cut:'pear', size:'100', side:true}, open:0, size:'6.5'};
+                  bottom:{on:true, cut:'pear', size:'100', side:true, heartSide:false}, open:0, size:'6.5'};
 const okPick = p => p === null || (Number.isInteger(p) && p >= 0 && p < STONE_BANK.length);
+/* Does the bottom stone lie sideways? Emerald, oval and pear share one setting; the heart has its own. */
+const sideKey = b => cutOf(b.cut).own ? 'heartSide' : 'side';
+const lies = b => cutOf(b.cut).turns && b[sideKey(b)] === true;
 let state = load();
 let slot = 0;                          // which of a wrap's two stones the open picker is changing
 function load(){
@@ -350,7 +353,8 @@ function load(){
     if (Array.isArray(s.picks) && s.picks.length === MAX_WRAPS && s.picks.every(okPick)) d.picks = s.picks;
     if (Array.isArray(s.twins) && s.twins.length === MAX_WRAPS && s.twins.every(okPick)) d.twins = s.twins;
     if (s.bottom && CUTS.some(c => c.id === s.bottom.cut) && CARATS.some(c => c.id === s.bottom.size))
-      d.bottom = {on: s.bottom.on !== false, cut: s.bottom.cut, size: s.bottom.size, side: s.bottom.side !== false};
+      d.bottom = {on: s.bottom.on !== false, cut: s.bottom.cut, size: s.bottom.size, side: s.bottom.side !== false,
+                  heartSide: s.bottom.heartSide === true};
     if (s.open === 'b' || (Number.isInteger(s.open) && s.open >= -1 && s.open < d.count)) d.open = s.open;
     if (s.size) d.size = String(s.size);
   } catch (e) {}
@@ -424,7 +428,7 @@ function renderBottomStone(){
   const b = state.bottom, g = bgem;
   g.b.classList.toggle('empty', !b.on);
   if (!b.on){ g.shown = null; return; }
-  const B = BOTTOM_BANK[b.cut + '-' + b.size], side = b.side && cutOf(b.cut).turns, F = BOTTOM_SCALE;
+  const B = BOTTOM_BANK[b.cut + '-' + b.size], side = lies(b), F = BOTTOM_SCALE;
   const vw = side ? B.h : B.w, vh = side ? B.w : B.h;                 // the image's footprint as it lies
   const bodyW = (side ? B.bh : B.bw) * F, bodyH = (side ? B.bw : B.bh) * F;
   const tip = RINGS[state.count].tip;
@@ -435,7 +439,7 @@ function renderBottomStone(){
   g.b.style.width = (vw * F / PHOTO * 100) + '%';
   g.b.style.aspectRatio = vw + ' / ' + vh;
   g.img.style.width = (B.w / vw * 100) + '%';
-  g.img.style.transform = 'translate(-50%,-50%)' + (side ? ' rotate(-90deg)' : '');
+  g.img.style.transform = 'translate(-50%,-50%)' + (side ? ' rotate(' + (cutOf(b.cut).spin || -90) + 'deg)' : '');
   const src = bottomSrc(b.cut, b.size, state.metal), key = src + (side ? '|side' : '');
   if (g.shown !== key){
     const swapped = g.shown !== null;
@@ -555,8 +559,8 @@ function renderBottom(){
     const turn = el('div', 'seg text', bank);
     [['Sideways', true], ['Upright', false]].forEach(([label, v]) => {
       const t = el('button', '', turn, label); t.type = 'button';
-      t.setAttribute('aria-pressed', String(b.on && b.side === v));
-      t.addEventListener('click', () => { b.side = v; b.on = true; update(); });
+      t.setAttribute('aria-pressed', String(b.on && lies(b) === v));
+      t.addEventListener('click', () => { b[sideKey(b)] = v; b.on = true; update(); });
     });
   }
   const foot = el('div', 'bank-foot', bank);
@@ -595,7 +599,7 @@ function buildSpec(){
   }
   const b = state.bottom;
   lines.push('Bottom stone: ' + (!b.on ? 'none' : cutOf(b.cut).name + '-cut diamond, ' + caratOf(b.size).label +
-    (cutOf(b.cut).turns ? (b.side ? ', set sideways' : ', set upright') : '')));
+    (cutOf(b.cut).turns ? (lies(b) ? ', set sideways' : ', set upright') : '')));
   lines.push('Ring size: ' + $('#ringSize').value);
   lines.push('', 'Designed in the PK HART Birthstone Ring Studio.');
   return lines.join('\n');
