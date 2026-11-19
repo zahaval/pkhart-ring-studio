@@ -369,7 +369,7 @@ const el = (tag, cls, parent, text) => { const n = document.createElement(tag); 
 const stoneLabel = i => i == null ? 'No stone' : STONE_BANK[i].month + ' · ' + STONE_BANK[i].name;
 const wrapLabel = i => state.picks[i] == null ? 'No stone'
   : state.twins[i] == null ? stoneLabel(state.picks[i])
-  : state.twins[i] === state.picks[i] ? 'Two · ' + STONE_BANK[state.picks[i]].name
+  : state.twins[i] === state.picks[i] ? 'Twins · ' + STONE_BANK[state.picks[i]].name
   : STONE_BANK[state.picks[i]].name + ' + ' + STONE_BANK[state.twins[i]].name;
 const cutOf = id => CUTS.find(c => c.id === id);
 const caratOf = id => CARATS.find(c => c.id === id);
@@ -604,7 +604,7 @@ function buildSpec(){
   const full = p => STONE_BANK[p].month + ' — ' + STONE_BANK[p].name;
   for (let i = 0; i < state.count; i++){
     const p = state.picks[i], t = p != null ? state.twins[i] : null;
-    lines.push('Wrap ' + (i + 1) + ': ' + (p == null ? 'plain, no stone' : t == null ? full(p) : 'two stones: ' + full(p) + ' and ' + full(t)));
+    lines.push('Wrap ' + (i + 1) + ': ' + (p == null ? 'plain, no stone' : t == null ? full(p) : 'twins: ' + full(p) + ' and ' + full(t)));
   }
   const b = state.bottom;
   lines.push('Bottom stone: ' + (!b.on ? 'none' : cutOf(b.cut).name + '-cut ' + (b.lab ? 'lab-grown' : 'natural') + ' diamond, ' + caratOf(b.size).label +
