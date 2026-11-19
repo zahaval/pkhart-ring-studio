@@ -163,10 +163,6 @@ img{display:block}
 .bank-foot{display:flex; justify-content:space-between; align-items:center; margin-top:10px; min-height:18px}
 .bank-foot .now{font-size:13px; color:var(--ink-2)}
 .bank-foot .links{display:flex; gap:18px; flex-wrap:wrap; justify-content:flex-end}
-.tabs{display:flex; gap:22px; margin:0 0 10px}
-.tabs button{border:0; border-bottom:1px solid transparent; background:none; padding:2px 0 4px; font-size:10.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3)}
-.tabs button:hover{color:var(--ink)}
-.tabs button[aria-pressed=true]{color:var(--ink); border-bottom-color:var(--ink)}
 .cuts{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px}
 .cuts .tile img{max-width:none; width:100%; height:62px; aspect-ratio:auto; object-fit:contain}
 .sub{margin:14px 0 8px; font-size:10.5px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3)}
@@ -335,16 +331,15 @@ const bottomSrc = (cut, size, metal) => 'img/bottom/' + METALS[metal].dir + '/' 
 
 /* ============================ STATE ============================
    picks and twins keep a choice for all five wraps, so removing a wrap and adding it back
-   brings its stones back. picks: null = no stone on that wrap. twins: null = one stone only. */
+   brings its stones back. picks: null = no stone on that wrap. twins: true = two of that same birthstone. */
 const STORE = 'pkhart-ring-v3';
-const DEFAULTS = {metal:'y', count:5, picks:[6, 4, 1, 3, 3], twins:[null, null, null, null, null],
+const DEFAULTS = {metal:'y', count:5, picks:[6, 4, 1, 3, 3], twins:[false, false, false, false, false],
                   bottom:{on:true, cut:'pear', size:'100', side:true, heartSide:false, lab:false}, open:0, size:'6.5'};
 const okPick = p => p === null || (Number.isInteger(p) && p >= 0 && p < STONE_BANK.length);
 /* Does the bottom stone lie sideways? Emerald, oval and pear share one setting; the heart has its own. */
 const sideKey = b => cutOf(b.cut).own ? 'heartSide' : 'side';
 const lies = b => cutOf(b.cut).turns && b[sideKey(b)] === true;
 let state = load();
-let slot = 0;                          // which of a wrap's two stones the open picker is changing
 function load(){
   const d = JSON.parse(JSON.stringify(DEFAULTS));
   try {
@@ -353,7 +348,7 @@ function load(){
     if (METALS[s.metal]) d.metal = s.metal;
     if (Number.isInteger(s.count) && s.count >= 1 && s.count <= MAX_WRAPS) d.count = s.count;
     if (Array.isArray(s.picks) && s.picks.length === MAX_WRAPS && s.picks.every(okPick)) d.picks = s.picks;
-    if (Array.isArray(s.twins) && s.twins.length === MAX_WRAPS && s.twins.every(okPick)) d.twins = s.twins;
+    if (Array.isArray(s.twins) && s.twins.length === MAX_WRAPS) d.twins = s.twins.map(t => t != null && t !== false);   // older saves held a stone number here
     if (s.bottom && CUTS.some(c => c.id === s.bottom.cut) && CARATS.some(c => c.id === s.bottom.size))
       d.bottom = {on: s.bottom.on !== false, cut: s.bottom.cut, size: s.bottom.size, side: s.bottom.side !== false,
                   heartSide: s.bottom.heartSide === true, lab: s.bottom.lab === true};
@@ -368,9 +363,8 @@ const $ = s => document.querySelector(s);
 const el = (tag, cls, parent, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; if (parent) parent.appendChild(n); return n; };
 const stoneLabel = i => i == null ? 'No stone' : STONE_BANK[i].month + ' · ' + STONE_BANK[i].name;
 const wrapLabel = i => state.picks[i] == null ? 'No stone'
-  : state.twins[i] == null ? stoneLabel(state.picks[i])
-  : state.twins[i] === state.picks[i] ? 'Twins · ' + STONE_BANK[state.picks[i]].name
-  : STONE_BANK[state.picks[i]].name + ' + ' + STONE_BANK[state.twins[i]].name;
+  : state.twins[i] ? 'Twins · ' + STONE_BANK[state.picks[i]].name
+  : stoneLabel(state.picks[i]);
 const cutOf = id => CUTS.find(c => c.id === id);
 const caratOf = id => CARATS.find(c => c.id === id);
 const bottomLabel = () => !state.bottom.on ? 'No bottom stone'
@@ -381,20 +375,20 @@ const gems = [];                       // per wrap: [first stone, twin]; each a 
 let bgem;                              // the bottom stone
 (function buildGems(){
   const ring = $('#ring');
-  const openAt = (i, k) => { state.open = i; slot = k; save(); renderWraps(); renderBottom(); setTimeout(() => focusRow(i), 30); };   // scroll after the click has finished
+  const openAt = i => { state.open = i; save(); renderWraps(); renderBottom(); setTimeout(() => focusRow(i), 30); };   // scroll after the click has finished
   for (let i = 0; i < MAX_WRAPS; i++){
     gems.push([0, 1].map(k => {
       const b = el('button', 'gem empty', ring); b.type = 'button';
       const seat = el('img', 'seat', b); seat.alt = '';
       const img = el('img', 'stone-img', b); img.alt = '';
-      b.addEventListener('click', () => openAt(i, k));
+      b.addEventListener('click', () => openAt(i));
       return {b, seat, img, shown:null};
     }));
   }
   const b = el('button', 'bgem empty', ring); b.type = 'button';
   const sh = el('img', 'bshadow', b); sh.alt = ''; sh.src = 'img/bottom/shadow.png';
   const img = el('img', 'stone-img', b); img.alt = '';
-  b.addEventListener('click', () => openAt('b', 0));
+  b.addEventListener('click', () => openAt('b'));
   bgem = {b, img, shown:null};
 })();
 function place(g, pick, x, y, radius, label){
@@ -418,10 +412,10 @@ function renderRing(){
   if (ringImg.getAttribute('src') !== src) ringImg.src = src;
   ringImg.alt = METALS[state.metal].label + ' wrap ring with ' + n + (n === 1 ? ' wrap' : ' wraps');
   gems.forEach((pair, i) => {
-    const used = i < n, first = used ? state.picks[i] : null, twin = first != null ? state.twins[i] : null;
+    const used = i < n, first = used ? state.picks[i] : null, twin = first != null && state.twins[i] ? first : null;
     const P = R.stones[i] || [0, 0, 0, 0];
     place(pair[0], first, P[0], P[1], R.size, 'Wrap ' + (i + 1) + ': ' + stoneLabel(first) + '. Change stone');
-    place(pair[1], twin,  P[2], P[3], R.size, 'Wrap ' + (i + 1) + ', second stone: ' + stoneLabel(twin) + '. Change stone');
+    place(pair[1], twin,  P[2], P[3], R.size, 'Wrap ' + (i + 1) + ', twin: ' + stoneLabel(twin) + '. Change stone');
   });
   renderBottomStone();
 }
@@ -478,9 +472,9 @@ function renderCounts(){
   $('#countLabel').textContent = state.count + (state.count === 1 ? ' wrap' : ' wraps');
 }
 function update(){ save(); renderRing(); renderWraps(); renderBottom(); }
-function choose(wrap, k, pick){
-  if (k === 1) state.twins[wrap] = pick;
-  else { state.picks[wrap] = pick; if (pick == null){ state.twins[wrap] = null; slot = 0; } }
+function choose(wrap, pick){
+  state.picks[wrap] = pick;
+  if (pick == null) state.twins[wrap] = false;
   update();
 }
 function head(row, open, thumb, small, label){
@@ -496,38 +490,36 @@ function linkBtn(parent, text, fn){ const b = el('button', 'link', parent, text)
 function renderWraps(){
   const box = $('#wraps'); box.textContent = '';
   for (let i = 0; i < state.count; i++){
-    const pick = state.picks[i], twin = pick != null ? state.twins[i] : null, open = state.open === i;
-    const k = open && twin != null ? slot : 0;                 // the stone the tiles below are changing
+    const pick = state.picks[i], twin = pick != null && state.twins[i], open = state.open === i;
     const row = el('div', 'wrap' + (open ? ' open' : ''), box); row.id = 'wrap-' + i;
-    const th = el('span', 'thumb' + (pick == null ? ' none' : twin != null ? ' two' : ''));
-    [pick, twin].forEach(p => { if (p != null){ const im = el('img', '', th); im.src = stoneSrc(p, state.metal); im.alt = ''; } });
+    const th = el('span', 'thumb' + (pick == null ? ' none' : twin ? ' two' : ''));
+    [pick, twin ? pick : null].forEach(p => { if (p != null){ const im = el('img', '', th); im.src = stoneSrc(p, state.metal); im.alt = ''; } });
     head(row, open, th, 'Wrap ' + (i + 1), wrapLabel(i))
-      .addEventListener('click', () => { state.open = open ? -1 : i; slot = 0; save(); renderWraps(); renderBottom(); });
+      .addEventListener('click', () => { state.open = open ? -1 : i; save(); renderWraps(); renderBottom(); });
 
     const bank = el('div', 'bank', row);
-    if (twin != null){
-      const tabs = el('div', 'tabs', bank);
-      ['First stone', 'Second stone'].forEach((t, j) => {
-        const b = el('button', '', tabs, t); b.type = 'button'; b.setAttribute('aria-pressed', String(k === j));
-        b.addEventListener('click', () => { slot = j; renderWraps(); });
-      });
-    }
-    const current = k === 1 ? twin : pick;
     const tiles = el('div', 'tiles', bank);
     STONE_BANK.forEach((st, m) => {
       const t = el('button', 'tile', tiles); t.type = 'button';
-      t.setAttribute('aria-pressed', String(current === m));
+      t.setAttribute('aria-pressed', String(pick === m));
       t.setAttribute('aria-label', st.month + ' ' + st.name); t.title = st.month + ' · ' + st.name;
       const im = el('img', '', t); im.src = stoneSrc(m, state.metal); im.alt = ''; im.loading = 'lazy';
       el('small', '', t, st.short);
-      t.addEventListener('click', () => choose(i, k, m));
+      t.addEventListener('click', () => choose(i, m));
     });
+    if (pick != null){                                         // twins are two of the same birthstone, side by side
+      el('div', 'sub', bank, 'Stones');
+      const pair = el('div', 'seg text', bank);
+      [['Single', false], ['Twins', true]].forEach(([label, v]) => {
+        const t = el('button', '', pair, label); t.type = 'button';
+        t.setAttribute('aria-pressed', String(twin === v));
+        t.addEventListener('click', () => { state.twins[i] = v; update(); });
+      });
+    }
     const foot = el('div', 'bank-foot', bank);
-    el('span', 'now', foot, stoneLabel(current));
+    el('span', 'now', foot, (twin ? 'Twins · ' : '') + stoneLabel(pick));
     const links = el('span', 'links', foot);
-    if (pick != null && twin == null) linkBtn(links, 'Add a second stone', () => { state.twins[i] = pick; slot = 1; update(); });
-    if (twin != null) linkBtn(links, 'Remove second stone', () => { state.twins[i] = null; slot = 0; update(); });
-    if (pick != null) linkBtn(links, 'No stone', () => choose(i, 0, null));
+    if (pick != null) linkBtn(links, 'No stone', () => choose(i, null));
   }
 }
 function renderBottom(){
@@ -603,8 +595,8 @@ function buildSpec(){
   lines.push('Wraps: ' + state.count);
   const full = p => STONE_BANK[p].month + ' — ' + STONE_BANK[p].name;
   for (let i = 0; i < state.count; i++){
-    const p = state.picks[i], t = p != null ? state.twins[i] : null;
-    lines.push('Wrap ' + (i + 1) + ': ' + (p == null ? 'plain, no stone' : t == null ? full(p) : 'twins: ' + full(p) + ' and ' + full(t)));
+    const p = state.picks[i], t = p != null && state.twins[i];
+    lines.push('Wrap ' + (i + 1) + ': ' + (p == null ? 'plain, no stone' : full(p) + (t ? ', twins (two stones)' : '')));
   }
   const b = state.bottom;
   lines.push('Bottom stone: ' + (!b.on ? 'none' : cutOf(b.cut).name + '-cut ' + (b.lab ? 'lab-grown' : 'natural') + ' diamond, ' + caratOf(b.size).label +
