@@ -6,8 +6,8 @@ from PIL import Image, ImageDraw
 from scipy import ndimage
 pears=json.load(open('pears.json'))
 # prong beads, marked by eye on gridded close-ups: tip, top right, bottom right (x, y, r)
-BEADS={1:[(340,549,18),(531,485,17),(533,609,18)], 2:[(347,638,17),(526,571,16),(533,691,17)], 3:[(347,670,17),(519,617,16),(520,723,17)],
-       4:[(342,682,17),(518,622,18),(520,740,19)], 5:[(348,713,15),(500,660,16),(499,763,17)]}
+BEADS={1:[(328,534,21),(559,455,20),(561,605,21)], 2:[(325,589,21),(553,510,19),(556,650,20)], 3:[(316,604,19),(536,545,20),(535,680,20)],
+       4:[(310,668,19),(538,599,20),(540,738,21)], 5:[(321,675,20),(531,608,21),(532,741,21)]}
 for n,b in BEADS.items(): pears[str(n)]['beads']=[list(map(float,x)) for x in b]
 disk=lambda q:(np.hypot(*np.mgrid[-q:q+1,-q:q+1])<=q)
 def gold_of(a):
@@ -102,7 +102,7 @@ if __name__=='__main__':
         a=np.asarray(Image.open(f'nostone-{n}.png').convert('RGB')).astype(float)
         g=ndimage.binary_closing(metal_of(a),structure=np.ones((13,1),bool)); rounds=json.load(open('rounds.json'))[str(n)]; top=rounds[0]
         col=g[:,int(top['x']+3*top['r'])]; T=[r for r in runs(col,minlen=8)][0]; T=int((T[1]-T[0]+1)*1.25)
-        out,inf=erase(a,pears[str(n)],T if n in (3,4,5) else 0); info[n]=inf   # only on the 3, 4 and 5 wrap rings does the wire run into the band above
+        T={1:60}.get(n,T); out,inf=erase(a,pears[str(n)],T); info[n]=inf   # only on the 3, 4 and 5 wrap rings does the wire run into the band above
         im=Image.fromarray(np.clip(out,0,255).astype(np.uint8)); im.save(f'bare-{n}.png')
         x0,y0,x1,y1=inf['body']; cx=(x0+x1)//2; cy=(y0+y1)//2
         sheet.paste(im.crop((cx-220,cy-180,cx+220,cy+180)),((n-1)*440,0)); print(n,inf)
