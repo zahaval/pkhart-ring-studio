@@ -43,7 +43,7 @@ for part in (css, main, modal, js):
 # ---- images, flat names
 files = []
 adir = out / 'theme' / 'assets'; adir.mkdir(parents=True, exist_ok=True)
-for kind, pattern in (('stones', '*.png'), ('bottom', '*.png'), ('rings', '*.jpg')):
+for kind, pattern in (('stones', '*.png'), ('bottom', '*.png'), ('rings', '*.*')):
     for metal in ('gold', 'rose', 'silver'):
         for f in sorted((REPO / 'img' / kind / metal).glob(pattern)):
             files.append((f, f'{kind}-{metal}-{f.name}'))
