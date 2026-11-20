@@ -24,7 +24,8 @@ def erase_round(a,cx,cy,r):
     xL=int(round(cx-1.8*r)); xR=int(round(cx+1.8*r))
     half=int(1.5*r)
     colL=a[:,xL-2:xL+1].mean(1); colR=a[:,xR:xR+3].mean(1)
-    # the wire's slope just left and just right of the setting (same wire, 28px apart)
+    # the wire's rise across the stone: the vertical shift that best lines up the two edge profiles
+    # the wire's slope just left and just right of the setting (same wire, 28px apart), carried across the gap
     def local_shift(x0,x1):
         A=a[:,x0-1:x0+2].mean(1); B=a[:,x1-1:x1+2].mean(1); u0=int(cy-1.0*r); u1=int(cy+1.0*r); best=None
         for dd in range(-12,13):
@@ -32,23 +33,16 @@ def erase_round(a,cx,cy,r):
             if best is None or e<best[0]: best=(e,dd)
         return best[1]/float(x1-x0)
     sl=local_shift(xL-28,xL); sr=local_shift(xR,xR+28)
-    d=(sl+sr)/2.0*(xR-xL)
-    # refine the rise across the gap by matching the two edge profiles directly, near the slope's guess
-    u0=int(cy-1.3*r); u1=int(cy+1.3*r); best=None
-    for dd in range(int(round(d))-9,int(round(d))+10):
-        e=np.abs(colL[u0:u1]-colR[u0+dd:u1+dd]).mean()+0.15*abs(dd-d)
-        if best is None or e<best[0]: best=(e,dd)
-    d=float(best[1]); cL=cy-d/2.0; cR=cy+d/2.0
-    m0=sl*(xR-xL); m1=sr*(xR-xL)
+    d=(sl+sr)/2.0*(xR-xL); cL=cy-d/2.0; cR=cy+d/2.0
     out=a.copy(); ys=np.arange(H)
     for x in range(xL,xR+1):
         t=(x-xL)/(xR-xL); ts=t*t*(3-2*t)
-        c=cL+(t**3-2*t*t+t)*m0+(-2*t**3+3*t*t)*d+(t**3-t*t)*m1     # the wire's path: leaves and arrives at the wire's own slope
+        c=cL+(cR-cL)*t
         def samp(col,c0):
             yy=np.clip(ys-(c-c0),0,H-1); lo=np.floor(yy).astype(int); hi=np.minimum(lo+1,H-1); f=(yy-lo)[:,None]
             return col[lo]*(1-f)+col[hi]*f
         new=samp(colL,cL)*(1-ts)+samp(colR,cR)*ts
-        w=(np.clip((half-np.abs(ys-c))/8.0,0,1)*min(1.0,(x-xL+1)/8.0,(xR-x+1)/8.0))[:,None]
+        w=np.clip((half-np.abs(ys-c))/8.0,0,1)[:,None]
         out[:,x]=a[:,x]*(1-w)+new*w
     return out,(xL,xR,cL,cR)
 if __name__=='__main__':

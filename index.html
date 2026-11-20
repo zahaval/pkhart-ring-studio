@@ -322,11 +322,11 @@ const MAX_WRAPS = 5;
    as that pear did); seat = [the pear's right edge, the wire's centre there]; top = the pear's top edge;
    drop = how far below the wire the pear's centre hung, as a share of its height. */
 const RINGS = {
-  1:{size:49.5, bottom:1.63, seat:[594,498], top:440, drop:0.2, stones:[[443,320,554,310]]},
-  2:{size:43.1, bottom:1.6, seat:[586,543], top:497, drop:0.23, stones:[[426,263,523,254],[285,405,382,393]]},
-  3:{size:39.5, bottom:1.56, seat:[568,566], top:529, drop:0.29, stones:[[418,230,507,220],[279,369,368,352],[539,451,450,459]]},
-  4:{size:42.5, bottom:1.59, seat:[570,649], top:585, drop:0.14, stones:[[417,256,513,251],[262,371,358,381],[536,450,440,455],[326,555,422,548]]},
-  5:{size:45.0, bottom:1.46, seat:[558,662], top:589, drop:0.09, stones:[[430,175,531,173],[262,289,363,278],[539,374,438,378],[328,479,429,468],[644,557,543,559]]},
+  1:{size:54.5, bottom:1.56, seat:[589,509], top:454, drop:0.19, stones:[[446,327,569,314]]},
+  2:{size:39.9, bottom:1.5, seat:[572,602], top:548, drop:0.2, stones:[[436,304,526,298],[278,444,368,430]]},
+  3:{size:40.5, bottom:1.56, seat:[567,574], top:535, drop:0.28, stones:[[418,226,509,218],[274,368,365,350],[541,454,450,462]]},
+  4:{size:42.8, bottom:1.52, seat:[566,619], top:554, drop:0.12, stones:[[416,219,512,212],[261,334,357,320],[537,415,441,420],[325,521,421,512]]},
+  5:{size:45.2, bottom:1.49, seat:[560,670], top:597, drop:0.1, stones:[[431,164,533,162],[262,282,364,267],[542,367,440,371],[328,475,430,464],[649,556,547,560]]},
 };
 /* In a store, the store's page hands over SHOP: its image addresses, its cart, and the price of each ring.
    On its own (no SHOP) the page shows no prices and sends a request by email. */
@@ -337,7 +337,7 @@ const PHOTO = 900, STONE_BOX = 3;      // a stone image is 3x its stone's radius
 
 const stoneSrc  = (i, metal) => asset('img/stones/' + METALS[metal].dir + '/' + STONE_BANK[i].file);
 const seatSrc   = metal => asset('img/stones/' + METALS[metal].dir + '/seat.png');
-const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/ring-' + n + '.jpg?v=3');   // v=3: the in-between photos (original, a touch slimmer); bump when the photos change so no one sees old photos under new placements
+const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/ring-' + n + '.jpg?v=4');   // v=4: the five photos supplied on 20 Nov (close wraps, slimmer wire); bump when the photos change so no one sees old photos under new placements
 const bottomSrc = (cut, size, metal) => asset('img/bottom/' + METALS[metal].dir + '/' + cut + '-' + size + '.png');
 
 /* ============================ STATE ============================
