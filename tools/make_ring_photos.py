@@ -52,9 +52,10 @@ def changed(a,b,near=None,thr=3):
         x0,y0,x1,y1=near; k=np.zeros_like(m); k[max(0,y0):y1,max(0,x0):x1]=True; m&=k
     m=ndimage.binary_dilation(ndimage.binary_closing(m,iterations=2),iterations=3)
     return ndimage.gaussian_filter(m.astype(float),1.4)
-def erase_curved(a,cx,cy,r,pad=1.8):
-    """as erase_round, but the bridge follows a smooth arc: it leaves each side at that side's own slope"""
-    H,W,_=a.shape; xL=int(round(cx-pad*r)); xR=int(round(cx+pad*r)); half=int(1.5*r); Wd=float(xR-xL)
+def erase_curved(a,cx,cy,r,pad=1.8,halfk=1.5):
+    """as erase_round, but the bridge follows a smooth arc: it leaves each side at that side's own slope.
+    Returns the picture, the box, and the wire's centre line across the gap (None if the two sides could not be matched)."""
+    H,W,_=a.shape; xL=int(round(cx-pad*r)); xR=int(round(cx+pad*r)); half=int(halfk*r); Wd=float(xR-xL)
     colL=a[:,xL-2:xL+1].mean(1); colR=a[:,xR:xR+3].mean(1)
     def shift(A,B,lim):
         u0=int(cy-1.0*r); u1=int(cy+1.0*r); best=None
@@ -64,7 +65,8 @@ def erase_curved(a,cx,cy,r,pad=1.8):
         return best[1]
     sl=shift(a[:,xL-29:xL-26].mean(1),a[:,xL-1:xL+2].mean(1),12)/28.0; sr=shift(a[:,xR-1:xR+2].mean(1),a[:,xR+27:xR+30].mean(1),12)/28.0
     D=shift(colL,colR,45)                      # how much higher or lower the wire sits on the right than on the left
-    out=a.copy(); ys=np.arange(H)
+    if abs(D-(sl+sr)/2*Wd)>8: return None
+    out=a.copy(); ys=np.arange(H); line=np.zeros(xR-xL+1)
     for x in range(xL,xR+1):
         t=(x-xL)/Wd; ts=t*t*(3-2*t)
         off=(t**3-2*t*t+t)*sl*Wd+(-2*t**3+3*t*t)*D+(t**3-t*t)*sr*Wd       # the wire's centre here, relative to the left edge
@@ -72,10 +74,18 @@ def erase_curved(a,cx,cy,r,pad=1.8):
             yy=np.clip(ys-d,0,H-1); lo=np.floor(yy).astype(int); hi=np.minimum(lo+1,H-1); f=(yy-lo)[:,None]
             return col[lo]*(1-f)+col[hi]*f
         new=samp(colL,off)*(1-ts)+samp(colR,off-D)*ts
-        c=cy+off-D/2.0
+        c=cy+off-D/2.0; line[x-xL]=off
         w=np.clip((half-np.abs(ys-c))/8.0,0,1)[:,None]
         out[:,x]=a[:,x]*(1-w)+new*w
-    return out,(xL,xR,cy-D/2.0,cy+D/2.0)
+    return out,(xL,xR,cy-D/2.0,cy+D/2.0),line
+def lift(std,s):
+    """the photo with one stone lifted, and the soft mask of what that changes"""
+    from erase import erase_round
+    x,y,r=s['x'],s['y'],s['r']; ex=10
+    res=erase_curved(std.copy(),x,y,r,halfk=1.5+ex/r)        # a little taller, so no prong tips are left under the wire
+    if res is None: one,(xL,xR,cL,cR)=erase_round(std.copy(),x,y,r); kind='straight'; ex=0
+    else: one,(xL,xR,cL,cR),line=res; kind='arc'
+    return one,changed(std,one,(xL-6,int(min(cL,cR)-1.5*r)-10-ex,xR+7,int(max(cL,cR)+1.5*r)+11+ex),thr=22),kind
 rounds=json.load(open('rounds.json')); bare_json=json.load(open('bare.json')); table={}
 STONE_R=34.4      # every Stone Bank stone is drawn at this radius, on every wrap of every ring
 for f in glob.glob(OUT+'*/ring-*.jpg')+glob.glob(OUT+'*/lift-*.png')+glob.glob(OUT+'*/photo-*.jpg'): os.remove(f)
@@ -88,8 +98,7 @@ for n in range(1,6):
     # one sprite per stone: the photo with only that stone lifted
     lifts=[]; masks=[]
     for s in st:
-        one,(xL,xR,cL,cR)=(erase_curved if n==1 else erase_round)(std.copy(),s['x'],s['y'],s['r'])    # the 1-wrap's wire bends under its stone: a straight bridge left a kink
-        m=changed(std,one,(xL-6,int(min(cL,cR)-1.5*s['r'])-10,xR+7,int(max(cL,cR)+1.5*s['r'])+11),thr=22); lifts.append((one,m)); masks.append(m)
+        one,m,kind=lift(std,s); lifts.append((one,m)); masks.append(m); print(n,s['kind'],kind)
     # every stone comes from the Stone Bank, so the page's photo is the ring with its own stones lifted off: each one
     # replaced only inside its own footprint (the same small covers as before), the rest of the photo untouched
     bare=std.copy(); gone=np.zeros(std.shape[:2])
