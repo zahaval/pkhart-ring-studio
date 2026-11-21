@@ -446,9 +446,9 @@ const decoded = new Map(), pending = new Map();      // src -> Image (kept, so i
 function ensure(src){
   if (decoded.has(src)) return null;
   if (!pending.has(src)){
-    const im = new Image(); im.src = src;
+    const im = new Image(); im.decoding = 'sync';
     const done = () => { decoded.set(src, im); pending.delete(src); };
-    pending.set(src, (im.decode ? im.decode() : new Promise((ok, no) => { im.onload = ok; im.onerror = no; })).then(done, done));
+    pending.set(src, new Promise(ok => { im.onload = im.onerror = ok; im.src = src; }).then(done));      // loaded, not decode(): that can stall in a tab that is not showing
   }
   return pending.get(src);
 }
