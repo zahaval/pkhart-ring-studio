@@ -10,20 +10,29 @@ OUT='/Users/zahavalowy/Projects/pkhart-ring-studio/img/rings/'
 RAMP={'rose':[[0,[52,22,14]],[0.30,[146,74,58]],[0.55,[201,129,108]],[0.80,[236,190,172]],[1,[255,241,234]]],
       'silver':[[0,[34,36,42]],[0.30,[104,109,118]],[0.55,[168,173,182]],[0.80,[226,230,236]],[1,[255,255,255]]]}
 def tint(rgb,metal,keep=None):
+    """gold -> rose / silver. Fully saturated gold takes the metal ramp; paler warm pixels (soft highlights, the gold
+    reflected in the diamonds and on the floor) move to the same hue instead of keeping a yellow cast."""
     r,g,b=rgb[...,0],rgb[...,1],rgb[...,2]; mx=rgb.max(-1); mn=rgb.min(-1); sat=np.where(mx>0,(mx-mn)/np.maximum(mx,1),0)
-    ok=(sat>=0.06)&(r>=b); amt=np.clip((sat-0.06)/0.18,0,1)*ok
-    if keep is not None: amt=amt*(1-keep)                       # the photo's own coloured stones keep their colour
+    warm=np.clip((r-b)/4.0,0,1); amt=np.clip((sat-0.06)/0.18,0,1)
     L=(0.30*r+0.59*g+0.11*b-40)/215; L=0.5+(L-0.5)*1.25; L=np.where(L>0.78,L+(L-0.78)*0.5,L); L=np.clip(L,0,1)
     stops=RAMP[metal]; ts=[s[0] for s in stops]; out=np.stack([np.interp(L,ts,[s[1][c] for s in stops]) for c in range(3)],-1)
-    return rgb+(out-rgb)*amt[...,None]
+    if metal=='silver':
+        y=0.30*r+0.59*g+0.11*b; base=np.stack([y,y,y],-1)
+    else:
+        c=mx-mn; base=np.stack([mx,mx-0.77*c,mx-c],-1)
+    mix=base+(out-base)*amt[...,None]; w=warm
+    if keep is not None: w=w*(1-keep)                           # the photo's own coloured stones keep their colour
+    return rgb+(mix-rgb)*w[...,None]
 def clean_backdrop(rgb):
     mn=rgb.min(-1); mx=rgb.max(-1); t=np.clip((mn-222)/24,0,1)*((mn>222)&(mx-mn<14))
     return rgb+(255-rgb)*t[...,None]
-def stone_colour(a):
+def stone_colour(a,stones):
     a=a.astype(int); r,g,b=a[:,:,0],a[:,:,1],a[:,:,2]
     m=((r>90)&(g<75)&(b<90)&(r-g>45))|((g>r+25)&(g>b+25)&(g>60))|((b>g+35)&(r>g+15)&(b>90))
     m=ndimage.binary_closing(ndimage.binary_opening(m,iterations=1),iterations=4)
-    return ndimage.gaussian_filter(ndimage.binary_dilation(m,iterations=2).astype(float),1.0)
+    yy,xx=np.mgrid[:a.shape[0],:a.shape[1]]; near=np.zeros(m.shape,bool)
+    for s in stones: near|=(xx-s['x'])**2+(yy-s['y'])**2<(1.15*s['r'])**2
+    return ndimage.gaussian_filter(ndimage.binary_dilation(m&near,iterations=2).astype(float),1.0)
 def slope_at(a,cx,cy,r):
     xL=int(round(cx-1.8*r)); xR=int(round(cx+1.8*r))
     def local(x0,x1):
@@ -51,7 +60,7 @@ for n in range(1,6):
     std=np.asarray(Image.open(f'std-{n}.png').convert('RGB')).astype(float)
     nos=np.asarray(Image.open(f'nostone-{n}.png').convert('RGB')).astype(float)
     bar=np.asarray(Image.open(f'bare-{n}.png').convert('RGB')).astype(float)
-    keep=stone_colour(std); st=rounds[str(n)]
+    st=rounds[str(n)]; keep=stone_colour(std,st)
     # one sprite per stone: the photo with only that stone lifted
     lifts=[]; masks=[]
     for s in st:
@@ -63,8 +72,8 @@ for n in range(1,6):
     for metal in ('gold','rose','silver'):
         fin=(lambda px,k=None: clean_backdrop(px if metal=='gold' else tint(px,metal,k))); os.makedirs(OUT+metal,exist_ok=True)
         Image.fromarray(np.clip(fin(std,keep),0,255).astype(np.uint8)).save(OUT+metal+f'/photo-{n}.jpg',quality=93)
-        boxes=[sprite(OUT+metal+f'/lift-{n}-{i+1}.png',fin(one),m) for i,(one,m) in enumerate(lifts)]
-        pbox=sprite(OUT+metal+f'/lift-{n}-b.png',fin(pear_rgb),pm)
+        boxes=[sprite(OUT+metal+f'/lift-{n}-{i+1}.png',fin(one,keep*(1-m)),m) for i,(one,m) in enumerate(lifts)]
+        pbox=sprite(OUT+metal+f'/lift-{n}-b.png',fin(pear_rgb,keep),pm)
     stones=[]
     for s,bx in zip(st,boxes):
         sl=slope_at(std,s['x'],s['y'],s['r']); dx=(1 if s['x']<450 else -1)*2.25*s['r']

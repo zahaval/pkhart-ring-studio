@@ -348,8 +348,8 @@ const PHOTO = 900, STONE_BOX = 3;      // a stone image is 3x its stone's radius
 
 const stoneSrc  = (i, metal) => asset('img/stones/' + METALS[metal].dir + '/' + STONE_BANK[i].file);
 const seatSrc   = metal => asset('img/stones/' + METALS[metal].dir + '/seat.png');
-const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/photo-' + n + '.jpg?v=5');   // bump v when the photos change, so no one sees old photos under new placements
-const liftSrc   = (n, k, metal) => asset('img/rings/' + METALS[metal].dir + '/lift-' + n + '-' + k + '.png?v=5');   // k: wrap number, or 'b' for the pear
+const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/photo-' + n + '.jpg?v=6');   // bump v when the photos change, so no one sees old photos under new placements
+const liftSrc   = (n, k, metal) => asset('img/rings/' + METALS[metal].dir + '/lift-' + n + '-' + k + '.png?v=6');   // k: wrap number, or 'b' for the pear
 const bottomSrc = (cut, size, metal) => asset('img/bottom/' + METALS[metal].dir + '/' + cut + '-' + size + '.png');
 
 /* ============================ STATE ============================
