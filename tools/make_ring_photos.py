@@ -9,6 +9,7 @@ from scipy import ndimage
 OUT='/Users/zahavalowy/Projects/pkhart-ring-studio/img/rings/'
 RAMP={'rose':[[0,[52,22,14]],[0.30,[146,74,58]],[0.55,[201,129,108]],[0.80,[236,190,172]],[1,[255,241,234]]],
       'silver':[[0,[34,36,42]],[0.30,[104,109,118]],[0.55,[168,173,182]],[0.80,[226,230,236]],[1,[255,255,255]]]}
+ROSE=[[0,[40,16,10]],[90,[138,70,56]],[160,[204,132,112]],[210,[236,180,160]],[240,[250,220,208]],[255,[255,244,240]]]
 def tint(rgb,metal,keep=None):
     """gold -> rose / silver. Fully saturated gold takes the metal ramp; paler warm pixels (soft highlights, the gold
     reflected in the diamonds and on the floor) move to the same hue instead of keeping a yellow cast."""
@@ -16,10 +17,12 @@ def tint(rgb,metal,keep=None):
     warm=np.clip((r-b)/4.0,0,1); amt=np.clip((sat-0.06)/0.18,0,1)
     L=(0.30*r+0.59*g+0.11*b-40)/215; L=0.5+(L-0.5)*1.25; L=np.where(L>0.78,L+(L-0.78)*0.5,L); L=np.clip(L,0,1)
     stops=RAMP[metal]; ts=[s[0] for s in stops]; out=np.stack([np.interp(L,ts,[s[1][c] for s in stops]) for c in range(3)],-1)
-    if metal=='silver':
-        y=0.30*r+0.59*g+0.11*b; base=np.stack([y,y,y],-1)
-    else:
-        c=mx-mn; base=np.stack([mx,mx-0.77*c,mx-c],-1)
+    if metal=='silver':                                         # the photo's own light and shade, in a cool grey: the band keeps its body
+        y=0.30*r+0.59*g+0.11*b; base=np.stack([y,y,y],-1); v=255*np.clip(y/255,0,1)**1.3
+        out=np.stack([v*0.965,v*0.985,v],-1)
+    else:                                                       # rose: the same, the photo's own light and shade in rose gold
+        c=mx-mn; base=np.stack([mx,mx-0.77*c,mx-c],-1); y=0.30*r+0.59*g+0.11*b
+        out=np.stack([np.interp(y,[s[0] for s in ROSE],[s[1][k] for s in ROSE]) for k in range(3)],-1)
     mix=base+(out-base)*amt[...,None]; w=warm
     if keep is not None: w=w*(1-keep)                           # the photo's own coloured stones keep their colour
     return rgb+(mix-rgb)*w[...,None]

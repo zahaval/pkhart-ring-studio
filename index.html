@@ -75,7 +75,8 @@ img{display:block}
 
 /* ---------- the ring preview: a photo with stone images placed on it ---------- */
 .ring{position:relative; width:min(100%, calc(100vh - 150px - var(--top, 0px)), 720px); aspect-ratio:1/1}
-.ring-img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; user-select:none; -webkit-user-drag:none}
+.ring-img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; user-select:none; -webkit-user-drag:none; visibility:hidden}
+.ring-img.on{visibility:visible}      /* one <img> per photo, all kept decoded; changing ring only flips which one shows */
 .gem{
   position:absolute; transform:translate(-50%,-50%); aspect-ratio:1/1; padding:0; border:0; background:none; border-radius:50%;
   -webkit-tap-highlight-color:transparent;
@@ -211,7 +212,6 @@ footer.pagefoot{border-top:1px solid var(--line-c); padding:22px 48px; font-size
 <main class="studio">
   <section class="stage-col" aria-label="Your ring">
     <div class="ring" id="ring">
-      <img class="ring-img" id="ringImg" alt="">
       <!-- one stone placement per wrap; filled from the Stone Bank -->
     </div>
     <p class="hint">Select a stone on the ring to change it</p>
@@ -348,14 +348,14 @@ const PHOTO = 900, STONE_BOX = 3;      // a stone image is 3x its stone's radius
 
 const stoneSrc  = (i, metal) => asset('img/stones/' + METALS[metal].dir + '/' + STONE_BANK[i].file);
 const seatSrc   = metal => asset('img/stones/' + METALS[metal].dir + '/seat.png');
-const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/photo-' + n + '.jpg?v=6');   // bump v when the photos change, so no one sees old photos under new placements
-const liftSrc   = (n, k, metal) => asset('img/rings/' + METALS[metal].dir + '/lift-' + n + '-' + k + '.png?v=6');   // k: wrap number, or 'b' for the pear
+const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/photo-' + n + '.jpg?v=7');   // bump v when the photos change, so no one sees old photos under new placements
+const liftSrc   = (n, k, metal) => asset('img/rings/' + METALS[metal].dir + '/lift-' + n + '-' + k + '.png?v=7');   // k: wrap number, or 'b' for the pear
 const bottomSrc = (cut, size, metal) => asset('img/bottom/' + METALS[metal].dir + '/' + cut + '-' + size + '.png');
 
 /* ============================ STATE ============================
    picks and twins keep a choice for all five wraps, so removing a wrap and adding it back
    brings its stones back. picks: null = no stone on that wrap. twins: true = two of that same birthstone. */
-const STORE = 'pkhart-ring-v3';
+const STORE = 'pkhart-ring-v4';
 const DEFAULTS = {metal:'y', count:5, picks:[6, 4, 1, 3, 3], twins:[false, false, false, false, false],
                   bottom:{on:true, cut:'pear', size:'100', side:true, heartSide:false, lab:false}, open:0, size:'6.5'};
 const okPick = p => p === null || (Number.isInteger(p) && p >= 0 && p < STONE_BANK.length);
@@ -400,19 +400,19 @@ const lifts = [];                      // covers for the photo's own stones: one
 (function buildGems(){
   const ring = $('#ring');
   const openAt = i => { state.open = i; save(); renderWraps(); renderBottom(); setTimeout(() => focusRow(i), 30); };   // scroll after the click has finished
-  for (let i = 0; i <= MAX_WRAPS; i++){ const im = el('img', 'lift', ring); im.alt = ''; im.hidden = true; lifts.push(im); }   // one per wrap, the last for the pear
+  for (let i = 0; i <= MAX_WRAPS; i++){ const im = el('img', 'lift', ring); im.alt = ''; im.decoding = 'sync'; im.hidden = true; lifts.push(im); }   // one per wrap, the last for the pear
   for (let i = 0; i < MAX_WRAPS; i++){
     gems.push([0, 1].map(k => {
       const b = el('button', 'gem empty', ring); b.type = 'button';
-      const seat = el('img', 'seat', b); seat.alt = '';
-      const img = el('img', 'stone-img', b); img.alt = '';
+      const seat = el('img', 'seat', b); seat.alt = ''; seat.decoding = 'sync';
+      const img = el('img', 'stone-img', b); img.alt = ''; img.decoding = 'sync';
       b.addEventListener('click', () => openAt(i));
       return {b, seat, img, shown:null};
     }));
   }
   const b = el('button', 'bgem empty', ring); b.type = 'button';
   const sh = el('img', 'bshadow', b); sh.alt = ''; sh.src = asset('img/bottom/shadow.png');
-  const img = el('img', 'stone-img', b); img.alt = '';
+  const img = el('img', 'stone-img', b); img.alt = ''; img.decoding = 'sync';
   b.addEventListener('click', () => openAt('b'));
   bgem = {b, img, shown:null};
 })();
@@ -441,11 +441,47 @@ function place(g, pick, x, y, radius, label, own){
   }
   g.b.setAttribute('aria-label', label);
 }
+/* Nothing on the ring changes until every image the new view needs is decoded; then the photo and its stones change in one frame. */
+const decoded = new Map(), pending = new Map();      // src -> Image (kept, so it stays decoded) / src -> promise
+function ensure(src){
+  if (decoded.has(src)) return null;
+  if (!pending.has(src)){
+    const im = new Image(); im.src = src;
+    const done = () => { decoded.set(src, im); pending.delete(src); };
+    pending.set(src, (im.decode ? im.decode() : new Promise((ok, no) => { im.onload = ok; im.onerror = no; })).then(done, done));
+  }
+  return pending.get(src);
+}
+const photos = new Map();                            // metal + count -> its <img>
+function photoEl(n, metal){
+  const key = metal + n; let im = photos.get(key);
+  if (!im){
+    const ring = $('#ring'); im = document.createElement('img'); im.className = 'ring-img'; im.alt = ''; im.decoding = 'sync';
+    im.src = ringSrc(n, metal); ring.insertBefore(im, ring.firstChild); photos.set(key, im);
+  }
+  return im;
+}
+function ringNeeds(){
+  const n = state.count, m = state.metal, list = [ringSrc(n, m)]; let bank = false;
+  for (let i = 0; i < n; i++){
+    const p = state.picks[i];
+    if (p === PHOTO_PICKS[i] && !state.twins[i]) continue;
+    list.push(liftSrc(n, i + 1, m));
+    if (p != null){ list.push(stoneSrc(p, m)); bank = true; }
+  }
+  if (bank) list.push(seatSrc(m));
+  const b = state.bottom;
+  if (!(b.on && b.cut === 'pear' && b.size === '100' && lies(b))){ list.push(liftSrc(n, 'b', m)); if (b.on) list.push(bottomSrc(b.cut, b.size, m)); }
+  return list;
+}
+let ringTurn = 0;
 function renderRing(){
+  const turn = ++ringTurn, waits = ringNeeds().map(ensure).filter(Boolean);
+  if (waits.length){ Promise.all(waits).then(() => { if (turn === ringTurn) renderRing(); }); return; }   // keep showing the last ring until then
   const n = state.count, R = RINGS[n];
-  const ringImg = $('#ringImg'), src = ringSrc(n, state.metal);
-  if (ringImg.getAttribute('src') !== src) ringImg.src = src;
-  ringImg.alt = METALS[state.metal].label + ' wrap ring with ' + n + (n === 1 ? ' wrap' : ' wraps');
+  const shown = photoEl(n, state.metal);
+  photos.forEach(im => { im.classList.toggle('on', im === shown); if (im !== shown) im.alt = ''; });
+  shown.alt = METALS[state.metal].label + ' wrap ring with ' + n + (n === 1 ? ' wrap' : ' wraps');
   gems.forEach((pair, i) => {
     const used = i < n, first = used ? state.picks[i] : null, twin = first != null && state.twins[i] ? first : null;
     const P = R.stones[i] || [0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -624,13 +660,17 @@ function focusRow(i){
 function render(){ renderMetals(); renderCounts(); renderRing(); renderWraps(); renderBottom(); renderBuy(); preload(); }
 
 /* fetch the other photos and stones in the background so every change is instant */
-const warmed = new Set();
 function preload(){
-  const list = [seatSrc(state.metal)];
-  for (let n = 1; n <= MAX_WRAPS; n++) list.push(ringSrc(n, state.metal));
-  STONE_BANK.forEach((_, i) => list.push(stoneSrc(i, state.metal)));
-  CUTS.forEach(c => CARATS.forEach(k => list.push(bottomSrc(c.id, k.id, state.metal))));
-  list.forEach(src => { if (!warmed.has(src)){ warmed.add(src); const im = new Image(); im.src = src; } });
+  const m = state.metal, list = [seatSrc(m)];
+  STONE_BANK.forEach((_, i) => list.push(stoneSrc(i, m)));
+  CUTS.forEach(c => CARATS.forEach(k => list.push(bottomSrc(c.id, k.id, m))));
+  for (let n = 1; n <= MAX_WRAPS; n++){
+    const w = ensure(ringSrc(n, m)); if (w) w.then(() => photoEl(n, m)); else photoEl(n, m);      // every wrap count in this metal, ready to show
+    for (let k = 1; k <= n; k++) list.push(liftSrc(n, k, m));
+    list.push(liftSrc(n, 'b', m));
+  }
+  Object.keys(METALS).forEach(o => { if (o !== m) list.push(ringSrc(state.count, o)); });           // and this ring in the other metals
+  list.forEach(ensure);
 }
 
 /* ============================ REQUEST / BUY ============================ */
