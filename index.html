@@ -320,18 +320,18 @@ const MAX_WRAPS = 5;
    Measured on the 900px photo: stones = [x, y, twinX, twinY] per wrap, top wrap first.
    The bottom stone goes where the photo's pear sat: bottom = photo pixels per sheet unit; seat = [the pear's right edge,
    the wire's centre there]; top = the pear's top edge; drop = how far below the wire its centre hung, as a share of its height. */
-const STONE_R = 43;
+const STONE_R = 34.4;
 const RINGS = {
   1:{bottom:1.56, seat:[589,509], top:454, drop:0.19,
-     stones:[[446,327,543,317]]},
+     stones:[[446,327,523,319]]},
   2:{bottom:1.5, seat:[572,602], top:548, drop:0.2,
-     stones:[[436,304,533,297],[278,444,375,428]]},
+     stones:[[436,304,513,298],[278,444,355,432]]},
   3:{bottom:1.56, seat:[567,574], top:535, drop:0.28,
-     stones:[[418,226,515,217],[274,368,371,349],[541,454,444,463]]},
+     stones:[[418,226,495,219],[274,368,351,353],[541,454,464,461]]},
   4:{bottom:1.52, seat:[566,619], top:554, drop:0.12,
-     stones:[[416,219,513,212],[261,334,358,320],[537,415,440,420],[325,521,422,512]]},
+     stones:[[416,219,493,213],[261,334,338,323],[537,415,460,419],[325,521,402,514]]},
   5:{bottom:1.49, seat:[560,670], top:597, drop:0.1,
-     stones:[[431,164,528,162],[262,282,359,268],[542,367,445,370],[328,475,425,465],[649,556,552,559]]},
+     stones:[[431,164,508,163],[262,282,339,271],[542,367,465,370],[328,475,405,467],[649,556,572,559]]},
 };
 /* In a store, the store's page hands over SHOP: its image addresses, its cart, and the price of each ring.
    On its own (no SHOP) the page shows no prices and sends a request by email. */
@@ -342,7 +342,7 @@ const PHOTO = 900, STONE_BOX = 3;      // a stone image is 3x its stone's radius
 
 const stoneSrc  = (i, metal) => asset('img/stones/' + METALS[metal].dir + '/' + STONE_BANK[i].file);
 const seatSrc   = metal => asset('img/stones/' + METALS[metal].dir + '/seat.png');
-const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/ring-' + n + '.jpg?v=8');   // bump v when the photos change, so no one sees old photos under new placements
+const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/ring-' + n + '.jpg?v=9');   // bump v when the photos change, so no one sees old photos under new placements
 const bottomSrc = (cut, size, metal) => asset('img/bottom/' + METALS[metal].dir + '/' + cut + '-' + size + '.png');
 
 /* ============================ STATE ============================
