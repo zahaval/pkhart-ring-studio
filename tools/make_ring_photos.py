@@ -1,6 +1,6 @@
-"""Ring photos for the configurator. The page shows each supplied photo as it is. A stone the customer changes is covered
-by a small "lift" sprite (the bare wire under that one stone) and the Stone Bank stone goes on top; the same for the pear.
-Writes, per metal: photo-N.jpg, lift-N-<wrap>.png, lift-N-b.png, and prints the placement table for index.html."""
+"""Ring photos for the configurator. Every stone on the page is a Stone Bank image, so each supplied photo has its own
+stones lifted off: only the footprint of each setting is replaced with bare wire, the rest of the photo is untouched.
+Writes, per metal: ring-N.jpg, and prints the placement table for index.html."""
 import json, os, sys, glob
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
@@ -52,11 +52,8 @@ def changed(a,b,near=None,thr=3):
         x0,y0,x1,y1=near; k=np.zeros_like(m); k[max(0,y0):y1,max(0,x0):x1]=True; m&=k
     m=ndimage.binary_dilation(ndimage.binary_closing(m,iterations=2),iterations=3)
     return ndimage.gaussian_filter(m.astype(float),1.4)
-def sprite(path,rgb,alpha):
-    ys,xs=np.nonzero(alpha>0.004); x0,x1,y0,y1=xs.min(),xs.max()+1,ys.min(),ys.max()+1
-    px=np.dstack([np.clip(rgb[y0:y1,x0:x1],0,255),np.clip(alpha[y0:y1,x0:x1]*255,0,255)]).astype(np.uint8)
-    Image.fromarray(px,'RGBA').save(path,optimize=True); return [int(x0),int(y0),int(x1-x0),int(y1-y0)]
-rounds=json.load(open('rounds.json')); bare=json.load(open('bare.json')); table={}
+rounds=json.load(open('rounds.json')); bare_json=json.load(open('bare.json')); table={}
+STONE_R=43      # every Stone Bank stone is drawn at this radius, on every wrap of every ring
 for f in glob.glob(OUT+'*/ring-*.jpg')+glob.glob(OUT+'*/lift-*.png')+glob.glob(OUT+'*/photo-*.jpg'): os.remove(f)
 from erase import erase_round
 for n in range(1,6):
@@ -69,21 +66,22 @@ for n in range(1,6):
     for s in st:
         one,(xL,xR,cL,cR)=erase_round(std.copy(),s['x'],s['y'],s['r'])
         m=changed(std,one,(xL-6,int(min(cL,cR)-1.5*s['r'])-10,xR+7,int(max(cL,cR)+1.5*s['r'])+11),thr=22); lifts.append((one,m)); masks.append(m)
-    pm=changed(nos,bar); pear_rgb=std.copy(); hard=(np.abs(nos-bar).max(-1)>0); pear_rgb=np.where(ndimage.binary_dilation(hard,iterations=6)[...,None],bar,std)
-    over=max(float((pm*m).max()) for m in masks); print(n,'pear/stone sprite overlap',round(over,3))
-    boxes=[]
+    # every stone comes from the Stone Bank, so the page's photo is the ring with its own stones lifted off: each one
+    # replaced only inside its own footprint (the same small covers as before), the rest of the photo untouched
+    bare=std.copy(); gone=np.zeros(std.shape[:2])
+    for one,m in lifts: bare=bare*(1-m[...,None])+one*m[...,None]; gone=np.maximum(gone,m)
+    pm=changed(nos,bar); hard=ndimage.binary_dilation(np.abs(nos-bar).max(-1)>0,iterations=6)
+    bare=bare*(1-pm[...,None])+np.where(hard[...,None],bar,bare)*pm[...,None]; gone=np.maximum(gone,pm)
     for metal in ('gold','rose','silver'):
         fin=(lambda px,k=None: clean_backdrop(px if metal=='gold' else tint(px,metal,k))); os.makedirs(OUT+metal,exist_ok=True)
-        Image.fromarray(np.clip(fin(std,keep),0,255).astype(np.uint8)).save(OUT+metal+f'/photo-{n}.jpg',quality=93)
-        boxes=[sprite(OUT+metal+f'/lift-{n}-{i+1}.png',fin(one,keep*(1-m)),m) for i,(one,m) in enumerate(lifts)]
-        pbox=sprite(OUT+metal+f'/lift-{n}-b.png',fin(pear_rgb,keep),pm)
+        Image.fromarray(np.clip(fin(bare,keep*(1-gone)),0,255).astype(np.uint8)).save(OUT+metal+f'/ring-{n}.jpg',quality=93)
     stones=[]
-    for s,bx in zip(st,boxes):
-        sl=slope_at(std,s['x'],s['y'],s['r']); dx=(1 if s['x']<450 else -1)*2.25*s['r']
-        stones.append([s['x'],s['y'],round(s['x']+dx),round(s['y']+sl*dx),round(s['r'],1)]+bx)
-    B=bare[str(n)]; x0,y0,x1,y1=B['body']; h=y1-y0; w=x1-x0
-    table[n]=dict(bottom=round(w/152.3,2),seat=[B['right'],round(B['wire_at_right'])],top=y0,drop=round((y0+h/2-B['wire_at_right'])/h,2),pear=[x0,y0,w,h],lift=pbox,stones=stones)
+    for s in st:
+        sl=slope_at(std,s['x'],s['y'],s['r']); dx=(1 if s['x']<450 else -1)*2.25*STONE_R
+        stones.append([s['x'],s['y'],round(s['x']+dx),round(s['y']+sl*dx)])
+    B=bare_json[str(n)]; x0,y0,x1,y1=B['body']; h=y1-y0; w=x1-x0
+    table[n]=dict(bottom=round(w/152.3,2),seat=[B['right'],round(B['wire_at_right'])],top=y0,drop=round((y0+h/2-B['wire_at_right'])/h,2),stones=stones)
 json.dump(table,open('rings-table.json','w'))
 for n in range(1,6):
     t=table[n]; J=lambda v: json.dumps(v).replace(' ','')
-    print(f"  {n}:{{bottom:{t['bottom']}, seat:{J(t['seat'])}, top:{t['top']}, drop:{t['drop']}, pear:{J(t['pear'])}, lift:{J(t['lift'])},\n     stones:{J(t['stones'])}}},")
+    print(f"  {n}:{{bottom:{t['bottom']}, seat:{J(t['seat'])}, top:{t['top']}, drop:{t['drop']}, \n     stones:{J(t['stones'])}}},")

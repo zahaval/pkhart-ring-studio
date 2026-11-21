@@ -89,9 +89,6 @@ img{display:block}
 @keyframes set{ from{transform:scale(.82); opacity:.2} to{transform:scale(1); opacity:1} }
 .gem:focus-visible{outline:2px solid var(--ink); outline-offset:-14%}
 .gem.empty{display:none}
-.gem.own img, .bgem.own img{visibility:hidden}      /* the photo's own stone shows; the button only keeps it clickable */
-.lift{position:absolute; height:auto; user-select:none; -webkit-user-drag:none; pointer-events:none}
-.lift[hidden]{display:none}
 .bgem{position:absolute; transform:translate(-50%,-50%); padding:0; border:0; background:none; -webkit-tap-highlight-color:transparent}
 .bgem img{position:absolute; user-select:none; -webkit-user-drag:none; pointer-events:none}
 .bgem .bshadow{left:-10%; width:120%; top:42%; height:78%}
@@ -318,26 +315,23 @@ const METALS = {
   w:{label:'Silver',    dir:'silver'},
 };
 const MAX_WRAPS = 5;
-/* Each ring photo is shown exactly as supplied, with its own stones: ruby, emerald, amethyst, diamond, diamond and a
-   1.00 ct pear lying sideways (PHOTO_PICKS). Nothing is drawn over a stone the customer has not changed. When one is
-   changed, a small "lift" image (the bare wire under that one stone) covers it and the Stone Bank stone goes on top.
-   Measured on the 900px photo:
-   stones = [x, y, twinX, twinY, radius, liftX, liftY, liftW, liftH] per wrap, top wrap first;
-   pear = the photo's own pear [x, y, w, h]; lift = the image that covers it [x, y, w, h].
-   A different bottom stone goes where that pear sat: bottom = photo pixels per sheet unit; seat = [the pear's right edge,
+/* Each ring photo is the supplied photo with its own stones lifted off (only the footprint of each setting is replaced
+   with bare wire), so every stone on the ring is a Stone Bank image, all drawn at one size (STONE_R).
+   Measured on the 900px photo: stones = [x, y, twinX, twinY] per wrap, top wrap first.
+   The bottom stone goes where the photo's pear sat: bottom = photo pixels per sheet unit; seat = [the pear's right edge,
    the wire's centre there]; top = the pear's top edge; drop = how far below the wire its centre hung, as a share of its height. */
-const PHOTO_PICKS = [6, 4, 1, 3, 3];
+const STONE_R = 43;
 const RINGS = {
-  1:{bottom:1.56, seat:[589,509], top:454, drop:0.19, pear:[351,454,238,179], lift:[295,431,314,213],
-     stones:[[446,327,569,314,54.5,343,256,207,142]]},
-  2:{bottom:1.5, seat:[572,602], top:548, drop:0.2, pear:[344,548,228,177], lift:[293,525,302,212],
-     stones:[[436,304,526,298,39.8,359,248,154,113],[278,444,368,430,40.0,201,386,155,131]]},
-  3:{bottom:1.56, seat:[567,574], top:535, drop:0.28, pear:[330,535,237,177], lift:[279,514,307,210],
-     stones:[[418,226,503,218,37.8,348,173,141,115],[274,368,365,350,40.5,196,309,153,134],[541,454,449,462,41.0,462,387,154,136]]},
-  4:{bottom:1.52, seat:[566,619], top:554, drop:0.12, pear:[334,554,232,173], lift:[284,533,302,207],
-     stones:[[416,219,515,212,44.0,332,162,166,116],[261,334,356,320,42.0,179,276,163,132],[537,415,441,420,42.8,456,357,164,116],[325,521,406,514,35.8,257,469,138,114]]},
-  5:{bottom:1.49, seat:[560,670], top:597, drop:0.1, pear:[333,597,227,183], lift:[283,577,297,213],
-     stones:[[431,164,534,162,45.8,344,106,174,123],[262,282,358,268,42.8,180,222,165,137],[542,367,440,371,45.2,456,308,170,130],[328,475,414,466,38.2,255,422,146,118],[649,556,571,559,34.8,583,503,135,111]]},
+  1:{bottom:1.56, seat:[589,509], top:454, drop:0.19,
+     stones:[[446,327,543,317]]},
+  2:{bottom:1.5, seat:[572,602], top:548, drop:0.2,
+     stones:[[436,304,533,297],[278,444,375,428]]},
+  3:{bottom:1.56, seat:[567,574], top:535, drop:0.28,
+     stones:[[418,226,515,217],[274,368,371,349],[541,454,444,463]]},
+  4:{bottom:1.52, seat:[566,619], top:554, drop:0.12,
+     stones:[[416,219,513,212],[261,334,358,320],[537,415,440,420],[325,521,422,512]]},
+  5:{bottom:1.49, seat:[560,670], top:597, drop:0.1,
+     stones:[[431,164,528,162],[262,282,359,268],[542,367,445,370],[328,475,425,465],[649,556,552,559]]},
 };
 /* In a store, the store's page hands over SHOP: its image addresses, its cart, and the price of each ring.
    On its own (no SHOP) the page shows no prices and sends a request by email. */
@@ -348,14 +342,13 @@ const PHOTO = 900, STONE_BOX = 3;      // a stone image is 3x its stone's radius
 
 const stoneSrc  = (i, metal) => asset('img/stones/' + METALS[metal].dir + '/' + STONE_BANK[i].file);
 const seatSrc   = metal => asset('img/stones/' + METALS[metal].dir + '/seat.png');
-const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/photo-' + n + '.jpg?v=7');   // bump v when the photos change, so no one sees old photos under new placements
-const liftSrc   = (n, k, metal) => asset('img/rings/' + METALS[metal].dir + '/lift-' + n + '-' + k + '.png?v=7');   // k: wrap number, or 'b' for the pear
+const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/ring-' + n + '.jpg?v=8');   // bump v when the photos change, so no one sees old photos under new placements
 const bottomSrc = (cut, size, metal) => asset('img/bottom/' + METALS[metal].dir + '/' + cut + '-' + size + '.png');
 
 /* ============================ STATE ============================
    picks and twins keep a choice for all five wraps, so removing a wrap and adding it back
    brings its stones back. picks: null = no stone on that wrap. twins: true = two of that same birthstone. */
-const STORE = 'pkhart-ring-v4';
+const STORE = 'pkhart-ring-v5';
 const DEFAULTS = {metal:'y', count:5, picks:[6, 4, 1, 3, 3], twins:[false, false, false, false, false],
                   bottom:{on:true, cut:'pear', size:'100', side:true, heartSide:false, lab:false}, open:0, size:'6.5'};
 const okPick = p => p === null || (Number.isInteger(p) && p >= 0 && p < STONE_BANK.length);
@@ -396,11 +389,9 @@ const bottomLabel = () => !state.bottom.on ? 'No bottom stone'
 /* ============================ THE RING PREVIEW ============================ */
 const gems = [];                       // per wrap: [first stone, twin]; each a button holding the seat and the stone image
 let bgem;                              // the bottom stone
-const lifts = [];                      // covers for the photo's own stones: one per wrap, then the pear
 (function buildGems(){
   const ring = $('#ring');
   const openAt = i => { state.open = i; save(); renderWraps(); renderBottom(); setTimeout(() => focusRow(i), 30); };   // scroll after the click has finished
-  for (let i = 0; i <= MAX_WRAPS; i++){ const im = el('img', 'lift', ring); im.alt = ''; im.decoding = 'sync'; im.hidden = true; lifts.push(im); }   // one per wrap, the last for the pear
   for (let i = 0; i < MAX_WRAPS; i++){
     gems.push([0, 1].map(k => {
       const b = el('button', 'gem empty', ring); b.type = 'button';
@@ -416,23 +407,14 @@ const lifts = [];                      // covers for the photo's own stones: one
   b.addEventListener('click', () => openAt('b'));
   bgem = {b, img, shown:null};
 })();
-function showLift(im, on, k, box){
-  im.hidden = !on;
-  if (!on) return;
-  const src = liftSrc(state.count, k, state.metal);
-  if (im.getAttribute('src') !== src) im.src = src;
-  im.style.left = (box[0] / PHOTO * 100) + '%'; im.style.top = (box[1] / PHOTO * 100) + '%'; im.style.width = (box[2] / PHOTO * 100) + '%';
-}
-function place(g, pick, x, y, radius, label, own){
+function place(g, pick, x, y, label){
   const on = pick != null;
   g.b.classList.toggle('empty', !on);
-  g.b.classList.toggle('own', !!own);
   if (!on){ g.shown = null; return; }
   g.b.style.left = (x / PHOTO * 100) + '%';
   g.b.style.top = (y / PHOTO * 100) + '%';
-  g.b.style.width = (radius * STONE_BOX / PHOTO * 100) + '%';
+  g.b.style.width = (STONE_R * STONE_BOX / PHOTO * 100) + '%';
   g.b.setAttribute('aria-label', label);
-  if (own){ g.shown = 'own'; g.pick = pick; return; }           // the photo's own stone: nothing to draw
   const src = stoneSrc(pick, state.metal);
   if (g.shown !== src){
     const swapped = g.shown !== null && g.pick !== pick;      // a new stone, not the same stone in another metal
@@ -463,15 +445,9 @@ function photoEl(n, metal){
 }
 function ringNeeds(){
   const n = state.count, m = state.metal, list = [ringSrc(n, m)]; let bank = false;
-  for (let i = 0; i < n; i++){
-    const p = state.picks[i];
-    if (p === PHOTO_PICKS[i] && !state.twins[i]) continue;
-    list.push(liftSrc(n, i + 1, m));
-    if (p != null){ list.push(stoneSrc(p, m)); bank = true; }
-  }
+  for (let i = 0; i < n; i++){ const p = state.picks[i]; if (p != null){ list.push(stoneSrc(p, m)); bank = true; } }
   if (bank) list.push(seatSrc(m));
-  const b = state.bottom;
-  if (!(b.on && b.cut === 'pear' && b.size === '100' && lies(b))){ list.push(liftSrc(n, 'b', m)); if (b.on) list.push(bottomSrc(b.cut, b.size, m)); }
+  const b = state.bottom; if (b.on) list.push(bottomSrc(b.cut, b.size, m));
   return list;
 }
 let ringTurn = 0;
@@ -484,27 +460,17 @@ function renderRing(){
   shown.alt = METALS[state.metal].label + ' wrap ring with ' + n + (n === 1 ? ' wrap' : ' wraps');
   gems.forEach((pair, i) => {
     const used = i < n, first = used ? state.picks[i] : null, twin = first != null && state.twins[i] ? first : null;
-    const P = R.stones[i] || [0, 0, 0, 0, 0, 0, 0, 0, 0];
-    const own = used && first === PHOTO_PICKS[i] && twin == null;      // untouched: the photo's own stone stays
-    showLift(lifts[i], used && !own, i + 1, P.slice(5));
-    place(pair[0], first, P[0], P[1], P[4], 'Wrap ' + (i + 1) + ': ' + stoneLabel(first) + '. Change stone', own);
-    place(pair[1], twin,  P[2], P[3], P[4], 'Wrap ' + (i + 1) + ', twin: ' + stoneLabel(twin) + '. Change stone');
+    const P = R.stones[i] || [0, 0, 0, 0];
+    place(pair[0], first, P[0], P[1], 'Wrap ' + (i + 1) + ': ' + stoneLabel(first) + '. Change stone');
+    place(pair[1], twin,  P[2], P[3], 'Wrap ' + (i + 1) + ', twin: ' + stoneLabel(twin) + '. Change stone');
   });
   renderBottomStone();
 }
 /* The bottom stone sits on the free end of the bottom wire: the wire runs in behind it from the right. */
 function renderBottomStone(){
   const b = state.bottom, g = bgem, R = RINGS[state.count];
-  const own = b.on && b.cut === 'pear' && b.size === '100' && lies(b);     // the photo's own pear
-  showLift(lifts[MAX_WRAPS], !own, 'b', R.lift);
   g.b.classList.toggle('empty', !b.on);
-  g.b.classList.toggle('own', own);
   if (!b.on){ g.shown = null; return; }
-  if (own){
-    g.b.style.left = ((R.pear[0] + R.pear[2] / 2) / PHOTO * 100) + '%'; g.b.style.top = ((R.pear[1] + R.pear[3] / 2) / PHOTO * 100) + '%';
-    g.b.style.width = (R.pear[2] / PHOTO * 100) + '%'; g.b.style.aspectRatio = R.pear[2] + ' / ' + R.pear[3];
-    g.shown = 'own'; g.b.setAttribute('aria-label', 'Bottom stone: ' + bottomLabel() + '. Change'); return;
-  }
   const B = BOTTOM_BANK[b.cut + '-' + b.size], side = lies(b), F = R.bottom;
   const vw = side ? B.h : B.w, vh = side ? B.w : B.h;                 // the image's footprint as it lies
   const bodyW = (side ? B.bh : B.bw) * F, bodyH = (side ? B.bw : B.bh) * F;
@@ -519,7 +485,7 @@ function renderBottomStone(){
   g.img.style.transform = 'translate(-50%,-50%)' + (side ? ' rotate(' + (cutOf(b.cut).spin || -90) + 'deg)' : '');
   const src = bottomSrc(b.cut, b.size, state.metal), key = src + (side ? '|side' : '');
   if (g.shown !== key){
-    const swapped = g.shown !== null && g.shown !== 'own';
+    const swapped = g.shown !== null;
     if (g.img.getAttribute('src') !== src) g.img.src = src;
     g.shown = key;
     if (swapped){ g.b.classList.remove('swap'); void g.b.offsetWidth; g.b.classList.add('swap'); }
@@ -666,8 +632,6 @@ function preload(){
   CUTS.forEach(c => CARATS.forEach(k => list.push(bottomSrc(c.id, k.id, m))));
   for (let n = 1; n <= MAX_WRAPS; n++){
     const w = ensure(ringSrc(n, m)); if (w) w.then(() => photoEl(n, m)); else photoEl(n, m);      // every wrap count in this metal, ready to show
-    for (let k = 1; k <= n; k++) list.push(liftSrc(n, k, m));
-    list.push(liftSrc(n, 'b', m));
   }
   Object.keys(METALS).forEach(o => { if (o !== m) list.push(ringSrc(state.count, o)); });           // and this ring in the other metals
   list.forEach(ensure);
