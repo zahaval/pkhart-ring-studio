@@ -11,7 +11,7 @@ from lift3 import bridge
 OUT='/Users/zahavalowy/Projects/pkhart-ring-studio/img/rings/'
 STONE_R=float(sys.argv[1]) if len(sys.argv)>1 else 48.0      # every birthstone, on every ring
 BOTTOM=float(sys.argv[2]) if len(sys.argv)>2 else 2.0         # and one size of bottom stone (per carat) on every ring
-TRIM={5:(112,300)}
+TRIM={5:(112,300)}; TRIMX={5:(148,236)}
 P=json.load(open('params.json')); rounds=json.load(open('rounds.json')); bare_json=json.load(open('bare.json')); table={}
 def ungem(a):
     """a stone's colour reflected in the band beside it would clash with whatever stone is chosen: turn it gold"""
@@ -62,16 +62,18 @@ for n in range(1,6):
             runs.append((s0,p)); runs=[q for q in runs if q[1]-q[0]>=20]; bt.append(runs[-1][1])
             ok=len(runs)>1 and runs[-1][1]-runs[-1][0]<115 and runs[-2][1]-runs[-2][0]<115
             tg.append(runs[-1][0]+(runs[-2][1]-runs[-2][0])+1 if ok else np.nan)
-        bt=np.array(bt,float); tg=np.array(tg,float); xs_=np.arange(len(bt)); okm=~np.isnan(tg)
-        tg=np.interp(xs_,xs_[okm],tg[okm]); E=np.minimum(ndimage.median_filter(bt,size=15,mode='nearest'),tg)
-        print('bt',bt[::12].round(0).tolist()); print('tg',tg[::12].round(0).tolist())
-        cf=np.polyfit(xs_,E,3); E=np.minimum(np.polyval(cf,xs_),ndimage.maximum_filter1d(bt,41)+1)        # one smooth curve
-        yy=np.arange(bare.shape[0])
+        bt=ndimage.median_filter(np.array(bt,float),size=7,mode='nearest'); xa,xb=TRIMX[n]; ia,ib=xa-x0,xb-x0
+        # one clean corner: the real outline up to xa, then a quarter-ellipse down to the level of the band's straight run (from xb)
+        ya=bt[ia]; yb=float(np.median(bt[ib:ib+30])); E=bt.copy()
+        for i in range(ia,ib+1):
+            t=(i-ia)/float(ib-ia); E[i]=ya+(yb-ya)*np.sqrt(max(0.0,1-(1-t)**2))
+        E[ib:]=np.minimum(bt[ib:],yb+1); yy=np.arange(bare.shape[0]); print('corner',xa,ya,'->',xb,yb)
         for i,x in enumerate(range(x0,x1+1)):
-            e=min(1.0,(x-x0)/12.0,(x1-x)/12.0); ed=bt[i]*(1-e)+E[i]*e; col=bare[:,x].copy()
+            if i<ia-24: continue
+            ed=E[i] if i>=ia else E[ia]-(E[ia]-bt[i])*min(1.0,(ia-i)/24.0)+0*1; ed=max(ed,bt[i]) if i<ia-12 else ed; col=bare[:,x].copy()
             if ed>bt[i]+0.5:                                         # a bite: carry the band's last gold rows down to the line
                 src=np.clip(yy-(ed-bt[i]),0,len(yy)-1).astype(int); m=(yy>bt[i]-6)&(yy<=ed); col[m]=bare[src[m],x]
-            wv=np.clip(yy-ed+0.5,0,1)[:,None]*np.clip((max(bt[i],ed)+14-yy)/3.0,0,1)[:,None]; bare[:,x]=col*(1-wv)+255*wv
+            wv=np.clip(yy-ed+0.5,0,1)[:,None]*np.clip((max(bt[i],ed)+40-yy)/3.0,0,1)[:,None]; bare[:,x]=col*(1-wv)+255*wv
     for metal in ('gold','rose','silver'):
         px=clean_backdrop(bare if metal=='gold' else tint(bare,metal,None)); os.makedirs(OUT+metal,exist_ok=True)
         Image.fromarray(np.clip(px,0,255).astype(np.uint8)).save(OUT+metal+f'/ring-{n}.jpg',quality=93)
