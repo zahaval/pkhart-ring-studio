@@ -42,10 +42,14 @@ for n in (4,5):
     x0,y0,x1,y1=px,py,px+pw,py+ph; low=np.where(gold2,yy,-1).max(0); low=ndimage.maximum_filter1d(low,9)
     lumf=f.mean(-1); speck=(yy>low[None,:]+2)&(xx>x0-90)&(xx<x1+90)&(yy<y1+70)&(lum<240)&(sat<0.2)
     ms=ndimage.gaussian_filter(ndimage.binary_dilation(speck,iterations=6).astype(float),2.0)
+    rl,rk=ndimage.label(ndimage.binary_closing(gold2,iterations=2)); rs=ndimage.sum(np.ones_like(rl),rl,range(1,rk+1)); ring=ndimage.binary_dilation(np.isin(rl,1+np.nonzero(rs>400)[0]),iterations=3); ry=np.nonzero(ring.any(1))[0]; floor=(~ring)&(yy>(ry.min()+ry.max())/2.0)&(yy>np.where(ring,yy,-1).max(0)[None,:])
     print(n,'band px',int(grey.sum()),'floor px',int(speck.sum()))
     for metal in ('gold','rose','silver'):
         o=orig(metal,n); patch=f if metal=='gold' else clean(tint(f,metal,None))
         out=o*(1-mg[...,None])+patch*mg[...,None]; out=out+(255-out)*np.maximum(ms,ml)[...,None]
+        # the floor shadow under the ring: one soft, even shadow (the specks and pale blobs left by the old stones go)
+        d=np.clip(255-out.mean(-1),0,10)*floor; wsum=ndimage.gaussian_filter(floor.astype(float),18); d=ndimage.gaussian_filter(d,18)/np.maximum(wsum,1e-3)
+        fw=ndimage.gaussian_filter(floor.astype(float),1.0)[...,None]; out=out*(1-fw)+(255-d)[...,None]*fw
         Image.fromarray(np.clip(out,0,255).astype(np.uint8)).save(R+f'img/rings/{metal}/ring-{n}.jpg',quality=93)
 sh=Image.new('RGB',(4*640,363),'white')
 for i,n in enumerate((4,5)):
