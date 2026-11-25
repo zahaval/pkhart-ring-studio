@@ -4,7 +4,7 @@ Nothing further away is touched or copied from."""
 import json, os, sys, numpy as np; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from PIL import Image
 from scipy import ndimage
-def bridge(a,cx,cy,r,padL=1.45,padR=1.45,body=1.15,prong=(0.88,0.80,0.78),strip=0.85,mix=0.35,extra=(),**_):
+def bridge(a,cx,cy,r,padL=1.45,padR=1.45,body=1.15,prong=(0.88,0.80,0.78),strip=0.85,mix=0.35,extra=(),footimg=None,clip=None,**_):
     H,W,_c=a.shape; xL=int(round(cx-padL*r)); xR=int(round(cx+padR*r)); Wd=float(xR-xL)
     def shift(A,B,lim):
         u0=int(cy-1.0*r); u1=int(cy+1.0*r); best=None
@@ -32,6 +32,10 @@ def bridge(a,cx,cy,r,padL=1.45,padR=1.45,body=1.15,prong=(0.88,0.80,0.78),strip=
     for sx in (-1,1):
         for sy in (-1,1): foot|=(dx-sx*prong[0])**2+(dy-sy*prong[1])**2<prong[2]**2
     foot|=(dx>-padL)&(dx<padR)&(np.abs(dy)<strip)
+    for ex,ey,er in extra: foot|=(dx-ex)**2+(dy-ey)**2<er**2
+    if footimg is not None:                                  # the setting's true outline, given in the photo's own frame
+        yi=np.clip(np.round(ys[:,None]+rel[None,:]).astype(int),0,H-1); foot=footimg[yi,np.broadcast_to(xs[None,:],yi.shape)]
+    if clip is not None: foot&=(dx>-clip[0])&(dx<clip[1])&(dy>-clip[2])&(dy<clip[3])      # never past the setting's own prongs
     for ex,ey,er in extra: foot|=(dx-ex)**2+(dy-ey)**2<er**2
     foot[:, :M]=False; foot[:, -M:]=False
     F=S.copy()

@@ -37,19 +37,30 @@ def lift(std,s,kw,bad,top=False,thr=17.0):
             w=ndimage.gaussian_filter((~ndimage.binary_dilation(sbad,iterations=3)).astype(float),2.0)[...,None]
             return one*(1-w)+np.clip(src*gain,0,255)*w,np.maximum(m,ndimage.gaussian_filter(foot.astype(float),1.2)),f'turn dy={dy} dx={dx} err={e:.1f} donor free {1-sbad[foot].mean():.2f}'
     one,m,_=bridge(std,s['x'],s['y'],s['r'],**kw); return one,m,'bridge'
+def true_foot(shape,s,balls,inner):
+    """the setting's own outline: the stone, its four prong balls, the bars between them and the little gallery"""
+    H,W=shape; yy,xx=np.mgrid[:H,:W]; x,y,r=s['x'],s['y'],s['r']
+    f=(xx-x)**2+(yy-y)**2<(1.04*r+3)**2
+    for bx,by,br,ok in balls: f|=(xx-bx)**2+(yy-by)**2<(br+6)**2
+    for a,b in ((0,1),(2,3),(0,2),(1,3)):                      # bars: a capsule between neighbouring balls
+        (ax,ay,ar,_),(bx,by,br,_)=balls[a],balls[b]; t=np.clip(((xx-ax)*(bx-ax)+(yy-ay)*(by-ay))/max(1.0,(bx-ax)**2+(by-ay)**2),0,1)
+        f|=(xx-(ax+t*(bx-ax)))**2+(yy-(ay+t*(by-ay)))**2<(0.62*max(ar,br)+2)**2
+    gx=(balls[2][0]+balls[3][0])/2 if inner>0 else (balls[0][0]+balls[1][0])/2
+    f|=((xx-(gx+inner*0.22*r))/(0.42*r))**2+((yy-y)/(0.58*r))**2<1
+    return f
 def lift_all(n,std):
-    from marks import BEADS
-    P=json.load(open('params.json')); R=json.load(open('rounds.json'))[str(n)]; pears=json.load(open('pears.json'))[str(n)]
-    from PIL import Image, ImageDraw
-    H,W=std.shape[:2]; pm=Image.new('L',(W,H),0); ImageDraw.Draw(pm).polygon([tuple(p) for p in pears['hull']],fill=255); bad=np.asarray(pm)>0
-    yy,xx=np.mgrid[:H,:W]
-    for x,y,r in BEADS[n]: bad|=(xx-x)**2+(yy-y)**2<(r+4)**2
-    kws=[]
+    """every setting lifted by the row-by-row bridge, its outline kept inside the box of its own four prong balls"""
+    R=json.load(open('rounds.json'))[str(n)]; BL=json.load(open('balls.json'))[str(n)]; P=json.load(open('params.json'))
+    H,W=std.shape[:2]; bare=std.copy(); gone=np.zeros((H,W))
     for k,s in enumerate(R):
-        kw=dict(P.get(f'{n}-{k}',{})); [kw.pop(q,None) for q in ('x','y','r')]; kws.append(kw); bad|=footprint((H,W),s['x'],s['y'],s['r'],**kw)
-    bare=std.copy(); gone=np.zeros((H,W))
-    for k,s in enumerate(R):
-        one,m,how=lift(std,s,kws[k],bad,top=(k==0)); print('  ',n,k,s['kind'],how)
+        kw=dict(P.get(f'{n}-{k}',{})); [kw.pop(q,None) for q in ('x','y','r')]; x,y,r=s['x'],s['y'],s['r']; b=BL[k]; g=7.0
+        cl=(x-min(q[0]-q[2] for q in b)+g)/r; cr=(max(q[0]+q[2] for q in b)-x+g)/r; ct=(y-min(q[1]-q[2] for q in b)+g)/r; cb=(max(q[1]+q[2] for q in b)-y+g)/r
+        if k>0:                                                      # the gallery sticks out a little on the side facing the middle
+            if x<450: cr=max(cr,kw.get('padR',1.45))
+            else: cl=max(cl,kw.get('padL',1.45))
+        cl,cr=max(cl,1.42),max(cr,1.42); ct,cb=max(ct,1.32),max(cb,1.32)      # a missed ball must still be inside
+        cl,cr,ct,cb=[min(v,1.9) for v in (cl,cr,ct,cb)]
+        one,m,_=bridge(std,x,y,r,clip=(cl,cr,ct,cb),**kw); print('  ',n,k,s['kind'],'clip',[round(v,2) for v in (cl,cr,ct,cb)])
         bare=bare*(1-m[...,None])+one*m[...,None]; gone=np.maximum(gone,m)
     return bare,gone
 if __name__=='__main__':

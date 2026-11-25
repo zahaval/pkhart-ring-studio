@@ -72,7 +72,18 @@ def erase(a,pg,T):
     sL=pg.get('sL',tilt(XL-24,XL,edgeL)); sR=pg.get('sR',tilt(xR,xR+24,edgeR)); print('   tilts',round(sL,3),round(sR,3),'rise',D)
     def offs(x):                                             # the band follows a smooth arc between the two sides
         t=(x-XL)/Wd; return (t**3-2*t*t+t)*sL*Wd+(-2*t**3+3*t*t)*D+(t**3-t*t)*sR*Wd
-    OFF=np.array([offs(x) for x in range(W)])
+    # the band's lower edge sags like the bottom of an ellipse: follow the real edge where the stone's body starts (XL2),
+    # leave it there at its own slope, and curve up to meet the band on the right
+    tipx,tipy,tipr=beads[0]; ysplit0=tipy-tipr-6
+    hx=np.nonzero((hole&(YY<ysplit0)&(XX>tipx)).any(0))[0]; XL2=max(XL,int(pg.get('XL2',(hx.min()-8) if len(hx) else XL)))
+    def low(x):
+        rr_=[q for q in runs((g&~hole)[:,x],minlen=6) if q[1]<y1+4]; return float(rr_[-1][1]) if rr_ else None
+    e2=pg.get('e2',low(XL2-3)); e2b=low(XL2-23)
+    if XL2>XL+10 and e2 is not None and e2b is not None and ('s2' in pg or abs(e2-e2b)/20.0<0.35):      # else the tilt-based arc
+        s2=float(pg.get('s2',(e2-e2b)/20.0)); L2=float(xR-XL2); c2=(edgeR-e2-s2*L2)/(L2*L2)
+        E=np.array([edgeL+(e2-edgeL)*(x-XL)/float(XL2-XL) if x<XL2 else e2+s2*(x-XL2)+c2*(x-XL2)**2 for x in range(W)])
+        OFF=E-edgeL; print('   lower edge at XL2',XL2,e2,'slope',round(s2,3))
+    else: OFF=np.array([offs(x) for x in range(W)])
     for x in range(XL,xR+1):
         t=(x-XL)/Wd; u=min(1.0,max(0.0,(t-0.5)/0.6+0.5)); ts=u*u*(3-2*u); off=OFF[x]
         new=samp(colL,off)*(1-ts)+samp(colRR,off-D)*ts
@@ -81,8 +92,7 @@ def erase(a,pg,T):
     PL=(float(XL),float(edgeL)); PR=(float(xR),float(edgeR))
     # the stone's point hangs below the band, so above the point the band is only hidden from where the stone's body
     # starts (XL2): left of that the band stays exactly as photographed, and the rebuilt part is as short as it can be
-    tipx,tipy,tipr=beads[0]; ysplit=tipy-tipr-6; rowsS=YY-OFF[None,:]
-    hx=np.nonzero((hole&(rowsS<ysplit)&(XX>tipx)).any(0))[0]; XL2=int(pg.get('XL2',(hx.min()-8) if len(hx) else XL)); XL2=max(XL2,XL)
+    ysplit=tipy-tipr-6; rowsS=YY-OFF[None,:]+0.0
     print('   XL2',XL2,'ysplit',round(ysplit))
     if XL2>XL+10:
         colL2=a[:,XL2-2:XL2+1].mean(1); W2=float(xR-XL2); fill2=fill.copy()
@@ -115,6 +125,11 @@ def erase(a,pg,T):
     mask=hole|rect|(wire&(XX<=xR))
     soft=ndimage.gaussian_filter(mask.astype(float),1.2)[:,:,None]
     out=a*(1-soft)+fill*soft
+    if pg.get('tipbridge'):                                   # the stone's point sat on a band of its own: bridge that band under it
+        from lift3 import bridge
+        left=ndimage.binary_dilation(hole&(XX<XL2+2),iterations=2); cols=np.nonzero(left.any(0))[0]
+        o2,m2,_=bridge(out,tipx,tipy,tipr,padL=(tipx-cols.min()+8)/tipr,padR=(cols.max()-tipx+8)/tipr,footimg=left)
+        out=out*(1-m2[...,None])+o2*m2[...,None]
     hx=float(hull[:,0].max()); return out,dict(T=int(T),right=int(hx),wire_at_right=round(float(cR+sw*(hx-xR)),1),tip=[int(x_end),int(round(cR+sw*(x_end-xR)))],wire_half=round(half,1),slope=round(sw,4),body=pg['body'],edge=[PL,PR])
 if __name__=='__main__':
     info={}; sheet=Image.new('RGB',(5*600,500),(255,255,255))
