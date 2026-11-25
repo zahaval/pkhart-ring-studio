@@ -25,7 +25,10 @@ def floor(a,top):
     lab,k=ndimage.label((sat>0.26)&(r-b>45)); H,W=lab.shape; keep=np.zeros((H,W),bool)
     for i,sl in enumerate(ndimage.find_objects(lab)):
         if sl[0].start<top+60 and (lab[sl]==i+1).sum()>600: keep[sl]|=lab[sl]==i+1
-    keep=ndimage.binary_dilation(ndimage.binary_closing(keep,iterations=3),iterations=2)
+    # the ring's pale rim and highlights belong to it too: anything faintly gold within a few pixels of the solid gold
+    yy0=np.mgrid[:H,:W][0]; low0=ndimage.maximum_filter1d(np.where(keep,yy0,-1).max(0),31)        # but not the reflection under the ring
+    weak=(sat>0.07)&(r-b>10)&(yy0<=low0[None,:]+4); keep=keep|(weak&ndimage.binary_dilation(keep,iterations=14))
+    keep=ndimage.binary_dilation(ndimage.binary_closing(keep,iterations=3),iterations=3)
     yy=np.mgrid[:H,:W][0]; low=np.where(keep,yy,-1).max(0); ys=np.nonzero(keep.any(1))[0]; mid=(ys.min()+ys.max())//2
     low=np.where(low<0,mid,low); w=ndimage.gaussian_filter(((yy>low[None,:])&~keep).astype(float),0.8)
     return a+(255-a)*w[...,None]

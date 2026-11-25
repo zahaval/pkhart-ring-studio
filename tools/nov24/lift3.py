@@ -12,7 +12,7 @@ def bridge(a,cx,cy,r,padL=1.45,padR=1.45,body=1.15,prong=(0.88,0.80,0.78),strip=
             e=np.abs(A[u0:u1]-B[u0+dd:u1+dd]).mean()+0.15*abs(dd)
             if best is None or e<best[0]: best=(e,dd)
         return best[1]
-    sl=shift(a[:,xL-25:xL-22].mean(1),a[:,xL-1:xL+2].mean(1),10)/24.0; sr=shift(a[:,xR-1:xR+2].mean(1),a[:,xR+23:xR+26].mean(1),10)/24.0
+    sl=shift(a[:,xL-17:xL-14].mean(1),a[:,xL-1:xL+2].mean(1),14)/16.0; sr=shift(a[:,xR-1:xR+2].mean(1),a[:,xR+15:xR+18].mean(1),14)/16.0      # the band's own slope at each side, steep at the ring's edge
     D=shift(a[:,xL-2:xL+1].mean(1),a[:,xR:xR+3].mean(1),40); est=(sl+sr)/2*Wd
     if abs(D-est)>10: D=int(round(est))
     def off(x):

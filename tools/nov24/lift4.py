@@ -58,10 +58,21 @@ def lift_all(n,std):
         if k>0:                                                      # the gallery sticks out a little on the side facing the middle
             if x<450: cr=max(cr,kw.get('padR',1.45))
             else: cl=max(cl,kw.get('padL',1.45))
-        cl,cr=max(cl,1.42),max(cr,1.42); ct,cb=max(ct,1.32),max(cb,1.32)      # a missed ball must still be inside
+        if k==0: cl,cr=max(cl,1.42),max(cr,1.42)
+        ct,cb=max(ct,1.32),max(cb,1.32)      # a missed ball must still be inside
         cl,cr,ct,cb=[min(v,1.9) for v in (cl,cr,ct,cb)]
         one,m,_=bridge(std,x,y,r,clip=(cl,cr,ct,cb),**kw); print('  ',n,k,s['kind'],'clip',[round(v,2) for v in (cl,cr,ct,cb)])
         bare=bare*(1-m[...,None])+one*m[...,None]; gone=np.maximum(gone,m)
+        if k>0:
+            # the prongs sat over the gaps and the edges of the bands above and below: those small caps are filled in 2D
+            # from everything around them (so an edge that crosses a cap carries on through it), not along the band
+            from skimage.restoration import inpaint_biharmonic
+            yy,xx=np.mgrid[:H,:W]; Wd=(kw.get('padL',1.45)+kw.get('padR',1.45))*r; dyb=yy-y-_[2]*(xx-x)/Wd
+            cap=ndimage.binary_dilation((m>0.02)&(np.abs(dyb)>0.52*r),iterations=2)
+            ys_,xs_=np.nonzero(cap); y0,y1,x0,x1=max(0,ys_.min()-12),min(H,ys_.max()+13),max(0,xs_.min()-12),min(W,xs_.max()+13)
+            sub=inpaint_biharmonic(bare[y0:y1,x0:x1]/255.0,cap[y0:y1,x0:x1],channel_axis=-1)*255.0
+            w=ndimage.gaussian_filter(cap[y0:y1,x0:x1].astype(float),0.8)[...,None]; bare[y0:y1,x0:x1]=bare[y0:y1,x0:x1]*(1-w)+np.clip(sub,0,255)*w
+            gone=np.maximum(gone,cap.astype(float))
     return bare,gone
 if __name__=='__main__':
     from PIL import Image
