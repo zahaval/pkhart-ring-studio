@@ -11,6 +11,7 @@ from lift3 import bridge
 OUT='/Users/zahavalowy/Projects/pkhart-ring-studio/img/rings/'
 STONE_R=float(sys.argv[1]) if len(sys.argv)>1 else 48.0      # every birthstone, on every ring
 BOTTOM=float(sys.argv[2]) if len(sys.argv)>2 else 2.0         # and one size of bottom stone (per carat) on every ring
+TRIM={5:(165,300)}
 P=json.load(open('params.json')); rounds=json.load(open('rounds.json')); bare_json=json.load(open('bare.json')); table={}
 def ungem(a):
     """a stone's colour reflected in the band beside it would clash with whatever stone is chosen: turn it gold"""
@@ -44,6 +45,20 @@ for n in range(1,6):
     nos=np.asarray(Image.open(f'nostone-{n}.png').convert('RGB')).astype(float)
     pm=changed(nos,bar); hard=ndimage.binary_dilation(np.abs(nos-bar).max(-1)>0,iterations=6)
     bare=bare*(1-pm[...,None])+np.where(hard[...,None],bar,bare)*pm[...,None]
+    if n in TRIM:                                              # the lowest band no thicker than the band above it, left of the bottom stone
+        x0,x1=TRIM[n]; rr,gg,bb=bare[...,0],bare[...,1],bare[...,2]; mxx=bare.max(-1); mnn=bare.min(-1)
+        gold=((mxx-mnn)/np.maximum(mxx,1)>0.2)&(rr-bb>35); tg=[]
+        for x in range(x0,x1+1):
+            ys=np.nonzero(gold[:,x])[0]; runs=[]; s0=p=ys[0]
+            for y in ys[1:]:
+                if y>p+4: runs.append((s0,p)); s0=y
+                p=y
+            runs.append((s0,p)); runs=[q for q in runs if q[1]-q[0]>=20]
+            tg.append(runs[-1][0]+(runs[-2][1]-runs[-2][0])+1 if len(runs)>1 else runs[-1][1])
+        tg=ndimage.median_filter(np.array(tg,float),size=21,mode='nearest'); tg=ndimage.gaussian_filter1d(tg,4,mode='nearest'); yy=np.arange(bare.shape[0])
+        for i,x in enumerate(range(x0,x1+1)):
+            fade=min(1.0,(x-x0)/25.0,(x1-x)/12.0)                   # eases in and out, so no step where the trim starts or stops
+            wv=(np.clip(yy-tg[i]+0.5,0,1)*np.clip((tg[i]+60-yy)/6.0,0,1)*fade)[:,None]; bare[:,x]=bare[:,x]*(1-wv)+255*wv
     bare=floor(ungem(bare),bare_json[str(n)]['body'][1])
     for metal in ('gold','rose','silver'):
         px=clean_backdrop(bare if metal=='gold' else tint(bare,metal,None)); os.makedirs(OUT+metal,exist_ok=True)

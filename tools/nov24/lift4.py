@@ -63,7 +63,7 @@ def lift_all(n,std):
         cl,cr,ct,cb=[min(v,1.9) for v in (cl,cr,ct,cb)]
         one,m,_=bridge(std,x,y,r,clip=(cl,cr,ct,cb),**kw); print('  ',n,k,s['kind'],'clip',[round(v,2) for v in (cl,cr,ct,cb)])
         bare=bare*(1-m[...,None])+one*m[...,None]; gone=np.maximum(gone,m)
-        if k>0:
+        if False:
             # the prongs sat over the gaps and the edges of the bands above and below: those small caps are filled in 2D
             # from everything around them (so an edge that crosses a cap carries on through it), not along the band
             from skimage.restoration import inpaint_biharmonic
