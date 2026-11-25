@@ -51,7 +51,7 @@ def true_foot(shape,s,balls,inner):
 def lift_all(n,std):
     """every setting lifted by the row-by-row bridge, its outline kept inside the box of its own four prong balls"""
     R=json.load(open('rounds.json'))[str(n)]; BL=json.load(open('balls.json'))[str(n)]; P=json.load(open('params.json'))
-    H,W=std.shape[:2]; bare=std.copy(); gone=np.zeros((H,W))
+    H,W=std.shape[:2]; bare=std.copy(); gone=np.zeros((H,W)); bottom_y=json.load(open('pears.json'))[str(n)]['body'][1]-70
     for k,s in enumerate(R):
         kw=dict(P.get(f'{n}-{k}',{})); [kw.pop(q,None) for q in ('x','y','r')]; x,y,r=s['x'],s['y'],s['r']; b=BL[k]; g=7.0
         cl=(x-min(q[0]-q[2] for q in b)+g)/r; cr=(max(q[0]+q[2] for q in b)-x+g)/r; ct=(y-min(q[1]-q[2] for q in b)+g)/r; cb=(max(q[1]+q[2] for q in b)-y+g)/r
@@ -61,7 +61,7 @@ def lift_all(n,std):
         if k==0: cl,cr=max(cl,1.42),max(cr,1.42)
         ct,cb=max(ct,1.32),max(cb,1.32)      # a missed ball must still be inside
         cl,cr,ct,cb=[min(v,1.9) for v in (cl,cr,ct,cb)]
-        one,m,_=bridge(std,x,y,r,clip=(cl,cr,ct,cb),**kw); print('  ',n,k,s['kind'],'clip',[round(v,2) for v in (cl,cr,ct,cb)])
+        one,m,_=bridge(std,x,y,r,clip=(cl,cr,ct,cb),gaps=(k>0 and x<450 and y<bottom_y),**kw)      # only the stones up the left side; print('  ',n,k,s['kind'],'clip',[round(v,2) for v in (cl,cr,ct,cb)])
         bare=bare*(1-m[...,None])+one*m[...,None]; gone=np.maximum(gone,m)
         if False:
             # the prongs sat over the gaps and the edges of the bands above and below: those small caps are filled in 2D

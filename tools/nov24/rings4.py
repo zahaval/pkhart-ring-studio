@@ -11,7 +11,7 @@ from lift3 import bridge
 OUT='/Users/zahavalowy/Projects/pkhart-ring-studio/img/rings/'
 STONE_R=float(sys.argv[1]) if len(sys.argv)>1 else 48.0      # every birthstone, on every ring
 BOTTOM=float(sys.argv[2]) if len(sys.argv)>2 else 2.0         # and one size of bottom stone (per carat) on every ring
-TRIM={5:(165,300)}
+TRIM={5:(112,300)}
 P=json.load(open('params.json')); rounds=json.load(open('rounds.json')); bare_json=json.load(open('bare.json')); table={}
 def ungem(a):
     """a stone's colour reflected in the band beside it would clash with whatever stone is chosen: turn it gold"""
@@ -20,7 +20,7 @@ def ungem(a):
     m=ndimage.gaussian_filter(ndimage.binary_dilation(m,iterations=2).astype(float),1.5)[...,None]
     y=(0.45*r+0.45*g+0.10*b)+30; gold=np.stack([np.clip(y*1.2,0,255),np.clip(y*0.92,0,255),np.clip(y*0.42,0,255)],-1)
     return a*(1-m)+gold*m
-def floor(a,top):
+def floor(a,top,joined=False):
     """a plain white floor: the old stones' reflections and shadows under the ring go; the ring itself is untouched"""
     r,g,b=a[...,0],a[...,1],a[...,2]; mx=a.max(-1); mn=a.min(-1); sat=np.where(mx>0,(mx-mn)/np.maximum(mx,1),0)
     lab,k=ndimage.label((sat>0.26)&(r-b>45)); H,W=lab.shape; keep=np.zeros((H,W),bool)
@@ -31,8 +31,11 @@ def floor(a,top):
         piece=lab[sl]==i+1
         if piece.sum()>700 and (piece&near[sl]).any(): keep[sl]|=piece
     # the ring's pale rim and highlights belong to it too: anything faintly gold within a few pixels of the solid gold
-    yy0=np.mgrid[:H,:W][0]; own=np.where(keep,yy0,-1).max(0); low0=np.where(own>=0,own,ndimage.maximum_filter1d(own,31))        # but not the reflection under the ring
-    weak=(sat>0.07)&(r-b>10)&(yy0<=low0[None,:]+2); keep=keep|(weak&ndimage.binary_dilation(keep,iterations=14))
+    # the ring's pale rim and soft highlights belong to it: faint gold that is joined to the solid gold, within a few pixels
+    if joined: weak=(sat>0.06)&(r-b>8); keep=keep|(ndimage.binary_propagation(keep,mask=weak|keep)&ndimage.binary_dilation(keep,iterations=16))
+    else:
+        yy0=np.mgrid[:H,:W][0]; own=np.where(keep,yy0,-1).max(0); low0=np.where(own>=0,own,ndimage.maximum_filter1d(own,31))
+        weak=(sat>0.07)&(r-b>10)&(yy0<=low0[None,:]+2); keep=keep|(weak&ndimage.binary_dilation(keep,iterations=14))
     keep=ndimage.binary_dilation(ndimage.binary_closing(keep,iterations=3),iterations=3)
     yy=np.mgrid[:H,:W][0]; low=np.where(keep,yy,-1).max(0); ys=np.nonzero(keep.any(1))[0]; mid=(ys.min()+ys.max())//2
     low=np.where(low<0,mid,low); w=ndimage.gaussian_filter(((yy>low[None,:])&~keep).astype(float),0.8)
@@ -45,21 +48,30 @@ for n in range(1,6):
     nos=np.asarray(Image.open(f'nostone-{n}.png').convert('RGB')).astype(float)
     pm=changed(nos,bar); hard=ndimage.binary_dilation(np.abs(nos-bar).max(-1)>0,iterations=6)
     bare=bare*(1-pm[...,None])+np.where(hard[...,None],bar,bare)*pm[...,None]
-    if n in TRIM:                                              # the lowest band no thicker than the band above it, left of the bottom stone
+    bare=floor(ungem(bare),bare_json[str(n)]['body'][1],joined=(n>=4))
+    if n in TRIM:
+        # the ring's lower-left outline as one smooth line: no thicker than the band above allows, bites filled with the
+        # band's own gold, plain white under it
         x0,x1=TRIM[n]; rr,gg,bb=bare[...,0],bare[...,1],bare[...,2]; mxx=bare.max(-1); mnn=bare.min(-1)
-        gold=((mxx-mnn)/np.maximum(mxx,1)>0.2)&(rr-bb>35); tg=[]
+        gold=((mxx-mnn)/np.maximum(mxx,1)>0.12)&(rr-bb>20); bt=[]; tg=[]
         for x in range(x0,x1+1):
             ys=np.nonzero(gold[:,x])[0]; runs=[]; s0=p=ys[0]
             for y in ys[1:]:
                 if y>p+4: runs.append((s0,p)); s0=y
                 p=y
-            runs.append((s0,p)); runs=[q for q in runs if q[1]-q[0]>=20]
-            tg.append(runs[-1][0]+(runs[-2][1]-runs[-2][0])+1 if len(runs)>1 else runs[-1][1])
-        tg=ndimage.median_filter(np.array(tg,float),size=21,mode='nearest'); tg=ndimage.gaussian_filter1d(tg,4,mode='nearest'); yy=np.arange(bare.shape[0])
+            runs.append((s0,p)); runs=[q for q in runs if q[1]-q[0]>=20]; bt.append(runs[-1][1])
+            ok=len(runs)>1 and runs[-1][1]-runs[-1][0]<115 and runs[-2][1]-runs[-2][0]<115
+            tg.append(runs[-1][0]+(runs[-2][1]-runs[-2][0])+1 if ok else np.nan)
+        bt=np.array(bt,float); tg=np.array(tg,float); xs_=np.arange(len(bt)); okm=~np.isnan(tg)
+        tg=np.interp(xs_,xs_[okm],tg[okm]); E=np.minimum(ndimage.median_filter(bt,size=15,mode='nearest'),tg)
+        print('bt',bt[::12].round(0).tolist()); print('tg',tg[::12].round(0).tolist())
+        cf=np.polyfit(xs_,E,3); E=np.minimum(np.polyval(cf,xs_),ndimage.maximum_filter1d(bt,41)+1)        # one smooth curve
+        yy=np.arange(bare.shape[0])
         for i,x in enumerate(range(x0,x1+1)):
-            fade=min(1.0,(x-x0)/25.0,(x1-x)/12.0)                   # eases in and out, so no step where the trim starts or stops
-            wv=(np.clip(yy-tg[i]+0.5,0,1)*np.clip((tg[i]+60-yy)/6.0,0,1)*fade)[:,None]; bare[:,x]=bare[:,x]*(1-wv)+255*wv
-    bare=floor(ungem(bare),bare_json[str(n)]['body'][1])
+            e=min(1.0,(x-x0)/12.0,(x1-x)/12.0); ed=bt[i]*(1-e)+E[i]*e; col=bare[:,x].copy()
+            if ed>bt[i]+0.5:                                         # a bite: carry the band's last gold rows down to the line
+                src=np.clip(yy-(ed-bt[i]),0,len(yy)-1).astype(int); m=(yy>bt[i]-6)&(yy<=ed); col[m]=bare[src[m],x]
+            wv=np.clip(yy-ed+0.5,0,1)[:,None]*np.clip((max(bt[i],ed)+14-yy)/3.0,0,1)[:,None]; bare[:,x]=col*(1-wv)+255*wv
     for metal in ('gold','rose','silver'):
         px=clean_backdrop(bare if metal=='gold' else tint(bare,metal,None)); os.makedirs(OUT+metal,exist_ok=True)
         Image.fromarray(np.clip(px,0,255).astype(np.uint8)).save(OUT+metal+f'/ring-{n}.jpg',quality=93)

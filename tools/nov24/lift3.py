@@ -4,7 +4,7 @@ Nothing further away is touched or copied from."""
 import json, os, sys, numpy as np; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from PIL import Image
 from scipy import ndimage
-def bridge(a,cx,cy,r,padL=1.45,padR=1.45,body=1.15,prong=(0.88,0.80,0.78),strip=0.85,mix=0.35,extra=(),footimg=None,clip=None,**_):
+def bridge(a,cx,cy,r,padL=1.45,padR=1.45,body=1.15,prong=(0.88,0.80,0.78),strip=0.85,mix=0.35,extra=(),footimg=None,clip=None,gaps=False,**_):
     H,W,_c=a.shape; xL=int(round(cx-padL*r)); xR=int(round(cx+padR*r)); Wd=float(xR-xL)
     def shift(A,B,lim):
         u0=int(cy-1.0*r); u1=int(cy+1.0*r); best=None
@@ -46,7 +46,7 @@ def bridge(a,cx,cy,r,padL=1.45,padR=1.45,body=1.15,prong=(0.88,0.80,0.78),strip=
             s,e=run[0],run[-1]; A=S[i,max(0,s-3):s].mean(0); B=S[i,e+1:e+4].mean(0); n=e-s+2.0
             t=(run-s+1)/n; m=mix if (e-s)>1.2*r else 1.0; c=0.5
             wa=A.min()>236 and A.max()-A.min()<14; wb=B.min()>236 and B.max()-B.min()<14
-            if wa!=wb and abs(ys[i]-cy)>0.5*r: m=0.12; c=0.88 if wa else 0.12     # a gap between bands meeting gold: the gap carries on, it does not fade
+            if gaps and wa!=wb and abs(ys[i]-cy)>0.5*r: m=0.12; c=0.88 if wa else 0.12     # a gap between bands meeting gold: the gap carries on, it does not fade
             u=np.clip((t-c)/m+0.5,0,1); ts=(u*u*(3-2*u))[:,None]
             F[i,run]=A*(1-ts)+B*ts
     Fs=ndimage.gaussian_filter(F,(1.0,0,0)); F=np.where(foot[...,None],Fs,F)
