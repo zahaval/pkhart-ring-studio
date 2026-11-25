@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PK HART — Birthstone Ring Studio</title>
+<meta name="description" content="Design your PK HART birthstone wrap ring: choose the metal, the number of wraps and the stone for each one.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+
+<!--
+  PK HART — BIRTHSTONE RING STUDIO
+
+  How the preview works (no canvas, no colour filters on stones):
+    - The ring is a photograph per wrap count and metal:   img/rings/<metal>/ring-<n>.jpg
+      (no stones are in these photos).
+    - Every small stone is its own image from the Stone Bank: img/stones/<metal>/<nn>-<name>.png
+      (twelve stones, identical dimensions; the metal folder only changes the four prongs).
+    - The bottom stone is its own image too: img/bottom/<metal>/<cut>-<size>.png (five cuts, three sizes).
+    - Each wrap has a placement on the ring, and a second one for a twin (RINGS below). The page puts
+      the chosen stone's image there. Changing a stone swaps the image file.
+
+  Nothing is sent anywhere: "Request this ring" opens the visitor's own mail app.
+-->
+
+<style>
+:root{
+  --ink:#0B0B0B; --ink-2:#4A4A4A; --ink-3:#8A8A8A;
+  --paper:#FFFFFF; --mist:#F7F6F4; --line-c:#E6E6E6; --line-2:#CCCCCC;
+  --serif:'Bodoni Moda', 'Didot', 'Bodoni 72', Georgia, serif;
+  --sans:'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --ease:cubic-bezier(.2,.7,.3,1); --fast:160ms;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased}
+h1,h2{font-family:var(--serif); font-weight:400; margin:0; font-variant-numeric:lining-nums}
+button,select{font-family:var(--sans); color:var(--ink)}
+button{cursor:pointer}
+img{display:block}
+:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+@media (prefers-reduced-motion:reduce){ *,*::before,*::after{transition:none !important; animation:none !important} }
+[hidden]{display:none !important}
+
+/* ---------- nav ---------- */
+.nav{display:flex; align-items:center; justify-content:space-between; padding:22px 48px; border-bottom:1px solid var(--line-c)}
+.wordmark{font-family:var(--serif); font-size:22px; letter-spacing:.22em; color:var(--ink); text-decoration:none}
+.navlink{font-size:11px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); text-decoration:none}
+.navlink:hover{text-decoration:underline; text-underline-offset:4px}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  border:1px solid var(--ink); background:var(--paper); color:var(--ink); border-radius:0;
+  padding:15px 20px; font-size:11.5px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; line-height:1.2; white-space:nowrap;
+  text-decoration:none; transition:background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.btn:hover{background:var(--ink); color:#fff}
+.btn.solid{background:var(--ink); color:#fff}
+.btn.solid:hover{background:#333; border-color:#333}
+.btn.quiet{border-color:var(--line-2)}
+.btn.wide{width:100%}
+.link{
+  border:0; background:none; padding:0; font-size:11px; font-weight:500; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink-2); text-decoration:underline; text-decoration-color:var(--line-2); text-underline-offset:4px;
+  transition:color var(--fast) var(--ease), text-decoration-color var(--fast) var(--ease);
+}
+.link:hover{color:var(--ink); text-decoration-color:var(--ink)}
+
+/* ---------- layout ---------- */
+.studio{display:grid; grid-template-columns:minmax(0,1.3fr) minmax(380px,1fr); min-height:calc(100vh - 70px)}
+.stage-col{display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 40px; border-right:1px solid var(--line-c)}
+.panel{padding:44px 48px 56px 44px; max-width:580px}
+@media (min-width:981px){ .stage-col{position:sticky; top:var(--top, 0px); height:calc(100vh - var(--top, 0px))} }   /* --top: room for a store's own sticky header */
+
+/* ---------- the ring preview: a photo with stone images placed on it ---------- */
+.ring{position:relative; width:min(100%, calc(100vh - 150px - var(--top, 0px)), 720px); aspect-ratio:1/1}
+.ring-img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; user-select:none; -webkit-user-drag:none; visibility:hidden}
+.ring-img.on{visibility:visible}      /* one <img> per photo, all kept decoded; changing ring only flips which one shows */
+.gem{
+  position:absolute; transform:translate(-50%,-50%); aspect-ratio:1/1; padding:0; border:0; background:none; border-radius:50%;
+  -webkit-tap-highlight-color:transparent;
+}
+.gem img{position:absolute; inset:0; width:100%; height:100%; user-select:none; -webkit-user-drag:none; pointer-events:none}
+.gem .seat{z-index:0}
+.gem .stone-img{z-index:1; transition:transform 220ms var(--ease)}
+.gem:hover .stone-img{transform:scale(1.06)}
+.gem.swap .stone-img{animation:set 320ms var(--ease)}
+@keyframes set{ from{transform:scale(.82); opacity:.2} to{transform:scale(1); opacity:1} }
+.gem:focus-visible{outline:2px solid var(--ink); outline-offset:-14%}
+.gem.empty{display:none}
+.bgem{position:absolute; transform:translate(-50%,-50%); padding:0; border:0; background:none; -webkit-tap-highlight-color:transparent}
+.bgem img{position:absolute; user-select:none; -webkit-user-drag:none; pointer-events:none}
+.bgem .bshadow{left:-10%; width:120%; top:42%; height:78%}
+.bgem .stone-img{left:50%; top:50%; height:auto}
+.bgem.swap .stone-img{animation:fade 320ms var(--ease)}
+@keyframes fade{ from{opacity:.15} to{opacity:1} }
+.bgem:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+.bgem.empty{display:none}
+.hint{margin:6px 0 0; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+
+/* ---------- panel ---------- */
+.panel h1{font-size:44px; line-height:1.05; letter-spacing:.005em}
+.lede{margin:10px 0 0; color:var(--ink-2); font-size:14px}
+.opt{border-top:1px solid var(--line-c); margin-top:28px; padding-top:20px}
+.opt-h{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; font-size:11px; font-weight:500; letter-spacing:.18em; text-transform:uppercase}
+.opt-h .val{letter-spacing:.04em; text-transform:none; font-size:13px; font-weight:400; color:var(--ink-2)}
+
+.metals{display:flex; gap:14px}
+.metal{
+  width:36px; height:36px; border-radius:50%; border:0; padding:0;
+  box-shadow:0 1px 3px rgba(0,0,0,.22); outline:1px solid transparent; outline-offset:4px;
+  transition:outline-color var(--fast) var(--ease);
+}
+.metal:hover{outline-color:var(--line-2)}
+.metal[aria-pressed=true]{outline-color:var(--ink)}
+.metal.y{background:radial-gradient(circle at 34% 28%, #FFF6D8 0%, #EFCB79 30%, #C89A45 68%, #9A6F25 100%)}
+.metal.r{background:radial-gradient(circle at 34% 28%, #FFEDE4 0%, #EBB9A0 30%, #C98A6E 68%, #9E5F47 100%)}
+.metal.w{background:radial-gradient(circle at 34% 28%, #FFFFFF 0%, #E4E6EA 30%, #B4B8C0 68%, #83878F 100%)}
+
+.seg{display:flex; gap:6px}
+.seg button{
+  border:1px solid var(--line-2); background:var(--paper); width:44px; height:40px; font-size:14px;
+  font-family:var(--serif); font-variant-numeric:lining-nums;
+  transition:background var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.seg button:hover{border-color:var(--ink)}
+.seg button[aria-pressed=true]{background:var(--ink); border-color:var(--ink); color:#fff}
+
+/* one row per wrap; the open one shows the Stone Bank */
+.wraps{display:flex; flex-direction:column}
+.wrap{border-bottom:1px solid var(--line-c)}
+.wrap:last-child{border-bottom:0}
+.wrap-head{
+  width:100%; display:grid; grid-template-columns:44px minmax(0,1fr) auto; align-items:center; gap:14px;
+  border:0; background:none; padding:12px 0; text-align:left;
+}
+.wrap-head .thumb{width:44px; height:44px; position:relative}
+.wrap-head .thumb img{width:100%; height:100%}
+.wrap-head .thumb.none{border:1px dashed var(--line-2); border-radius:50%}
+.wrap-head .thumb.two img{position:absolute; width:70%; height:70%}
+.wrap-head .thumb.two img:first-child{left:0; top:0}
+.wrap-head .thumb.two img:last-child{right:0; bottom:0}
+.wrap-head .thumb.cut img{object-fit:contain}
+.wrap-head .lbl{display:flex; flex-direction:column; line-height:1.3}
+.wrap-head .lbl small{font-size:10.5px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3)}
+.wrap-head .lbl span{font-family:var(--serif); font-size:19px}
+.wrap-head .chev{font-size:10.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); transition:color var(--fast) var(--ease)}
+.wrap-head:hover .chev{color:var(--ink)}
+.wrap.open .wrap-head .chev{color:var(--ink)}
+.bank{display:none; padding:2px 0 18px}
+.wrap.open .bank{display:block}
+.tiles{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:6px}
+.tile{
+  border:1px solid transparent; background:none; padding:6px 2px 5px; display:flex; flex-direction:column; align-items:center; gap:2px;
+  transition:border-color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.tile img{width:100%; max-width:58px; aspect-ratio:1/1; transition:transform var(--fast) var(--ease)}
+.tile small{font-size:9.5px; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+.tile:hover{background:var(--mist)}
+.tile:hover img{transform:scale(1.07)}
+.tile[aria-pressed=true]{border-color:var(--ink)}
+.tile[aria-pressed=true] small{color:var(--ink)}
+.bank-foot{display:flex; justify-content:space-between; align-items:center; margin-top:10px; min-height:18px}
+.bank-foot .now{font-size:13px; color:var(--ink-2)}
+.bank-foot .links{display:flex; gap:18px; flex-wrap:wrap; justify-content:flex-end}
+.cuts{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px}
+.cuts .tile img{max-width:none; width:100%; height:62px; aspect-ratio:auto; object-fit:contain}
+.sub{margin:14px 0 8px; font-size:10.5px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3)}
+.seg.text button{width:auto; padding:0 14px; font-family:var(--sans); font-size:12.5px; letter-spacing:.03em}
+
+.buy{display:flex; flex-direction:column; gap:14px}
+.sizebox{display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:500; letter-spacing:.18em; text-transform:uppercase}
+.sizebox select{border:1px solid var(--line-2); border-radius:0; background:var(--paper); padding:9px 12px; font-size:14px; letter-spacing:0}
+.pricebox{display:flex; align-items:baseline; justify-content:space-between; font-size:11px; font-weight:500; letter-spacing:.18em; text-transform:uppercase}
+.pricebox .price{font-family:var(--serif); font-size:28px; font-weight:400; letter-spacing:.01em; text-transform:none; font-variant-numeric:lining-nums}
+.buy .note{margin:-6px 0 0; font-size:12.5px; color:var(--ink-2)}
+.btn[disabled]{opacity:.55; cursor:default}
+
+/* ---------- request modal ---------- */
+.modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; padding:24px; z-index:50}
+.modal-bg.open{display:flex}
+.modal{background:#fff; border:1px solid var(--ink); max-width:480px; width:100%; padding:32px; max-height:86vh; overflow:auto}
+.modal h2{font-size:30px}
+.spec{white-space:pre-wrap; background:var(--mist); padding:14px 16px; font-size:13px; margin:18px 0; line-height:1.65}
+.modal .actions{display:flex; gap:8px; flex-wrap:wrap}
+
+footer.pagefoot{border-top:1px solid var(--line-c); padding:22px 48px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+
+/* ---------- phone ---------- */
+@media (max-width:980px){
+  .nav{padding:16px 20px}
+  .studio{display:block}
+  .stage-col{position:sticky; top:var(--top, 0px); z-index:20; background:#fff; padding:6px 20px 8px; border-right:0; border-bottom:1px solid var(--line-c)}
+  .ring{width:min(100%, 42vh)}
+  .hint{display:none}
+  .panel{padding:24px 20px 44px; max-width:none}
+  .panel h1{font-size:34px}
+  .tiles{gap:4px}
+  footer.pagefoot{padding:20px}
+}
+</style>
+
+<nav class="nav">
+  <a class="wordmark" href="https://pkhartjewels.com">PK HART</a>
+  <a class="navlink" href="mailto:sales@pkhartjewels.com">Contact</a>
+</nav>
+
+<main class="studio">
+  <section class="stage-col" aria-label="Your ring">
+    <div class="ring" id="ring">
+      <!-- one stone placement per wrap; filled from the Stone Bank -->
+    </div>
+    <p class="hint">Select a stone on the ring to change it</p>
+  </section>
+
+  <section class="panel">
+    <h1>Birthstone Ring</h1>
+    <p class="lede">Made to order in 14k. A birthstone for each wrap, and a diamond to finish.</p>
+
+    <div class="opt">
+      <div class="opt-h"><span>Metal</span><span class="val" id="metalLabel"></span></div>
+      <div class="metals" id="metals"></div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-h"><span>Wraps</span><span class="val" id="countLabel"></span></div>
+      <div class="seg" id="counts" role="group" aria-label="Number of wraps"></div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-h"><span>Birthstones</span><span class="val">Choose one for each wrap</span></div>
+      <div class="wraps" id="wraps"></div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-h"><span>Bottom stone</span><span class="val">The diamond on the last wrap</span></div>
+      <div class="wraps" id="bottom"></div>
+    </div>
+
+    <div class="opt buy">
+      <label class="sizebox"><span>Ring size</span><select id="ringSize"></select></label>
+      <div class="pricebox" id="priceBox" hidden><span>Price</span><span class="price" id="price"></span></div>
+      <p class="note" id="buyNote" hidden></p>
+      <button class="btn solid wide" id="btnRequest">Request this ring</button>
+    </div>
+  </section>
+</main>
+
+<footer class="pagefoot">PK HART Fine Jewelry &middot; Lincolnwood, IL</footer>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h2 id="modalTitle">Your ring</h2>
+    <div class="spec" id="specText"></div>
+    <div class="actions">
+      <a class="btn solid" id="btnMailto" href="#">Email PK HART</a>
+      <button class="btn" id="btnCopy">Copy</button>
+      <button class="btn quiet" id="btnClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================ THE STONE BANK ============================
+   One entry per birth month. `file` is that stone's own image; the same file name
+   exists in each metal folder (only the prongs differ). Add or replace a stone by
+   dropping a new image in img/stones/<metal>/ and editing this list. */
+const STONE_BANK = [
+  {month:'January',   short:'Jan', name:'Garnet',          file:'01-garnet.png'},
+  {month:'February',  short:'Feb', name:'Amethyst',        file:'02-amethyst.png'},
+  {month:'March',     short:'Mar', name:'Aquamarine',      file:'03-aquamarine.png'},
+  {month:'April',     short:'Apr', name:'Diamond',         file:'04-diamond.png'},
+  {month:'May',       short:'May', name:'Emerald',         file:'05-emerald.png'},
+  {month:'June',      short:'Jun', name:'Pearl',           file:'06-pearl.png'},
+  {month:'July',      short:'Jul', name:'Ruby',            file:'07-ruby.png'},
+  {month:'August',    short:'Aug', name:'Peridot',         file:'08-peridot.png'},
+  {month:'September', short:'Sep', name:'Sapphire',        file:'09-sapphire.png'},
+  {month:'October',   short:'Oct', name:'Opal',            file:'10-opal.png'},
+  {month:'November',  short:'Nov', name:'Citrine',         file:'11-citrine.png'},
+  {month:'December',  short:'Dec', name:'Blue Topaz',      file:'12-blue-topaz.png'},
+];
+/* ============================ THE BOTTOM STONE BANK ============================
+   Five cuts in three sizes, each its own image: img/bottom/<metal>/<cut>-<size>.png.
+   All fifteen files share one scale, so their sizes are true to each other.
+   w, h = the image; bw, bh = the stone itself, without its prongs (in sheet units). */
+const CUTS = [
+  {id:'round',   name:'Round',   turns:false},
+  {id:'emerald', name:'Emerald', turns:true},
+  {id:'heart',   name:'Heart',   turns:true, own:true, spin:90},   // the heart keeps its own setting and starts upright; sideways, its point leads away from the wire like the pear's
+  {id:'oval',    name:'Oval',    turns:true},
+  {id:'pear',    name:'Pear',    turns:true},
+];
+const CARATS = [{id:'030', label:'0.30 ct'}, {id:'070', label:'0.70 ct'}, {id:'100', label:'1.00 ct'}];
+const BOTTOM_BANK = {
+  'round-030':{w:77.3, h:81.3, bw:72.3, bh:75.7},
+  'emerald-030':{w:86.0, h:94.7, bw:72.3, bh:87.3},
+  'heart-030':{w:105.3, h:105.3, bw:95.7, bh:77.3},
+  'oval-030':{w:81.3, h:111.3, bw:77.0, bh:107.0},
+  'pear-030':{w:87.3, h:141.3, bw:79.0, bh:111.3},
+  'round-070':{w:99.3, h:103.3, bw:95.3, bh:99.3},
+  'emerald-070':{w:98.7, h:116.0, bw:82.3, bh:109.0},
+  'heart-070':{w:126.7, h:130.0, bw:114.3, bh:96.7},
+  'oval-070':{w:95.3, h:132.0, bw:91.3, bh:127.7},
+  'pear-070':{w:98.0, h:165.3, bw:92.0, bh:132.0},
+  'round-100':{w:122.7, h:126.7, bw:118.7, bh:122.3},
+  'emerald-100':{w:117.3, h:136.7, bw:101.3, bh:130.0},
+  'heart-100':{w:138.0, h:144.7, bw:127.0, bh:110.0},
+  'oval-100':{w:108.0, h:148.0, bw:104.0, bh:143.7},
+  'pear-100':{w:113.3, h:182.7, bw:106.0, bh:152.3},
+};
+const METALS = {
+  y:{label:'Gold',      dir:'gold'},
+  r:{label:'Rose gold', dir:'rose'},
+  w:{label:'Silver',    dir:'silver'},
+};
+const MAX_WRAPS = 5;
+/* Each ring photo is the supplied photo with its own stones lifted off (only the footprint of each setting is replaced
+   with bare wire), so every stone on the ring is a Stone Bank image, all drawn at one size (STONE_R).
+   Measured on the 900px photo: stones = [x, y, twinX, twinY] per wrap, top wrap first.
+   The bottom stone goes where the photo's pear sat: bottom = photo pixels per sheet unit; seat = [the pear's right edge,
+   the wire's centre there]; top = the pear's top edge; drop = how far below the wire its centre hung, as a share of its height. */
+const STONE_R = 34.4;
+const RINGS = {
+  1:{bottom:1.56, seat:[589,509], top:454, drop:0.19,
+     stones:[[446,327,523,319]]},
+  2:{bottom:1.5, seat:[572,602], top:548, drop:0.2,
+     stones:[[436,304,513,298],[278,444,355,432]]},
+  3:{bottom:1.56, seat:[567,574], top:535, drop:0.28,
+     stones:[[418,226,495,219],[274,368,351,353],[541,454,464,461]]},
+  4:{bottom:1.52, seat:[566,619], top:554, drop:0.12,
+     stones:[[416,219,493,213],[261,334,338,323],[537,415,460,419],[325,521,402,514]]},
+  5:{bottom:1.49, seat:[560,670], top:597, drop:0.1,
+     stones:[[431,164,508,163],[262,282,339,271],[542,367,465,370],[328,475,405,467],[649,556,572,559]]},
+};
+/* In a store, the store's page hands over SHOP: its image addresses, its cart, and the price of each ring.
+   On its own (no SHOP) the page shows no prices and sends a request by email. */
+const ROOT = document;                 // where the page's own elements live
+const SHOP = null;
+const asset = path => SHOP ? SHOP.assets[path.split('?')[0].replace(/^img\//, '').replace(/\//g, '-')] : path;
+const PHOTO = 900, STONE_BOX = 3;      // a stone image is 3x its stone's radius wide (300px file, 100px radius)
+
+const stoneSrc  = (i, metal) => asset('img/stones/' + METALS[metal].dir + '/' + STONE_BANK[i].file + '?v=2');
+const seatSrc   = metal => asset('img/stones/' + METALS[metal].dir + '/seat.png?v=2');
+const ringSrc   = (n, metal) => asset('img/rings2/' + METALS[metal].dir + '/ring-' + n + '.jpg?v=1');   // bump v when the photos change, so no one sees old photos under new placements
+const bottomSrc = (cut, size, metal) => asset('img/bottom/' + METALS[metal].dir + '/' + cut + '-' + size + '.png');
+
+/* ============================ STATE ============================
+   picks and twins keep a choice for all five wraps, so removing a wrap and adding it back
+   brings its stones back. picks: null = no stone on that wrap. twins: true = two of that same birthstone. */
+const STORE = 'pkhart-ring-v5';
+const DEFAULTS = {metal:'y', count:5, picks:[6, 4, 1, 3, 3], twins:[false, false, false, false, false],
+                  bottom:{on:true, cut:'pear', size:'100', side:true, heartSide:false, lab:false}, open:0, size:'6.5'};
+const okPick = p => p === null || (Number.isInteger(p) && p >= 0 && p < STONE_BANK.length);
+/* Does the bottom stone lie sideways? Emerald, oval and pear share one setting; the heart has its own. */
+const sideKey = b => cutOf(b.cut).own ? 'heartSide' : 'side';
+const lies = b => cutOf(b.cut).turns && b[sideKey(b)] === true;
+let state = load();
+function load(){
+  const d = JSON.parse(JSON.stringify(DEFAULTS));
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (!s) return d;
+    if (METALS[s.metal]) d.metal = s.metal;
+    if (Number.isInteger(s.count) && s.count >= 1 && s.count <= MAX_WRAPS) d.count = s.count;
+    if (Array.isArray(s.picks) && s.picks.length === MAX_WRAPS && s.picks.every(okPick)) d.picks = s.picks;
+    if (Array.isArray(s.twins) && s.twins.length === MAX_WRAPS) d.twins = s.twins.map(t => t != null && t !== false);   // older saves held a stone number here
+    if (s.bottom && CUTS.some(c => c.id === s.bottom.cut) && CARATS.some(c => c.id === s.bottom.size))
+      d.bottom = {on: s.bottom.on !== false, cut: s.bottom.cut, size: s.bottom.size, side: s.bottom.side !== false,
+                  heartSide: s.bottom.heartSide === true, lab: s.bottom.lab === true};
+    if (s.open === 'b' || (Number.isInteger(s.open) && s.open >= -1 && s.open < d.count)) d.open = s.open;
+    if (s.size) d.size = String(s.size);
+  } catch (e) {}
+  return d;
+}
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
+
+const $ = s => ROOT.querySelector(s);
+const el = (tag, cls, parent, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; if (parent) parent.appendChild(n); return n; };
+const stoneLabel = i => i == null ? 'No stone' : STONE_BANK[i].month + ' · ' + STONE_BANK[i].name;
+const wrapLabel = i => state.picks[i] == null ? 'No stone'
+  : state.twins[i] ? 'Twins · ' + STONE_BANK[state.picks[i]].name
+  : stoneLabel(state.picks[i]);
+const cutOf = id => CUTS.find(c => c.id === id);
+const caratOf = id => CARATS.find(c => c.id === id);
+const bottomLabel = () => !state.bottom.on ? 'No bottom stone'
+  : cutOf(state.bottom.cut).name + (state.bottom.lab ? ' lab diamond · ' : ' diamond · ') + caratOf(state.bottom.size).label;
+
+/* ============================ THE RING PREVIEW ============================ */
+const gems = [];                       // per wrap: [first stone, twin]; each a button holding the seat and the stone image
+let bgem;                              // the bottom stone
+(function buildGems(){
+  const ring = $('#ring');
+  const openAt = i => { state.open = i; save(); renderWraps(); renderBottom(); setTimeout(() => focusRow(i), 30); };   // scroll after the click has finished
+  for (let i = 0; i < MAX_WRAPS; i++){
+    gems.push([0, 1].map(k => {
+      const b = el('button', 'gem empty', ring); b.type = 'button';
+      const seat = el('img', 'seat', b); seat.alt = ''; seat.decoding = 'sync';
+      const img = el('img', 'stone-img', b); img.alt = ''; img.decoding = 'sync';
+      b.addEventListener('click', () => openAt(i));
+      return {b, seat, img, shown:null};
+    }));
+  }
+  const b = el('button', 'bgem empty', ring); b.type = 'button';
+  const sh = el('img', 'bshadow', b); sh.alt = ''; sh.src = asset('img/bottom/shadow.png');
+  const img = el('img', 'stone-img', b); img.alt = ''; img.decoding = 'sync';
+  b.addEventListener('click', () => openAt('b'));
+  bgem = {b, img, shown:null};
+})();
+function place(g, pick, x, y, label){
+  const on = pick != null;
+  g.b.classList.toggle('empty', !on);
+  if (!on){ g.shown = null; return; }
+  g.b.style.left = (x / PHOTO * 100) + '%';
+  g.b.style.top = (y / PHOTO * 100) + '%';
+  g.b.style.width = (STONE_R * STONE_BOX / PHOTO * 100) + '%';
+  g.b.setAttribute('aria-label', label);
+  const src = stoneSrc(pick, state.metal);
+  if (g.shown !== src){
+    const swapped = g.shown !== null && g.pick !== pick;      // a new stone, not the same stone in another metal
+    g.img.src = src; g.seat.src = seatSrc(state.metal); g.shown = src; g.pick = pick;
+    if (swapped){ g.b.classList.remove('swap'); void g.b.offsetWidth; g.b.classList.add('swap'); }
+  }
+  g.b.setAttribute('aria-label', label);
+}
+/* Nothing on the ring changes until every image the new view needs is decoded; then the photo and its stones change in one frame. */
+const decoded = new Map(), pending = new Map();      // src -> Image (kept, so it stays decoded) / src -> promise
+function ensure(src){
+  if (decoded.has(src)) return null;
+  if (!pending.has(src)){
+    const im = new Image(); im.decoding = 'sync';
+    const done = () => { decoded.set(src, im); pending.delete(src); };
+    pending.set(src, new Promise(ok => { im.onload = im.onerror = ok; im.src = src; }).then(done));      // loaded, not decode(): that can stall in a tab that is not showing
+  }
+  return pending.get(src);
+}
+const photos = new Map();                            // metal + count -> its <img>
+function photoEl(n, metal){
+  const key = metal + n; let im = photos.get(key);
+  if (!im){
+    const ring = $('#ring'); im = document.createElement('img'); im.className = 'ring-img'; im.alt = ''; im.decoding = 'sync';
+    im.src = ringSrc(n, metal); ring.insertBefore(im, ring.firstChild); photos.set(key, im);
+  }
+  return im;
+}
+function ringNeeds(){
+  const n = state.count, m = state.metal, list = [ringSrc(n, m)]; let bank = false;
+  for (let i = 0; i < n; i++){ const p = state.picks[i]; if (p != null){ list.push(stoneSrc(p, m)); bank = true; } }
+  if (bank) list.push(seatSrc(m));
+  const b = state.bottom; if (b.on) list.push(bottomSrc(b.cut, b.size, m));
+  return list;
+}
+let ringTurn = 0;
+function renderRing(){
+  const turn = ++ringTurn, waits = ringNeeds().map(ensure).filter(Boolean);
+  if (waits.length){ Promise.all(waits).then(() => { if (turn === ringTurn) renderRing(); }); return; }   // keep showing the last ring until then
+  const n = state.count, R = RINGS[n];
+  const shown = photoEl(n, state.metal);
+  photos.forEach(im => { im.classList.toggle('on', im === shown); if (im !== shown) im.alt = ''; });
+  shown.alt = METALS[state.metal].label + ' wrap ring with ' + n + (n === 1 ? ' wrap' : ' wraps');
+  gems.forEach((pair, i) => {
+    const used = i < n, first = used ? state.picks[i] : null, twin = first != null && state.twins[i] ? first : null;
+    const P = R.stones[i] || [0, 0, 0, 0];
+    place(pair[0], first, P[0], P[1], 'Wrap ' + (i + 1) + ': ' + stoneLabel(first) + '. Change stone');
+    place(pair[1], twin,  P[2], P[3], 'Wrap ' + (i + 1) + ', twin: ' + stoneLabel(twin) + '. Change stone');
+  });
+  renderBottomStone();
+}
+/* The bottom stone sits on the free end of the bottom wire: the wire runs in behind it from the right. */
+function renderBottomStone(){
+  const b = state.bottom, g = bgem, R = RINGS[state.count];
+  g.b.classList.toggle('empty', !b.on);
+  if (!b.on){ g.shown = null; return; }
+  const B = BOTTOM_BANK[b.cut + '-' + b.size], side = lies(b), F = R.bottom;
+  const vw = side ? B.h : B.w, vh = side ? B.w : B.h;                 // the image's footprint as it lies
+  const bodyW = (side ? B.bh : B.bw) * F, bodyH = (side ? B.bw : B.bh) * F;
+  const cx = R.seat[0] - bodyW / 2;                                    // its right edge is where the pear's was, over the wire's end
+  const cy = Math.min(Math.max(R.seat[1] + R.drop * bodyH, R.top + bodyH / 2),          // hangs off the wire as the pear did, never higher than it
+                      PHOTO - 14 - vh * F / 2);                                         // and nothing leaves the frame
+  g.b.style.left = (cx / PHOTO * 100) + '%';
+  g.b.style.top = (cy / PHOTO * 100) + '%';
+  g.b.style.width = (vw * F / PHOTO * 100) + '%';
+  g.b.style.aspectRatio = vw + ' / ' + vh;
+  g.img.style.width = (B.w / vw * 100) + '%';
+  g.img.style.transform = 'translate(-50%,-50%)' + (side ? ' rotate(' + (cutOf(b.cut).spin || -90) + 'deg)' : '');
+  const src = bottomSrc(b.cut, b.size, state.metal), key = src + (side ? '|side' : '');
+  if (g.shown !== key){
+    const swapped = g.shown !== null;
+    if (g.img.getAttribute('src') !== src) g.img.src = src;
+    g.shown = key;
+    if (swapped){ g.b.classList.remove('swap'); void g.b.offsetWidth; g.b.classList.add('swap'); }
+  }
+  g.b.setAttribute('aria-label', 'Bottom stone: ' + bottomLabel() + '. Change');
+}
+
+/* ============================ CONTROLS ============================ */
+function renderMetals(){
+  const box = $('#metals'); box.textContent = '';
+  Object.keys(METALS).forEach(m => {
+    const b = el('button', 'metal ' + m, box); b.type = 'button';
+    b.setAttribute('aria-label', METALS[m].label); b.title = METALS[m].label;
+    b.setAttribute('aria-pressed', String(state.metal === m));
+    b.addEventListener('click', () => { state.metal = m; save(); render(); });
+  });
+  $('#metalLabel').textContent = METALS[state.metal].label;
+}
+function renderCounts(){
+  const box = $('#counts'); box.textContent = '';
+  for (let n = 1; n <= MAX_WRAPS; n++){
+    const b = el('button', '', box, String(n)); b.type = 'button';
+    b.setAttribute('aria-pressed', String(state.count === n));
+    b.setAttribute('aria-label', n + (n === 1 ? ' wrap' : ' wraps'));
+    b.addEventListener('click', () => {
+      state.count = n;
+      if (Number.isInteger(state.open) && state.open >= n) state.open = n - 1;
+      save(); render();
+    });
+  }
+  $('#countLabel').textContent = state.count + (state.count === 1 ? ' wrap' : ' wraps');
+}
+function update(){ save(); renderRing(); renderWraps(); renderBottom(); renderBuy(); }
+function choose(wrap, pick){
+  state.picks[wrap] = pick;
+  if (pick == null) state.twins[wrap] = false;
+  update();
+}
+function head(row, open, thumb, small, label){
+  const h = el('button', 'wrap-head', row); h.type = 'button';
+  h.setAttribute('aria-expanded', String(open));
+  h.appendChild(thumb);
+  const lbl = el('span', 'lbl', h);
+  el('small', '', lbl, small); el('span', '', lbl, label);
+  el('span', 'chev', h, open ? 'Close' : 'Change');
+  return h;
+}
+function linkBtn(parent, text, fn){ const b = el('button', 'link', parent, text); b.type = 'button'; b.addEventListener('click', fn); return b; }
+function renderWraps(){
+  const box = $('#wraps'); box.textContent = '';
+  for (let i = 0; i < state.count; i++){
+    const pick = state.picks[i], twin = pick != null && state.twins[i], open = state.open === i;
+    const row = el('div', 'wrap' + (open ? ' open' : ''), box); row.id = 'wrap-' + i;
+    const th = el('span', 'thumb' + (pick == null ? ' none' : twin ? ' two' : ''));
+    [pick, twin ? pick : null].forEach(p => { if (p != null){ const im = el('img', '', th); im.src = stoneSrc(p, state.metal); im.alt = ''; } });
+    head(row, open, th, 'Wrap ' + (i + 1), wrapLabel(i))
+      .addEventListener('click', () => { state.open = open ? -1 : i; save(); renderWraps(); renderBottom(); });
+
+    const bank = el('div', 'bank', row);
+    const tiles = el('div', 'tiles', bank);
+    STONE_BANK.forEach((st, m) => {
+      const t = el('button', 'tile', tiles); t.type = 'button';
+      t.setAttribute('aria-pressed', String(pick === m));
+      t.setAttribute('aria-label', st.month + ' ' + st.name); t.title = st.month + ' · ' + st.name;
+      const im = el('img', '', t); im.src = stoneSrc(m, state.metal); im.alt = ''; im.loading = 'lazy';
+      el('small', '', t, st.short);
+      t.addEventListener('click', () => choose(i, m));
+    });
+    if (pick != null){                                         // twins are two of the same birthstone, side by side
+      el('div', 'sub', bank, 'Stones');
+      const pair = el('div', 'seg text', bank);
+      [['Single', false], ['Twins', true]].forEach(([label, v]) => {
+        const t = el('button', '', pair, label); t.type = 'button';
+        t.setAttribute('aria-pressed', String(twin === v));
+        t.addEventListener('click', () => { state.twins[i] = v; update(); });
+      });
+    }
+    const foot = el('div', 'bank-foot', bank);
+    el('span', 'now', foot, (twin ? 'Twins · ' : '') + stoneLabel(pick));
+    const links = el('span', 'links', foot);
+    if (pick != null) linkBtn(links, 'No stone', () => choose(i, null));
+  }
+}
+function renderBottom(){
+  const box = $('#bottom'); box.textContent = '';
+  const b = state.bottom, open = state.open === 'b';
+  const row = el('div', 'wrap' + (open ? ' open' : ''), box); row.id = 'wrap-b';
+  const th = el('span', 'thumb cut' + (b.on ? '' : ' none'));
+  if (b.on){ const im = el('img', '', th); im.src = bottomSrc(b.cut, b.size, state.metal); im.alt = ''; }
+  head(row, open, th, 'Bottom stone', bottomLabel())
+    .addEventListener('click', () => { state.open = open ? -1 : 'b'; save(); renderWraps(); renderBottom(); });
+
+  const bank = el('div', 'bank', row);
+  const cuts = el('div', 'tiles cuts', bank);
+  CUTS.forEach(c => {
+    const t = el('button', 'tile', cuts); t.type = 'button';
+    t.setAttribute('aria-pressed', String(b.on && b.cut === c.id));
+    t.setAttribute('aria-label', c.name + ' cut'); t.title = c.name;
+    const im = el('img', '', t); im.src = bottomSrc(c.id, b.size, state.metal); im.alt = '';
+    el('small', '', t, c.name);
+    t.addEventListener('click', () => { b.cut = c.id; b.on = true; update(); });
+  });
+  el('div', 'sub', bank, 'Size');
+  const sizes = el('div', 'seg text', bank);
+  CARATS.forEach(c => {
+    const t = el('button', '', sizes, c.label); t.type = 'button';
+    t.setAttribute('aria-pressed', String(b.on && b.size === c.id));
+    t.addEventListener('click', () => { b.size = c.id; b.on = true; update(); });
+  });
+  if (cutOf(b.cut).turns){
+    el('div', 'sub', bank, 'Setting');
+    const turn = el('div', 'seg text', bank);
+    [['Sideways', true], ['Upright', false]].forEach(([label, v]) => {
+      const t = el('button', '', turn, label); t.type = 'button';
+      t.setAttribute('aria-pressed', String(b.on && lies(b) === v));
+      t.addEventListener('click', () => { b[sideKey(b)] = v; b.on = true; update(); });
+    });
+  }
+  el('div', 'sub', bank, 'Diamond');                       // same stone to the eye, so the picture does not change
+  const origin = el('div', 'seg text', bank);
+  [['Natural', false], ['Lab grown', true]].forEach(([label, v]) => {
+    const t = el('button', '', origin, label); t.type = 'button';
+    t.setAttribute('aria-pressed', String(b.on && b.lab === v));
+    t.addEventListener('click', () => { b.lab = v; b.on = true; update(); });
+  });
+  const foot = el('div', 'bank-foot', bank);
+  el('span', 'now', foot, bottomLabel());
+  const links = el('span', 'links', foot);
+  if (b.on) linkBtn(links, 'No bottom stone', () => { b.on = false; update(); });
+}
+function focusRow(i){
+  const row = ROOT.getElementById('wrap-' + i);
+  if (!row) return;
+  const phone = !matchMedia('(min-width:981px)').matches;
+  row.style.scrollMarginTop = phone ? ($('.stage-col').offsetHeight + 8) + 'px' : '16px';   // on phones the ring stays pinned on top
+  row.scrollIntoView({block: phone ? 'start' : 'nearest', behavior:'smooth'});
+}
+function render(){ renderMetals(); renderCounts(); renderRing(); renderWraps(); renderBottom(); renderBuy(); preload(); }
+
+/* fetch the other photos and stones in the background so every change is instant */
+function preload(){
+  const m = state.metal, list = [seatSrc(m)];
+  STONE_BANK.forEach((_, i) => list.push(stoneSrc(i, m)));
+  CUTS.forEach(c => CARATS.forEach(k => list.push(bottomSrc(c.id, k.id, m))));
+  for (let n = 1; n <= MAX_WRAPS; n++){
+    const w = ensure(ringSrc(n, m)); if (w) w.then(() => photoEl(n, m)); else photoEl(n, m);      // every wrap count in this metal, ready to show
+  }
+  Object.keys(METALS).forEach(o => { if (o !== m) list.push(ringSrc(state.count, o)); });           // and this ring in the other metals
+  list.forEach(ensure);
+}
+
+/* ============================ REQUEST / BUY ============================ */
+const wrapLine = i => { const p = state.picks[i];
+  return p == null ? 'Plain, no stone' : STONE_BANK[p].month + ' — ' + STONE_BANK[p].name + (state.twins[i] ? ', twins (two stones)' : ''); };
+const bottomLine = () => { const b = state.bottom;
+  return !b.on ? 'None' : cutOf(b.cut).name + '-cut ' + (b.lab ? 'lab-grown' : 'natural') + ' diamond, ' + caratOf(b.size).label +
+    (cutOf(b.cut).turns ? (lies(b) ? ', set sideways' : ', set upright') : ''); };
+function buildSpec(){
+  const lines = ['CUSTOM BIRTHSTONE RING — design request', ''];
+  lines.push('Metal: ' + METALS[state.metal].label);
+  lines.push('Wraps: ' + state.count);
+  for (let i = 0; i < state.count; i++) lines.push('Wrap ' + (i + 1) + ': ' + wrapLine(i));
+  lines.push('Bottom stone: ' + bottomLine());
+  lines.push('Ring size: ' + state.size);
+  lines.push('', 'Designed in the PK HART Birthstone Ring Studio.');
+  return lines.join('\n');
+}
+/* In a store each priced ring is one variant, found by its code:
+   N or L (natural or lab-grown) + the diamond's size, the number of wraps, and A (sizes 4 to 7) or B (7.5 to 10).
+   A ring the store has no price for (no bottom stone, for now) is requested by email instead. */
+const UPSIZE = 7.5;
+const variantCode = big => (state.bottom.lab ? 'L' : 'N') + state.bottom.size + '-' + state.count + 'W-' + (big ? 'B' : 'A');
+const variantNow = () => SHOP && state.bottom.on ? SHOP.variants[variantCode(parseFloat(state.size) >= UPSIZE)] || null : null;
+const money = cents => new Intl.NumberFormat('en-US', {style:'currency', currency:(SHOP && SHOP.currency) || 'USD', maximumFractionDigits: cents % 100 ? 2 : 0}).format(cents / 100);
+function note(text){ const n = $('#buyNote'); n.textContent = text || ''; n.hidden = !text; }
+function renderBuy(){
+  if (!SHOP) return;
+  const v = variantNow(), btn = $('#btnRequest');
+  $('#priceBox').hidden = false;
+  $('#price').textContent = v ? money(v.price) : 'On request';
+  btn.disabled = false;
+  btn.textContent = v ? 'Add to bag' : 'Request this ring';
+  const small = SHOP.variants[variantCode(false)];
+  note(v && small && v.price > small.price ? 'Sizes ' + UPSIZE + ' to 10 add ' + money(v.price - small.price) + '.' : '');
+}
+function orderDetails(){
+  const d = {'Metal': METALS[state.metal].label};
+  for (let i = 0; i < state.count; i++) d['Wrap ' + (i + 1)] = wrapLine(i);
+  d['Bottom stone'] = bottomLine();
+  if (!state.bottom.lab && SHOP.naturalGrade) d['Diamond quality'] = SHOP.naturalGrade;
+  d['Ring size'] = state.size;
+  return d;
+}
+async function addToBag(v){
+  const btn = $('#btnRequest');
+  btn.disabled = true; btn.textContent = 'Adding';
+  try {
+    const r = await fetch(SHOP.cartAddUrl, {method:'POST', headers:{'Content-Type':'application/json', 'Accept':'application/json'},
+      body: JSON.stringify({items:[{id: v.id, quantity: 1, properties: orderDetails()}]})});
+    if (!r.ok) throw new Error('cart ' + r.status);
+    location.href = SHOP.cartUrl;
+  } catch (e) {
+    renderBuy();
+    note('That did not reach your bag. Please try again.');
+  }
+}
+(function(){
+  const sel = $('#ringSize');
+  for (let s = 4; s <= 10; s += .5){
+    const o = document.createElement('option'); o.value = o.textContent = String(s);
+    if (String(s) === String(state.size)) o.selected = true;
+    sel.appendChild(o);
+  }
+  sel.addEventListener('change', () => { state.size = sel.value; save(); renderBuy(); });
+})();
+$('#btnRequest').addEventListener('click', () => {
+  const v = variantNow();
+  if (v) return addToBag(v);
+  const spec = buildSpec();
+  $('#specText').textContent = spec;
+  $('#btnMailto').href = 'mailto:sales@pkhartjewels.com?subject=' + encodeURIComponent('Custom birthstone ring request') +
+    '&body=' + encodeURIComponent(spec + '\n\nMy name:\nMy phone:');
+  $('#modalBg').classList.add('open');
+});
+const closeModal = () => $('#modalBg').classList.remove('open');
+$('#btnClose').addEventListener('click', closeModal);
+$('#modalBg').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+$('#btnCopy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(buildSpec()); $('#btnCopy').textContent = 'Copied'; }
+  catch (e) { $('#btnCopy').textContent = 'Select the text above and copy it'; }
+  setTimeout(() => { $('#btnCopy').textContent = 'Copy'; }, 1600);
+});
+
+render();
+</script>
+</html>
