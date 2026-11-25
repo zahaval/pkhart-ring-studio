@@ -91,7 +91,7 @@ img{display:block}
 .gem.empty{display:none}
 .bgem{position:absolute; transform:translate(-50%,-50%); padding:0; border:0; background:none; -webkit-tap-highlight-color:transparent}
 .bgem img{position:absolute; user-select:none; -webkit-user-drag:none; pointer-events:none}
-.bgem .bshadow{left:-10%; width:120%; top:42%; height:78%; opacity:.3}      /* faint: the photo's own floor already carries the shadow */
+.bgem .bshadow{left:-10%; width:120%; top:42%; height:78%}
 .bgem .stone-img{left:50%; top:50%; height:auto}
 .bgem.swap .stone-img{animation:fade 320ms var(--ease)}
 @keyframes fade{ from{opacity:.15} to{opacity:1} }
@@ -342,7 +342,7 @@ const PHOTO = 900, STONE_BOX = 3;      // a stone image is 3x its stone's radius
 
 const stoneSrc  = (i, metal) => asset('img/stones/' + METALS[metal].dir + '/' + STONE_BANK[i].file + '?v=2');
 const seatSrc   = metal => asset('img/stones/' + METALS[metal].dir + '/seat.png?v=2');
-const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/ring-' + n + '.jpg?v=26');   // bump v when the photos change, so no one sees old photos under new placements
+const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/ring-' + n + '.jpg?v=27');   // bump v when the photos change, so no one sees old photos under new placements
 const bottomSrc = (cut, size, metal) => asset('img/bottom/' + METALS[metal].dir + '/' + cut + '-' + size + '.png');
 
 /* ============================ STATE ============================
