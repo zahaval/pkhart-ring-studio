@@ -19,17 +19,16 @@ def ungem(a):
     m=ndimage.gaussian_filter(ndimage.binary_dilation(m,iterations=2).astype(float),1.5)[...,None]
     y=(0.45*r+0.45*g+0.10*b)+30; gold=np.stack([np.clip(y*1.2,0,255),np.clip(y*0.92,0,255),np.clip(y*0.42,0,255)],-1)
     return a*(1-m)+gold*m
-def floor(a,body):
-    """the bottom stone's own reflection on the floor goes with it (the ring's soft reflection either side stays)"""
-    x0,y0,x1,y1=body; H,W=a.shape[:2]; yy,xx=np.mgrid[:H,:W]
-    mx=a.max(-1); mn=a.min(-1); sat=np.where(mx>0,(mx-mn)/np.maximum(mx,1),0); lum=0.3*a[...,0]+0.59*a[...,1]+0.11*a[...,2]
-    pale=ndimage.gaussian_filter(((sat<0.30)&(lum>185)).astype(float),1.5)
-    box=np.clip((xx-(x0-110))/90.0,0,1)*np.clip(((x1+110)-xx)/90.0,0,1)*np.clip((yy-(y0+y1)/2.0)/50.0,0,1)
-    lab,k=ndimage.label(~((sat<0.30)&(lum>185))&(box>0.5))            # small leftovers of the old prongs on the floor
-    if k:
-        sz=ndimage.sum(np.ones_like(lab),lab,range(1,k+1)); speck=np.isin(lab,1+np.nonzero(sz<2500)[0])
-        pale=np.maximum(pale,ndimage.gaussian_filter(ndimage.binary_dilation(speck,iterations=3).astype(float),1.2))
-    w=(pale*box)[...,None]; return a+(255-a)*w
+def floor(a,top):
+    """a plain white floor: the old stones' reflections and shadows under the ring go; the ring itself is untouched"""
+    r,g,b=a[...,0],a[...,1],a[...,2]; mx=a.max(-1); mn=a.min(-1); sat=np.where(mx>0,(mx-mn)/np.maximum(mx,1),0)
+    lab,k=ndimage.label((sat>0.26)&(r-b>45)); H,W=lab.shape; keep=np.zeros((H,W),bool)
+    for i,sl in enumerate(ndimage.find_objects(lab)):
+        if sl[0].start<top+60 and (lab[sl]==i+1).sum()>600: keep[sl]|=lab[sl]==i+1
+    keep=ndimage.binary_dilation(ndimage.binary_closing(keep,iterations=3),iterations=2)
+    yy=np.mgrid[:H,:W][0]; low=np.where(keep,yy,-1).max(0); ys=np.nonzero(keep.any(1))[0]; mid=(ys.min()+ys.max())//2
+    low=np.where(low<0,mid,low); w=ndimage.gaussian_filter(((yy>low[None,:])&~keep).astype(float),0.8)
+    return a+(255-a)*w[...,None]
 for n in range(1,6):
     std=np.asarray(Image.open(f'std-{n}.png').convert('RGB')).astype(float)
     bar=np.asarray(Image.open(f'bare-{n}.png').convert('RGB')).astype(float); st=rounds[str(n)]
@@ -40,7 +39,7 @@ for n in range(1,6):
     nos=np.asarray(Image.open(f'nostone-{n}.png').convert('RGB')).astype(float)
     pm=changed(nos,bar); hard=ndimage.binary_dilation(np.abs(nos-bar).max(-1)>0,iterations=6)
     bare=bare*(1-pm[...,None])+np.where(hard[...,None],bar,bare)*pm[...,None]
-    bare=floor(ungem(bare),bare_json[str(n)]['body'])
+    bare=floor(ungem(bare),bare_json[str(n)]['body'][1])
     for metal in ('gold','rose','silver'):
         px=clean_backdrop(bare if metal=='gold' else tint(bare,metal,None)); os.makedirs(OUT+metal,exist_ok=True)
         Image.fromarray(np.clip(px,0,255).astype(np.uint8)).save(OUT+metal+f'/ring-{n}.jpg',quality=93)

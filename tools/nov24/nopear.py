@@ -53,33 +53,34 @@ def erase(a,pg,T):
     if T and wb-wt>T+10: bandR=wb-T; wt=wb-T+1                          # the wire touches the band above here
     else: bandR=rr[-2][1] if len(rr)>1 else wt-1
     if pg.get('wire'): wt,wb,bandR=pg['wire']                          # measured by eye where a highlight splits the wire
-    ring=ndimage.binary_dilation(hole,structure=disk(4))&~hole&g
-    ly,lx=np.nonzero(ring&(XX<cxh))
-    if len(ly): k=int(np.argmax(ly)); PL=(float(lx[k]),float(ly[k]))
-    else: PL=(float(xs.min()),float(y0))
-    PR=(float(xR),float(bandR))
-    edge=PL[1]+(PR[1]-PL[1])*(np.arange(W)-PL[0])/max(1.0,PR[0]-PL[0])
-    bx0,bx1,by0,by1=xs.min()-10,min(W,max(xs.max(),xR)+10),max(0,y0-10),min(H,y1+12)
-    sl=(slice(by0,by1),slice(bx0,bx1))
-    hs=hole[sl]; above=(YY<=edge[None,:])[sl]; gs=g[sl]; sub=a[sl]
-    gd=ndimage.binary_dilation(gs,structure=disk(2))
-    # the band behind the stone: carry each row across the gap, following the band's tilt, so its highlights run through
-    gold_fill=sub.copy(); hb=hs&above; hh_,ww_=hb.shape; eg=edge[bx0:bx1]
-    for yy_ in range(hh_):
-        row=hb[yy_]
-        if not row.any(): continue
-        xs_=np.nonzero(hs[yy_])[0]; segs=np.split(xs_,np.nonzero(np.diff(xs_)>1)[0]+1)
-        for sg in segs:
-            xa=max(0,sg[0]-3); xb=min(ww_-1,sg[-1]+3); span=max(1,xb-xa)
-            for x in sg:
-                if not row[x]: continue
-                t=(x-xa)/span; ts=t*t*(3-2*t)
-                yl=int(round(min(max(yy_+(eg[xa]-eg[x]),0),hh_-1))); yr=int(round(min(max(yy_+(eg[xb]-eg[x]),0),hh_-1)))
-                gold_fill[yy_,x]=sub[yl,xa]*(1-ts)+sub[yr,xb]*ts
-    gold_fill=np.where(hb[:,:,None],ndimage.gaussian_filter(gold_fill,(1.2,0.6,0)),gold_fill)
-    back_fill=harmonic(sub,hs&~above,~gd&~hs,np.array([252.0,251.0,249.0]))
-    w=np.clip((edge[None,:]+1.0-YY)/2.0,0,1)[sl][:,:,None]
-    fill=a.copy(); fill[sl]=np.where(hs[:,:,None],back_fill*(1-w)+gold_fill*w,sub)
+    # the band behind the stone: its profile just left of the stone and just right of it, carried straight across with
+    # the band's own tilt, so its edges and highlights run through as clean lines; under its lower edge, plain floor
+    XL=int(xs.min())-5; yb=min(b[1] for b in beads[:1])
+    rl=[r for r in runs((gc&~hole)[:,XL],minlen=8) if r[1]<yb+6]; edgeL=pg.get('edgeL',rl[-1][1] if rl else y0); edgeR=bandR
+    print('   left runs at',XL,rl,'edgeL',edgeL,'edgeR',edgeR)
+    colL=a[:,XL-2:XL+1].mean(1); colRR=a[:,xR:xR+3].mean(1); D=float(edgeR-edgeL); Wd=float(xR-XL); yr=np.arange(H); fill=a.copy()
+    WHITE=np.array([254.0,254.0,254.0])
+    def samp(col,d):
+        q=np.clip(yr-d,0,H-1); lo=np.floor(q).astype(int); hi=np.minimum(lo+1,H-1); f=(q-lo)[:,None]
+        return col[lo]*(1-f)+col[hi]*f
+    def tilt(x0,x1,ye):                                      # the band's own slope at one side, from its profile 24px apart
+        A=a[:,x0-1:x0+2].mean(1); B=a[:,x1-1:x1+2].mean(1); u0=int(ye-70); u1=int(ye+12); best=None
+        for dd in range(-10,11):
+            e=np.abs(A[u0:u1]-B[u0+dd:u1+dd]).mean()+0.1*abs(dd)
+            if best is None or e<best[0]: best=(e,dd)
+        return best[1]/float(x1-x0)
+    sL=pg.get('sL',tilt(XL-24,XL,edgeL)); sR=pg.get('sR',tilt(xR,xR+24,edgeR)); print('   tilts',round(sL,3),round(sR,3),'rise',D)
+    def offs(x):                                             # the band follows a smooth arc between the two sides
+        t=(x-XL)/Wd; return (t**3-2*t*t+t)*sL*Wd+(-2*t**3+3*t*t)*D+(t**3-t*t)*sR*Wd
+    OFF=np.array([offs(x) for x in range(W)])
+    for x in range(XL,xR+1):
+        t=(x-XL)/Wd; u=min(1.0,max(0.0,(t-0.5)/0.6+0.5)); ts=u*u*(3-2*u); off=OFF[x]
+        new=samp(colL,off)*(1-ts)+samp(colRR,off-D)*ts
+        ww=np.clip(yr-(edgeL+off)+0.5,0,1)[:,None]
+        fill[:,x]=new*(1-ww)+WHITE*ww
+    PL=(float(XL),float(edgeL)); PR=(float(xR),float(edgeR))
+    topL=pg.get('topL',rl[-1][0] if rl else y0)                      # that band and the floor under it are rebuilt whole, so no scrap of a prong is left on them
+    rect=(XX>=XL)&(XX<=xR)&(YY>=topL+OFF[None,:]-3)&(YY<=y1+12)
     # the bottom wire carries on a little under where the stone sat and ends in a rounded tip
     colR=a[:,xR:xR+3].mean(1); A=a[:,xR-1:xR+2].mean(1); B=a[:,xR+27:xR+30].mean(1); best=None
     for dd in range(-12,13):
@@ -96,7 +97,7 @@ def erase(a,pg,T):
         if x<x_end+half: col=col*(0.86+0.14*(hh/half))
         al=(np.clip((1.0-np.abs(v))*hh/1.2,0,1)*(np.abs(v)<=1.0))[:,None]
         fill[:,x]=fill[:,x]*(1-al)+col*al; wire[:,x]=np.abs(v)<=1.0
-    mask=hole|(wire&(XX<=xR))
+    mask=hole|rect|(wire&(XX<=xR))
     soft=ndimage.gaussian_filter(mask.astype(float),1.2)[:,:,None]
     out=a*(1-soft)+fill*soft
     hx=float(hull[:,0].max()); return out,dict(T=int(T),right=int(hx),wire_at_right=round(float(cR+sw*(hx-xR)),1),tip=[int(x_end),int(round(cR+sw*(x_end-xR)))],wire_half=round(half,1),slope=round(sw,4),body=pg['body'],edge=[PL,PR])
