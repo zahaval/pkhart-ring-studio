@@ -79,8 +79,23 @@ def erase(a,pg,T):
         ww=np.clip(yr-(edgeL+off)+0.5,0,1)[:,None]
         fill[:,x]=new*(1-ww)+WHITE*ww
     PL=(float(XL),float(edgeL)); PR=(float(xR),float(edgeR))
+    # the stone's point hangs below the band, so above the point the band is only hidden from where the stone's body
+    # starts (XL2): left of that the band stays exactly as photographed, and the rebuilt part is as short as it can be
+    tipx,tipy,tipr=beads[0]; ysplit=tipy-tipr-6; rowsS=YY-OFF[None,:]
+    hx=np.nonzero((hole&(rowsS<ysplit)&(XX>tipx)).any(0))[0]; XL2=int(pg.get('XL2',(hx.min()-8) if len(hx) else XL)); XL2=max(XL2,XL)
+    print('   XL2',XL2,'ysplit',round(ysplit))
+    if XL2>XL+10:
+        colL2=a[:,XL2-2:XL2+1].mean(1); W2=float(xR-XL2); fill2=fill.copy()
+        for x in range(XL2,xR+1):
+            t=(x-XL2)/W2; u=min(1.0,max(0.0,(t-0.5)/0.6+0.5)); ts=u*u*(3-2*u)
+            new=samp(colL2,OFF[x]-OFF[XL2])*(1-ts)+samp(colRR,OFF[x]-D)*ts
+            ww=np.clip(yr-(edgeL+OFF[x])+0.5,0,1)[:,None]; fill2[:,x]=new*(1-ww)+WHITE*ww
+        up=np.clip((ysplit-rowsS)/6.0,0,1)[...,None]                        # 1 above the point, 0 at and below it
+        fill2=np.where((XX<XL2)[...,None],a,fill2); fill=fill*(1-up)+fill2*up
+    else: XL2=XL
     topL=pg.get('topL',rl[-1][0] if rl else y0)                      # that band and the floor under it are rebuilt whole, so no scrap of a prong is left on them
     rect=(XX>=XL)&(XX<=xR)&(YY>=topL+OFF[None,:]-3)&(YY<=y1+12)
+    rect&=(XX>=XL2-2)                                  # left of the stone's body only the stone's own point is replaced
     # the bottom wire carries on a little under where the stone sat and ends in a rounded tip
     colR=a[:,xR:xR+3].mean(1); A=a[:,xR-1:xR+2].mean(1); B=a[:,xR+27:xR+30].mean(1); best=None
     for dd in range(-12,13):

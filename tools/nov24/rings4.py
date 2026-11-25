@@ -32,10 +32,8 @@ def floor(a,top):
 for n in range(1,6):
     std=np.asarray(Image.open(f'std-{n}.png').convert('RGB')).astype(float)
     bar=np.asarray(Image.open(f'bare-{n}.png').convert('RGB')).astype(float); st=rounds[str(n)]
-    bare=std.copy(); gone=np.zeros(std.shape[:2])
-    for k,s in enumerate(st):
-        kw=dict(P.get(f'{n}-{k}',{})); [kw.pop(q,None) for q in ('x','y','r')]; one,m,_=bridge(std,s['x'],s['y'],s['r'],**kw)
-        bare=bare*(1-m[...,None])+one*m[...,None]; gone=np.maximum(gone,m)
+    from lift4 import lift_all
+    bare,gone=lift_all(n,std)
     nos=np.asarray(Image.open(f'nostone-{n}.png').convert('RGB')).astype(float)
     pm=changed(nos,bar); hard=ndimage.binary_dilation(np.abs(nos-bar).max(-1)>0,iterations=6)
     bare=bare*(1-pm[...,None])+np.where(hard[...,None],bar,bare)*pm[...,None]

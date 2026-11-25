@@ -1,93 +1,60 @@
-"""Cut the Stone Bank sheet into 12 individual transparent stones, all the same size:
-300x300 px, stone radius 100 px, centred. Rose and silver copies differ only in the four prongs."""
-import json, os
-import numpy as np
+"""Cut the 24 Nov gem sheet into the 12 Stone Bank stones: 300x300 px, stone radius 100 px, centred, transparent.
+The sheet's background is a painted checkerboard, so each stone is cut by its shape: the stone's ellipse and its four
+prong balls. Rose and silver copies differ only in the prongs."""
+import os, sys, numpy as np
 from PIL import Image
 from scipy import ndimage
 OUT='/Users/zahavalowy/Projects/pkhart-ring-studio/img/stones/'
-NAMES=['garnet','amethyst','aquamarine','diamond','emerald','alexandrite','ruby','peridot','sapphire','pink-tourmaline','citrine','turquoise']
-sheet=Image.open('../../images/34.webp').convert('RGB'); a=np.asarray(sheet).astype(float)
-beads=json.load(open('beads.json'))
-r_,g_,b_=a[:,:,0],a[:,:,1],a[:,:,2]; mx=a.max(2); mn=a.min(2); sat=(mx-mn)/np.maximum(mx,1)
-H,W=sat.shape; YY,XX=np.mgrid[0:H,0:W]
-goldm=(r_-b_>70)&(sat>0.45)&(r_>170)&(g_>110)&(g_<r_-15)
-# rough stone centres: the middle of each stone's four prongs
-pts=np.array([[b[0],b[1]] for b in beads]); used=np.zeros(len(pts),bool); rough=[]
-for i in np.argsort(pts[:,1]*10+pts[:,0]):
-    if used[i]: continue
-    d=np.hypot(*(pts-pts[i]).T); idx=np.nonzero((d<140)&~used)[0]; used[idx]=True; rough.append(tuple(pts[idx].mean(0)))
-rough=sorted(rough,key=lambda c:(round(c[1]/150),c[0])); assert len(rough)==12, len(rough)
-def circle_fit(px,py):
-    A=np.stack([px,py,np.ones_like(px)],1); bvec=-(px**2+py**2); sol=np.linalg.lstsq(A,bvec,rcond=None)[0]
-    cx=-sol[0]/2; cy=-sol[1]/2; return cx,cy,np.sqrt(cx*cx+cy*cy-sol[2])
-fits={}; beadrel={q:[] for q in range(4)}; beadr=[]
-QUAD=[(-1,-1),(1,-1),(-1,1),(1,1)]
-for m,(rx,ry) in enumerate(rough):
-    if NAMES[m] in ('diamond','citrine'): continue
-    near=np.hypot(XX-rx,YY-ry)<85
-    stone=(sat>0.22)&near&~ndimage.binary_dilation(goldm,iterations=3)
-    stone=ndimage.binary_opening(stone,iterations=1)
-    edge=stone&~ndimage.binary_erosion(stone)
-    ey,ex=np.nonzero(edge); dd=np.hypot(ex-rx,ey-ry); keep=dd>46
-    # keep only the outline between the prongs (within 28 degrees of the four axes)
-    ang=np.degrees(np.arctan2(ey-ry,ex-rx))%90; keep&=(ang<28)|(ang>62)
-    cx,cy,R=circle_fit(ex[keep].astype(float),ey[keep].astype(float)); fits[m]=(cx,cy,R)
-    for q,(sx,sy) in enumerate(QUAD):
-        bm=goldm&near&((XX-cx)*sx>12)&((YY-cy)*sy>12)
-        ys,xs=np.nonzero(bm)
-        if len(ys)>120: beadrel[q].append((xs.mean()-cx,ys.mean()-cy)); beadr.append(np.sqrt(len(ys)/np.pi))
-Rmed=float(np.median([f[2] for f in fits.values()])); off=np.median(np.array([[fits[m][0]-rough[m][0],fits[m][1]-rough[m][1]] for m in fits]),0)
-brel=[np.median(np.array(beadrel[q]),0) for q in range(4)]; brad=float(np.median(beadr))
-print('R per stone',{NAMES[m]:round(f[2],1) for m,f in fits.items()},'median',round(Rmed,2)); print('bead offsets',[b.round(1).tolist() for b in brel],'bead r',round(brad,1))
-BEAD_R=12.9     # the prong beads' true radius on the sheet (the colour mask only catches their mid-tones)
-stones=[]
-for m,(rx,ry) in enumerate(rough):
-    if m in fits: cx,cy,_=fits[m]
-    elif NAMES[m]=='citrine':                       # its own gold body hides its prongs: take the grid position
-        cx=(fits[2][0]+fits[6][0])/2.0; cy=(fits[8][1]+fits[9][1]+fits[11][1])/3.0
-    else: cx,cy=rx+off[0],ry+off[1]
-    bl=[]
-    for q,(sx,sy) in enumerate(QUAD):
-        bm=goldm&(np.hypot(XX-cx,YY-cy)<85)&((XX-cx)*sx>12)&((YY-cy)*sy>12); ys,xs=np.nonzero(bm)
-        if NAMES[m]!='citrine' and len(ys)>120: bl.append((xs.mean(),ys.mean(),BEAD_R))
-        else: bl.append((cx+brel[q][0],cy+brel[q][1],BEAD_R))
-    stones.append((cx,cy,bl))
-R=Rmed
-RAMP={'rose':[[0,[52,22,14]],[0.30,[146,74,58]],[0.55,[201,129,108]],[0.80,[236,190,172]],[1,[255,241,234]]],
-      'silver':[[0,[34,36,42]],[0.30,[104,109,118]],[0.55,[168,173,182]],[0.80,[226,230,236]],[1,[255,255,255]]]}
+NAMES=['garnet','amethyst','aquamarine','diamond','emerald','pearl','ruby','peridot','sapphire','opal','citrine','blue-topaz']
+a=np.asarray(Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'sheet.png')).convert('RGB')).astype(float)
+H,W=a.shape[:2]; YY,XX=np.mgrid[:H,:W]
+r,g,b=a[...,0],a[...,1],a[...,2]; mx=a.max(-1); mn=a.min(-1); sat=(mx-mn)/np.maximum(mx,1)
+CX=[250.5,648,1030,1419.5]; CY=[186.5,465.5,766.5]; BX=74.3; BY=69.0
+cells=[(CX[i%4],CY[i//4]) for i in range(12)]
+# the stone's outline, measured on the coloured stones
+fits=[]
+for m,(cx,cy) in enumerate(cells):
+    if NAMES[m] in ('diamond','pearl','opal','citrine'): continue
+    near=(np.abs(XX-cx)<120)&(np.abs(YY-cy)<120)
+    balls=np.zeros((H,W),bool)
+    for sx in (-1,1):
+        for sy in (-1,1): balls|=(XX-(cx+sx*BX))**2+(YY-(cy+sy*BY))**2<29**2
+    st=ndimage.binary_opening((sat>0.30)&near&~balls,iterations=2); ys,xs=np.nonzero(st)
+    rows=np.nonzero(st[:,int(cx)-6:int(cx)+7].any(1))[0]; cols=np.nonzero(st[int(cy)-6:int(cy)+7].any(0))[0]
+    fits.append(((cols.min()+cols.max())/2-cx,(rows.min()+rows.max())/2-cy,(cols.max()-cols.min()+1)/2,(rows.max()-rows.min()+1)/2))
+fits=np.array(fits); print(fits.round(1)); dx,dy,A,B=np.median(fits,0); print('centre offset',dx,dy,'semi-axes',A,B)
+BR=27.0; BALLS=((72,68),(74,70),(72,70),(74,69))     # the prong balls, from the stone's centre
+RAMP={'rose':[[0,[40,16,10]],[90,[138,70,56]],[160,[204,132,112]],[210,[236,180,160]],[240,[250,220,208]],[255,[255,244,240]]]}
 def tint(rgb,metal):
-    """same metal recolour the ring uses: map the gold's light and dark onto the metal's own ramp"""
-    r,g,b=rgb[...,0],rgb[...,1],rgb[...,2]; mx=rgb.max(-1); mn=rgb.min(-1); sat=np.where(mx>0,(mx-mn)/np.maximum(mx,1),0)
-    ok=(sat>=0.06)&(r>=b); amt=np.clip((sat-0.06)/0.18,0,1)*ok
-    L=(0.30*r+0.59*g+0.11*b-40)/215; L=0.5+(L-0.5)*1.25; L=np.where(L>0.78,L+(L-0.78)*0.5,L); L=np.clip(L,0,1)
-    stops=RAMP[metal]; ts=[s[0] for s in stops]; out=np.stack([np.interp(L,ts,[s[1][c] for s in stops]) for c in range(3)],-1)
-    return rgb+(out-rgb)*amt[...,None]
-S=300; RO=100.0; sc=RO/R
-info=[]
-for month,(cx,cy,bl) in enumerate(stones):
-    half=S/2/sc
-    box=(cx-half,cy-half,cx+half,cy+half)
-    crop=sheet.resize((int(round(sheet.width*sc)),int(round(sheet.height*sc))),Image.LANCZOS).crop((int(round(cx*sc-S/2)),int(round(cy*sc-S/2)),int(round(cx*sc-S/2))+S,int(round(cy*sc-S/2))+S))
-    ox=cx*sc-int(round(cx*sc-S/2)); oy=cy*sc-int(round(cy*sc-S/2))          # the stone's centre inside the crop
-    rgb=np.asarray(crop).astype(float)
-    yy,xx=np.mgrid[0:S,0:S]; dd=np.hypot(xx+0.5-ox,yy+0.5-oy)
-    alpha=np.clip(RO-2.0-dd+0.5,0,1)
-    bead=np.zeros((S,S))
-    for bx_,by_,br_ in bl:
-        bx=(bx_-cx)*sc+ox; by=(by_-cy)*sc+oy; br=br_*sc-0.5
-        bead=np.maximum(bead,np.clip(br-np.hypot(xx+0.5-bx,yy+0.5-by)+0.5,0,1))
-    alpha=np.maximum(alpha,bead)
-    for metal in ('gold','rose','silver'):
-        px=rgb.copy()
+    y=0.30*rgb[...,0]+0.59*rgb[...,1]+0.11*rgb[...,2]
+    if metal=='silver': v=255*np.clip(y/255,0,1)**1.3; return np.stack([v*0.965,v*0.985,v],-1)
+    st=RAMP['rose']; return np.stack([np.interp(y,[s[0] for s in st],[s[1][k] for s in st]) for k in range(3)],-1)
+K=100.0/A; half=150/K
+for metal in ('gold','rose','silver'):
+    os.makedirs(OUT+metal,exist_ok=True)
+    for m,(cx,cy) in enumerate(cells):
+        x0=cx+dx-half; y0=cy+dy-half; box=(int(np.floor(x0))-2,int(np.floor(y0))-2,int(np.ceil(x0+2*half))+2,int(np.ceil(y0+2*half))+2)
+        sub=a[box[1]:box[3],box[0]:box[2]].copy(); yy,xx=np.mgrid[box[1]:box[3],box[0]:box[2]]
+        e=np.sqrt(((xx-cx-dx)/A)**2+((yy-cy-dy)/B)**2); stone=np.clip((1.0-e)*A/1.5+0.5,0,1)
+        ball=np.zeros(stone.shape)
+        fgs=(sat[box[1]:box[3],box[0]:box[2]]>0.14)|(a[box[1]:box[3],box[0]:box[2]].mean(-1)<205)
+        fgs=ndimage.gaussian_filter(ndimage.binary_fill_holes(ndimage.binary_closing(fgs,iterations=4)).astype(float),0.8)
+        for (sx,sy),(ox,oy) in zip(((-1,-1),(1,-1),(-1,1),(1,1)),BALLS):
+            ball=np.maximum(ball,np.clip((BR-np.hypot(xx-(cx+dx+sx*ox),yy-(cy+dy+sy*oy)))/1.5+0.5,0,1))
+        ball=ball*np.clip(fgs*1.6-0.3,0,1)
         if metal!='gold':
-            t=tint(rgb,metal); w=np.clip(ndimage.grey_dilation(bead,size=3),0,1)[...,None]; px=rgb*(1-w)+t*w
-        os.makedirs(OUT+metal,exist_ok=True)
-        Image.fromarray(np.dstack([np.clip(px,0,255),alpha*255]).astype(np.uint8),'RGBA').save(OUT+metal+f'/{month+1:02d}-{NAMES[month]}.png',optimize=True)
-    info.append(NAMES[month])
-print(info)
-chk=Image.new('RGB',(12*150,3*150),(120,120,120))
-for mi,metal in enumerate(('gold','rose','silver')):
-    for i,nm in enumerate(NAMES):
-        im=Image.open(OUT+metal+f'/{i+1:02d}-{nm}.png').resize((150,150),Image.LANCZOS)
-        bg=Image.new('RGB',(150,150),(255,255,255) if (i+mi)%2 else (40,40,40)); bg.paste(im,(0,0),im); chk.paste(bg,(i*150,mi*150))
-chk.save('bank-check.png')
+            mxs=sub.max(-1); mns=sub.min(-1); goldish=np.clip((sub[...,0]-sub[...,2]-25)/40.0,0,1) if NAMES[m]!='citrine' else np.ones(ball.shape)
+            w=(ball*np.maximum(goldish,(ball>0.5)*(1-stone)))[...,None]; sub=sub*(1-w)+tint(sub,metal)*w
+        al=np.maximum(stone,ball)
+        im=Image.fromarray(np.dstack([np.clip(sub,0,255),al*255]).astype(np.uint8),'RGBA')
+        im=im.transform((300,300),Image.AFFINE,(1/K,0,x0-box[0],0,1/K,y0-box[1]),resample=Image.BICUBIC)
+        im.save(OUT+metal+f'/{m+1:02d}-{NAMES[m]}.png',optimize=True)
+    Image.new('RGBA',(300,300),(0,0,0,0)).save(OUT+metal+'/seat.png')      # these stones carry their own setting
+for f in ('06-alexandrite.png','10-pink-tourmaline.png','12-turquoise.png'):
+    for metal in ('gold','rose','silver'):
+        if os.path.exists(OUT+metal+'/'+f): os.remove(OUT+metal+'/'+f)
+sh=Image.new('RGB',(12*150,3*150),(70,90,120))
+for i,metal in enumerate(('gold','rose','silver')):
+    for m in range(12):
+        t=Image.open(OUT+metal+f'/{m+1:02d}-{NAMES[m]}.png').resize((150,150),Image.LANCZOS); sh.paste(t,(m*150,i*150),t)
+sh.save('check.png')
