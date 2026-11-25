@@ -2,10 +2,7 @@ import json, os, sys, numpy as np; sys.path.insert(0, os.path.dirname(os.path.ab
 from PIL import Image
 src=open('rings3.py').read(); i=src.index("rounds=json.load(open('rounds.json'))")
 ns={'__file__':os.path.abspath('rings3.py')}; exec(src[:i],ns); lift=ns['lift']
-ROUNDS={2:[('red',447,302,67),('green',242,441,61.5)],
-        3:[('red',450,241,60),('green',246,363,53),('purple',555,453,54)],
-        4:[('red',454,235,58),('green',248,348,53.5),('purple',584,432,56),('white',313,522,50)],
-        5:[('red',461,153,67),('green',266,276,56),('purple',595,358,58.5),('white',327,475,49),('white',679,577,45)]}
+from marks import ROUNDS
 if __name__=='__main__':
     R=json.load(open('../m2/rounds.json')); out={'1':R['1']}
     sheet=Image.new('RGB',(4*900,2*900),'white')

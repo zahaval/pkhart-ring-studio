@@ -7,10 +7,11 @@ from scipy import ndimage
 import sys
 pears=json.load(open('pears.json')); TT=json.load(open('T.json')) if __import__('os').path.exists('T.json') else {}; TT={int(k):v for k,v in TT.items()}
 # prong beads, marked by eye on gridded close-ups: tip, top right, bottom right (x, y, r)
-BEADS={2:[(274,686,33),(571,578,29),(571,778,31)], 3:[(278,625,33),(556,545,29),(550,731,31)],
-       4:[(314,646,29),(564,569,28),(567,723,28),(588,648,34)], 5:[(268,694,31),(554,613,29),(551,784,31)]}
+import os,sys; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from marks import BEADS
 for n,b in BEADS.items(): pears[str(n)]['beads']=[list(map(float,x)) for x in b]
-pears['4']['wire']=(597,656,566); pears['4']['slope']=-0.2
+OV=json.load(open('wire.json')) if os.path.exists('wire.json') else {}
+for n,o in OV.items(): pears[n].update(o)
 disk=lambda q:(np.hypot(*np.mgrid[-q:q+1,-q:q+1])<=q)
 def gold_of(a):
     r,g,b=a[:,:,0],a[:,:,1],a[:,:,2]; mx=a.max(2); mn=a.min(2); sat=(mx-mn)/np.maximum(mx,1)
@@ -100,8 +101,8 @@ def erase(a,pg,T):
     out=a*(1-soft)+fill*soft
     hx=float(hull[:,0].max()); return out,dict(T=int(T),right=int(hx),wire_at_right=round(float(cR+sw*(hx-xR)),1),tip=[int(x_end),int(round(cR+sw*(x_end-xR)))],wire_half=round(half,1),slope=round(sw,4),body=pg['body'],edge=[PL,PR])
 if __name__=='__main__':
-    info={1:json.load(open('../m2/bare.json'))['1']}; sheet=Image.new('RGB',(5*600,500),(255,255,255))
-    for n in range(2,6):
+    info={}; sheet=Image.new('RGB',(5*600,500),(255,255,255))
+    for n in range(1,6):
         a=np.asarray(Image.open(f'nostone-{n}.png').convert('RGB')).astype(float)
         g=ndimage.binary_closing(metal_of(a),structure=np.ones((13,1),bool)); rounds=json.load(open('rounds.json'))[str(n)]; top=rounds[0]
         col=g[:,int(top['x']+3*top['r'])]; T=[r for r in runs(col,minlen=8)][0]; T=int((T[1]-T[0]+1)*1.25)

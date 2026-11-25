@@ -19,7 +19,7 @@ for n,f in FILES.items():
     obj=(mn<232)|(sat>0.2); obj=ndimage.binary_opening(obj,iterations=3)
     lab,k=ndimage.label(obj); sizes=ndimage.sum(obj,lab,range(1,k+1)); big=lab==(1+int(np.argmax(sizes)))
     oy,ox=np.nonzero(big); by0,by1=oy.min(),oy.max()
-    sc=700.0/(x1-x0); cx=(x0+x1)/2; cy=(by0+by1)/2
+    sc=700.0/(x1-x0); cx=(x0+x1)/2; cy=(by0+by1)/2          # every ring 700px wide: the same finger size at every wrap count
     side=900/sc; L=cx-side/2; T=cy-side/2
     crop=im.crop((int(round(L)),int(round(T)),int(round(L+side)),int(round(T+side))))   # PIL pads outside with black
     canvas=Image.new('RGB',(int(round(side)),int(round(side))),(255,255,255))
