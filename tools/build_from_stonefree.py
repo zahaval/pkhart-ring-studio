@@ -1,10 +1,10 @@
 """Ring photos from the stone-free renders (Artlist, Nano Banana 2: the supplied photo with only the stones removed).
 Each render is put in the same 900px frame as the supplied photo it came from (same crop and scale), so the stone
 positions in index.html do not change. Nothing else is edited: only the frame's outer edge fades to the page's white.
-usage: build.py OUT_DIR   (writes OUT_DIR/<metal>/ring-N.jpg)"""
+usage: build_from_stonefree.py OUT_DIR STONEFREE_DIR   (writes OUT_DIR/<metal>/ring-N.jpg)"""
 import json, os, sys, numpy as np
 from PIL import Image
-D=os.path.dirname(os.path.abspath(__file__)); R='/Users/zahavalowy/Projects/pkhart-ring-studio/'; OUT=sys.argv[1]
+D=os.path.dirname(os.path.abspath(__file__)); SRC=sys.argv[2]; R='/Users/zahavalowy/Projects/pkhart-ring-studio/'; OUT=sys.argv[1]
 src=open(R+'tools/make_ring_photos.py').read(); ns={'__file__':R+'tools/make_ring_photos.py'}; exec(src[:src.index('def erase_curved')],ns); tint=ns['tint']
 from scipy import ndimage
 from scipy.sparse import csr_matrix
@@ -52,7 +52,7 @@ def shorten(a,n):
     out=a.copy(); fill=a.copy(); fill[ys,xs]=sol; m=np.maximum(hole.astype(float),ndimage.gaussian_filter(ndimage.binary_dilation(hole,iterations=3).astype(float),2.5)*(mn>215))[...,None]; out=out*(1-m)+fill*m
     # the floor around the cut is featureless: smooth it there, so no edge of the filled patch or stray speck shows
     mx2=out.max(-1); mn2=out.min(-1); F=(mn2>215)&((mx2-mn2)/np.maximum(mx2,1)<0.10); zone=ndimage.binary_dilation(hole,iterations=16); zone[:,xc:]=False
-    lab,k=ndimage.label(zone&~F&(yy>midline[None,:])); sz=ndimage.sum(np.ones_like(lab),lab,range(1,k+1)); speck=np.isin(lab,1+np.nonzero(sz<200)[0])
+    lab,k=ndimage.label(~F); sz=ndimage.sum(np.ones_like(lab),lab,range(1,k+1)); speck=np.isin(lab,1+np.nonzero(sz<700)[0])&zone      # stray bits not joined to the ring
     Ff=F.astype(float); wsum=np.maximum(ndimage.gaussian_filter(Ff,7),1e-3); sm=np.stack([ndimage.gaussian_filter(out[...,c]*Ff,7) for c in range(3)],-1)/wsum[...,None]
     w=(ndimage.gaussian_filter(zone.astype(float),4)*(F|ndimage.binary_dilation(speck,iterations=2)))[...,None]; out=out*(1-w)+sm*w
     # the new rounded tip, from the wire's own cross-section just right of the cut
@@ -66,7 +66,7 @@ def shorten(a,n):
     return out
 info=json.load(open(D+'/stonefree-frames.json'))
 for n in range(1,6):
-    I=info[str(n)]; im=Image.open(f'{D}/in/nostone-{n}.png').convert('RGB')
+    I=info[str(n)]; im=Image.open(f'{SRC}/nostone-{n}.png').convert('RGB')
     if list(im.size)!=I['size']: im=im.resize(tuple(I['size']),Image.LANCZOS)
     side=900/I['scale']; canvas=Image.new('RGB',(int(round(side)),int(round(side))),(255,255,255)); canvas.paste(im,(-int(round(I['L'])),-int(round(I['T']))))
     a=np.asarray(canvas.resize((900,900),Image.LANCZOS)).astype(float); H,W=a.shape[:2]; yy,xx=np.mgrid[:H,:W]
@@ -75,5 +75,3 @@ for n in range(1,6):
     for metal in ('gold','rose','silver'):
         os.makedirs(f'{OUT}/{metal}',exist_ok=True); px=a if metal=='gold' else tint(a,metal,None)
         Image.fromarray(np.clip(px,0,255).astype(np.uint8)).save(f'{OUT}/{metal}/ring-{n}.jpg',quality=93)
-    std=np.asarray(Image.open(f'{D}/../bg/std-{n}.png').convert('RGB')).astype(float); d=np.abs(std-a).max(-1); g=(std[...,0]-std[...,2]>60)
-    print(n,'aligned with the supplied photo: median diff on gold',np.median(d[g]))
