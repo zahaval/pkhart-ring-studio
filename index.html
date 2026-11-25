@@ -316,21 +316,22 @@ const METALS = {
 };
 const MAX_WRAPS = 5;
 /* Each ring photo is the supplied photo with its own stones lifted off (only the footprint of each setting is replaced
-   with bare wire), so every stone on the ring is a Stone Bank image, all drawn at one size per ring (r: sized to that
-   photo's band). Measured on the 900px photo: stones = [x, y, twinX, twinY] per wrap, top wrap first.
+   with bare wire), so every stone on the ring is a Stone Bank image, all drawn at one size (STONE_R).
+   Measured on the 900px photo: stones = [x, y, twinX, twinY] per wrap, top wrap first.
    The bottom stone goes where the photo's pear sat: bottom = photo pixels per sheet unit; seat = [the pear's right edge,
    the wire's centre there]; top = the pear's top edge; drop = how far below the wire its centre hung, as a share of its height. */
+const STONE_R = 34.4;
 const RINGS = {
-  1:{r:43.0, bottom:2.0, seat:[670,532], top:431, drop:0.1,
-     stones:[[512,312,415,309]]},
-  2:{r:43.0, bottom:2.0, seat:[616,625], top:560, drop:0.22,
-     stones:[[447,302,544,300],[242,441,339,417]]},
-  3:{r:43.0, bottom:2.0, seat:[585,598], top:523, drop:0.16,
-     stones:[[450,241,353,241],[246,363,343,347],[555,453,458,451]]},
-  4:{r:43.0, bottom:2.0, seat:[589,636], top:552, drop:0.08,
-     stones:[[454,235,357,233],[248,348,345,319],[584,432,487,427],[313,522,410,517]]},
-  5:{r:43.0, bottom:2.0, seat:[581,723], top:613, drop:0.01,
-     stones:[[453,170,356,170],[248,304,345,311],[577,414,480,414],[308,522,405,515],[624,604,527,599]]},
+  1:{bottom:1.56, seat:[589,509], top:454, drop:0.19,
+     stones:[[446,327,523,319]]},
+  2:{bottom:1.5, seat:[572,602], top:548, drop:0.2,
+     stones:[[436,304,513,298],[278,444,355,432]]},
+  3:{bottom:1.56, seat:[567,574], top:535, drop:0.28,
+     stones:[[418,226,495,219],[274,368,351,353],[541,454,464,461]]},
+  4:{bottom:1.52, seat:[566,619], top:554, drop:0.12,
+     stones:[[416,219,493,213],[261,334,338,323],[537,415,460,419],[325,521,402,514]]},
+  5:{bottom:1.49, seat:[560,670], top:597, drop:0.1,
+     stones:[[431,164,508,163],[262,282,339,271],[542,367,465,370],[328,475,405,467],[649,556,572,559]]},
 };
 /* In a store, the store's page hands over SHOP: its image addresses, its cart, and the price of each ring.
    On its own (no SHOP) the page shows no prices and sends a request by email. */
@@ -341,7 +342,7 @@ const PHOTO = 900, STONE_BOX = 3;      // a stone image is 3x its stone's radius
 
 const stoneSrc  = (i, metal) => asset('img/stones/' + METALS[metal].dir + '/' + STONE_BANK[i].file + '?v=2');
 const seatSrc   = metal => asset('img/stones/' + METALS[metal].dir + '/seat.png?v=2');
-const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/ring-' + n + '.jpg?v=20');   // bump v when the photos change, so no one sees old photos under new placements
+const ringSrc   = (n, metal) => asset('img/rings/' + METALS[metal].dir + '/ring-' + n + '.jpg?v=21');   // bump v when the photos change, so no one sees old photos under new placements
 const bottomSrc = (cut, size, metal) => asset('img/bottom/' + METALS[metal].dir + '/' + cut + '-' + size + '.png');
 
 /* ============================ STATE ============================
@@ -412,7 +413,7 @@ function place(g, pick, x, y, label){
   if (!on){ g.shown = null; return; }
   g.b.style.left = (x / PHOTO * 100) + '%';
   g.b.style.top = (y / PHOTO * 100) + '%';
-  g.b.style.width = (RINGS[state.count].r * STONE_BOX / PHOTO * 100) + '%';
+  g.b.style.width = (STONE_R * STONE_BOX / PHOTO * 100) + '%';
   g.b.setAttribute('aria-label', label);
   const src = stoneSrc(pick, state.metal);
   if (g.shown !== src){
